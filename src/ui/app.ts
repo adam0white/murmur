@@ -24,6 +24,7 @@ import {
   trustOf,
 } from '../sim/game.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
+import { lab } from './lab.ts';
 
 const SAVE = 'murmur-save-v1';
 /** Real seconds an open card lasts (its whole window). */
@@ -156,6 +157,7 @@ export function start() {
 
 function title() {
   cancelAnimationFrame(raf);
+  lab.screen('title');
   const save = readSave();
   app.innerHTML = `${header(false)}<div class="page title">
     <h1>The Two Voices</h1>
@@ -242,6 +244,7 @@ function enter() {
 
 function day() {
   if (!s) return;
+  lab.screen(`day ${s.day}`);
   requestWake();
   drawn = { log: '', sheet: '' };
   hurry = false;
@@ -577,6 +580,8 @@ function evening() {
   if (!s) return;
   const pg = s.pages.at(-1);
   if (!pg) return;
+  lab.screen(`day ${s.day}: evening`);
+  lab.milestone(`day ${s.day} done`);
   app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     ${pageHtml(pg)}
@@ -631,6 +636,8 @@ function ending() {
   cancelAnimationFrame(raf);
   if (!s?.final) return;
   const f = s.final;
+  lab.screen('ending');
+  lab.milestone('ending reached');
   app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     ${finalHtml(f)}
@@ -638,6 +645,7 @@ function ending() {
     <div class="actions">
       <button class="primary" id="again">Another week</button>
       <button class="quiet" id="export">Export this run</button>
+      <button class="quiet" id="send">Send this run to the notebook</button>
     </div>
     ${footer()}
   </div>`;
@@ -645,6 +653,9 @@ function ending() {
   toast = '';
   document.getElementById('again')?.addEventListener('click', () => newWeek(randomSeed()));
   document.getElementById('export')?.addEventListener('click', download);
+  document
+    .getElementById('send')
+    ?.addEventListener('click', () => lab.openSendDialog({ getRun: () => exportRun() }));
 }
 
 function finalHtml(f: Final): string {
@@ -700,12 +711,14 @@ function handsHtml(f: Final): string {
 
 function backPage() {
   if (!s) return;
+  lab.screen('back page');
   // The back page is a sheet over the day; time keeps its slow pace under it.
   const el = document.createElement('div');
   el.className = 'backpage-wrap';
   el.innerHTML = `<div class="backpage ink-in" role="dialog" aria-label="The back page">
     <p class="label">the back page</p>
     <button class="row" id="bp-export">Export this run</button>
+    <button class="row" id="bp-send">Send this run to the notebook</button>
     <button class="row" id="bp-load">Replay a run file</button>
     <input type="file" id="bp-file" accept="application/json,.json" hidden />
     <button class="row" id="bp-new">Start a new week</button>
@@ -720,6 +733,9 @@ function backPage() {
   });
   document.getElementById('bp-close')?.addEventListener('click', close);
   document.getElementById('bp-export')?.addEventListener('click', download);
+  document
+    .getElementById('bp-send')
+    ?.addEventListener('click', () => lab.openSendDialog({ getRun: () => exportRun() }));
   document.getElementById('bp-new')?.addEventListener('click', () => {
     close();
     newWeek(randomSeed());
