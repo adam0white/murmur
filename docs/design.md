@@ -25,13 +25,23 @@ Taken: A + the evening scene, five weekdays + Saturday, pencil vs ink, size of h
 
 ### After the first playtests (2026-10-19, see docs/playtests/)
 Four source-unread testers and the HF-character harness agreed on these. They changed the rules:
-- **Holding is a capability, not a free override.** It carries only while she trusts you enough (`INSIST_FROM`, 0.45). Each hold costs trust. Below that line a hold carries less than a tap, and she says so: "Don't push me. Not today." Always holding now loses more moments than plain speaking.
+- **Holding is a capability, not a free override.** It carries only while she trusts you enough (`INSIST_FROM`, 0.45). Each hold costs trust. Below that line a hold carries less than a tap, and she says so: "You keep pushing me. I'm not listening to that today." Always holding now loses more moments than plain speaking.
 - **Her phrases fade unless you say them again.** Each night a phrase you did not say again that day loses a fifth of its practice. This is host-side, because HF's 60-day half-life is too slow for one week (HF request 5). Training and then coasting no longer works. She still turns the pull away on her own sometimes.
-- **The hints are honest.** Her will runs at temperature 0, so "she might" and "if you push" are what HF predicts she will do. Runs differ through the seed's small differences in her habits.
+- **The hints are honest.** Her will runs at temperature 0, so the mood words on each option ("she's willing", "only with a push") are what HF predicts she will do. Runs differ through the seed's small differences in her habits.
 - **Honesty and kindness are not free.** Her convictions against lying and backbiting are lower, so the pull wins at those too. The first lie at the depot works ("Nobody checked."). The second time she owns up to being late, Murat writes it down in pen.
 - **Threads close.** Ece's "after six" becomes a Thursday scene. Saturday closes Ece, Murat, the shelf and the lock-screen photo in a line each.
 - **Repeats vary.** The coffee, bus and bed cards have a different line each day. The journal keeps each card's scene and pull line, so a card that closed while the player was away still reads.
 - **Bodily lines.** Routine hours now give water (tea at the desk), so she no longer reaches dinner "too thirsty". The forecast speaks only when an exertion would really cost her.
+
+### After the first-timer playtest (2026-10-19, Claude Haiku)
+A first-timer could not tell her replies from the pencil, read the mood words as odds, and saw "Later" quietly hand the moment to the pencil. Fixes, none of which change a decision:
+- **Three hands, three looks.** Your ink is the serif; the pencil is graphite blue-grey handwriting; her replies are quoted handwriting marked "she says".
+- **Mood, not odds.** The small words are her mood: she's willing, she'd grumble, only with a push, she'd put it off, she's against it.
+- **Say when she didn't.** When she does not do what you said, a line says so before the narrator line: "She put yours off, so the pencil's way, for now." or "She didn't. She went the pencil's way."
+- **Every refusal has a reason.** When HF gives her no words, the host gives her a true one: tiredness, the easier way, or a plain no.
+
+### Edges we keep (owner, 2026-10-19)
+The owner wants the edges playtesters find "a bit fun and slightly in our calculations" kept, not closed. The measure's `edge` policy plays them: it sides with the pull where the pull is right (the coffee when she is tired, the first lie), holds only where a hold carries and beats a tap, and speaks on borrowed cards. Over 8 seeds it lets the pull win 1.9 of 18.6 prompts and keeps 9.8 commitments, against 4.3 and 8.8 for the honest reader. It is the best policy but not a rout, so the edges stay.
 
 ### What saying nothing does
 It is a real move. You see who she is without you. A turning-away she learned from you (below) only shows as hers when she uses it unprompted, and the evening notes it: "I did that one myself." Saying nothing costs no trust and lets voice pressure fade. It does let her phrases fade. A "say nothing" control on each card makes silence a visible move.

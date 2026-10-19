@@ -57,6 +57,26 @@ describe('The Two Voices sim', () => {
     expect(s.final?.note.length).toBeGreaterThan(0);
   });
 
+  it('every word she turns down comes back with words of hers', () => {
+    for (const seed of [1, 2, 42]) {
+      const s = newGame(seed);
+      for (let g = 0; s.phase !== 'end' && g < 2000; g++) {
+        if (s.phase === 'evening') {
+          queueInput(s, { kind: 'next' });
+          continue;
+        }
+        runToCard(s);
+        const v = cardView(s);
+        if (!v) continue;
+        const o = v.options.find((x) => !x.isPull);
+        if (!o) continue;
+        queueInput(s, { kind: 'say', option: o.id, insist: s.day >= 3 });
+        const a = s.answer;
+        if (a?.said && a.verdict !== 'assented' && a.verdict !== 'complied') expect(a.says).toBeTruthy();
+      }
+    }
+  });
+
   it('replays exactly from seed and input log', () => {
     const s = play(11, opposeFirst);
     const r = replay(s.seed, s.inputs);

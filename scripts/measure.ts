@@ -1,10 +1,21 @@
 // Headless measure: policy bots x seeds -> who won the moments, what she kept, how the two voices' trust moved.
 // Run: npm run measure [-- seeds=6] [p=silent,oppose]
-import { cardView, newGame, optionsOf, queueInput, runToCard, step, trustOf } from '../src/sim/game.ts';
+import {
+  cardView,
+  ctxOf,
+  insistCarries,
+  newGame,
+  optionsOf,
+  queueInput,
+  runToCard,
+  step,
+  trustOf,
+} from '../src/sim/game.ts';
 import { momentById } from '../src/sim/moments.ts';
 import type { GameState } from '../src/sim/types.ts';
 
-type Policy = 'silent' | 'oppose' | 'insist' | 'pull' | 'reader' | 'picky' | 'teach';
+type Policy = 'silent' | 'oppose' | 'insist' | 'pull' | 'reader' | 'picky' | 'teach' | 'edge';
+const RANK = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 } as const;
 
 /** What each bot says at a card, or null for silence. */
 function choose(s: GameState, policy: Policy): { option: string; insist?: boolean } | null {
@@ -17,6 +28,19 @@ function choose(s: GameState, policy: Policy): { option: string; insist?: boolea
   if (policy === 'oppose') return { option: first.id };
   if (policy === 'teach') return s.day <= 3 ? { option: first.id } : null;
   if (policy === 'insist') return { option: first.id, insist: true };
+  // edge: plays the edges a sharp player finds. Sides with the pull where it is right (tired mornings, the
+  // first lie), speaks on every card the pull borrows, and holds only where a hold carries and beats a tap.
+  if (policy === 'edge') {
+    const c = ctxOf(s);
+    const late = v.options.some((o) => o.id === 'lie');
+    if (late && c.flags.lied === undefined) return { option: 'lie' };
+    if (c.tired && ['coffee', 'watch', 'sleep'].includes(v.pullTo)) return { option: v.pullTo };
+    const willing = not.find((o) => o.lean === 'yes');
+    if (willing) return { option: willing.id };
+    const push = not.find((o) => RANK[o.pushed] > RANK[o.lean] && RANK[o.pushed] >= 3);
+    if (push && insistCarries(s.person)) return { option: push.id, insist: true };
+    return v.borrowed ? { option: first.id } : null;
+  }
   // reader: says the best non-pull option she leans to; insists only where she would go along if pushed.
   const yes = not.find((o) => o.lean === 'yes') ?? not.find((o) => o.lean === 'later');
   if (yes) return { option: yes.id };
@@ -83,7 +107,7 @@ const seeds = Number(process.argv.find((a) => a.startsWith('seeds='))?.slice(6) 
 const policies = (process.argv
   .find((a) => a.startsWith('p='))
   ?.slice(2)
-  .split(',') ?? ['silent', 'oppose', 'insist', 'pull', 'reader', 'picky', 'teach']) as Policy[];
+  .split(',') ?? ['silent', 'oppose', 'insist', 'pull', 'reader', 'picky', 'teach', 'edge']) as Policy[];
 for (const policy of policies) {
   const rows = Array.from({ length: seeds }, (_, i) => run(1000 + i, policy));
   const avg = (k: keyof (typeof rows)[number]) =>

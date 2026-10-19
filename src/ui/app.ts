@@ -130,13 +130,13 @@ const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather n
 const footer = () =>
   '<div class="footer"><a href="https://human.adamwhite.work/games/">◇ all notebooks</a></div>';
 
-/** A few approximate words for how she leans, never a number. */
+/** Her mood about each option, in a few words: never a number, never odds. */
 function cue(lean: Lean, pushed: Lean, day: number): string {
-  if (lean === 'yes') return 'she might';
+  if (lean === 'yes') return 'she’s willing';
   if (lean === 'if pushed') return 'she’d grumble';
-  if (day >= 2 && (pushed === 'yes' || pushed === 'if pushed')) return 'if you push';
-  if (lean === 'later') return 'later, maybe';
-  return 'not today';
+  if (day >= 2 && (pushed === 'yes' || pushed === 'if pushed')) return 'only with a push';
+  if (lean === 'later') return 'she’d put it off';
+  return 'she’s against it';
 }
 
 function urlSeed(): number | null {
@@ -430,7 +430,7 @@ function cardHtml(v: CardView): string {
   // Holding helps only while she trusts you enough; when a hold would land worse than a tap, say so in words.
   const pushSore = s.day >= 2 && v.options.some((o) => RANK[o.pushed] < RANK[o.lean]);
   const hint = pushSore
-    ? 'She’s had enough of being pushed.'
+    ? 'She’s had enough of being pushed. A hold now lands worse than a word.'
     : (v.hint ?? (first ? 'Tap one to say it.' : undefined));
   const pull = v.borrowed
     ? `<p class="pull borrowed" style="${inkStyle(tYou)}">${esc(v.pullLine)}</p>`
@@ -453,7 +453,7 @@ function cardHtml(v: CardView): string {
       ${first && !v.borrowed ? '<p class="caption">the pencil is the other voice</p>' : ''}
       ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
     </div>
-    <div class="opts">${first ? '<p class="caption right">the small words are how she’s leaning</p>' : ''}${opts}
+    <div class="opts">${first ? '<p class="caption right">the small words are her mood about each</p>' : ''}${opts}
       <button class="hush" id="hush">say nothing</button>
     </div>
   </div>`;
@@ -489,15 +489,22 @@ function gapHtml(a: Answer | null): string {
       `<p class="yousaid"><span class="ink" style="${inkStyle(trustOf(p, YOU))}">${esc(yours)}</span>${a.insisted ? ' <span class="insisted">you insisted</span>' : ''}</p>`,
     );
   else if (!a.said) lines.push(`<p class="soft">${quiet ? 'You let her be.' : 'You said nothing.'}</p>`);
-  if (a.says) lines.push(`<p class="her hand">${esc(a.says)}</p>`);
+  if (a.says) lines.push(`<p class="her hand">“${esc(a.says)}” <span class="who">she says</span></p>`);
+  // Say plainly when she did not do what you said, before the narrator line shows what she did.
+  if (a.said && a.said !== a.chosen) {
+    const how =
+      a.verdict === 'deferred'
+        ? 'She put yours off, so the pencil’s way, for now.'
+        : a.pullWon
+          ? 'She didn’t. She went the pencil’s way.'
+          : 'She didn’t. She did something else.';
+    lines.push(`<p class="turn small">${how}</p>`);
+  }
   const done = doneLine(a);
   if (done) lines.push(`<p class="n">${esc(done.text)}</p>`);
   if (a.learned)
     lines.push(`<p class="margin hand">She took it as “${esc(a.learned)}.” She kept that one.</p>`);
   if (a.turnedAlone) lines.push(`<p class="margin hand">“${esc(a.turnedAlone)}.” Her own words now.</p>`);
-  if (a.said && a.verdict === 'deferred') lines.push('<p class="soft small">Later, she said.</p>');
-  else if (a.said && a.said !== a.chosen && a.pullWon)
-    lines.push('<p class="soft small">The pencil had its way.</p>');
   return `<div class="gap ink-in">${lines.join('')}</div>
     <div class="gap-actions"><button class="quiet" id="hurry">on with the day ▸</button></div>`;
 }

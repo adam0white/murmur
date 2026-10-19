@@ -43,7 +43,7 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = '0.2.0';
+export const GAME_VERSION = '0.2.1';
 export const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const WINDOW = 5;
 const SAY = 0.6;
@@ -366,6 +366,14 @@ function open(s: GameState, m: Moment) {
   if (v) s.log.push({ at: s.minute, who: 'pull', text: v.pullLine });
 }
 
+/** Her reason when she turns your word down and HF gave her no words: tiredness, the easier way, or plain no. */
+function reasonOf(c: Ctx, v: Verdict, pullWay: boolean): string {
+  if (v === 'deferred') return c.tired ? 'Later. I’m too tired now.' : 'Later. Not now.';
+  if (c.tired) return 'I’m too tired for that.';
+  if (pullWay) return 'The other way is easier.';
+  return 'No. Not that one.';
+}
+
 function resolve(s: GameState, said: { option: string; insist: boolean } | null) {
   const card = s.card;
   if (!card) return;
@@ -406,7 +414,10 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
       answer.says = yours.says;
       const heard = yours.verdict === 'assented' || yours.verdict === 'complied';
       // A hold that did not carry: she says why, in her words.
-      if (!carried && !heard) answer.says = 'Don’t push me. Not today.';
+      // A hold that did not carry, or a refusal with no words: she gives her reason, from what is true now.
+      if (!carried && !heard) answer.says = 'You keep pushing me. I’m not listening to that today.';
+      else if (!heard && !answer.says)
+        answer.says = reasonOf(c, yours.verdict as Verdict, m.pull.to === chosen.id);
       if (heard) st.heard += 1;
       const ph = opts.find((o) => o.id === said.option)?.phrase;
       if (heard && ph && said.option === chosen.id) st.reinforced.push(ph.id);
