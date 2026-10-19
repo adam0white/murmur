@@ -67,6 +67,8 @@ export interface Ctx {
 
 export interface Flags {
   late?: boolean;
+  /** Mornings she has walked in late this week. */
+  lateDays?: number;
   lied?: number;
   gossiped?: number;
   helpedEce?: boolean;
@@ -111,7 +113,7 @@ export interface Answer {
 
 export interface LogLine {
   at: number;
-  who: 'narrator' | 'dilan' | 'pull' | 'you' | 'other';
+  who: 'narrator' | 'dilan' | 'pull' | 'you' | 'other' | 'scene';
   text: string;
 }
 
@@ -125,6 +127,8 @@ export interface DayStats {
   turnedAlone: string[];
   borrowedHeard: number;
   /** Cards today where the pull could have borrowed your ink, and where it did. */
+  /** Phrases you said again today (they keep); the rest fade overnight. */
+  reinforced: string[];
   borrowable: number;
   borrowed: number;
   learned: string[];
@@ -149,6 +153,7 @@ export interface Page {
 
 export type Input =
   | { kind: 'say'; at: number; option: string; insist?: boolean }
+  | { kind: 'quiet'; at: number }
   | { kind: 'next'; at: number };
 export type NewInput = Input extends infer I ? (I extends { at: number } ? Omit<I, 'at'> : never) : never;
 
@@ -157,6 +162,8 @@ export interface Final {
   sent: string;
   phrases: { text: string; weight: number }[];
   unasked: string[];
+  /** What became of the week's open threads (Ece, Murat, the shelf, the photo). */
+  threads: string[];
   strip: { day: number; kept: string[]; missed: string[] }[];
   hands: { start: { you: number; pull: number }; end: { you: number; pull: number } };
   line: string;

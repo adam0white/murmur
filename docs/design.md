@@ -23,8 +23,18 @@ Taken: A + the evening scene, five weekdays + Saturday, pencil vs ink, size of h
 6. **The review page.** Her review line (HF `reviewLine`), what she kept and missed, one line about you, any new phrase of her own in the margin, and tomorrow's resolves as underlines.
 7. **Tomorrow** carries it: a resolve prints on its card in her hand and pulls in HF (`review:resolve`); lost sleep makes the pull louder in the morning; a lie or a word at lunch comes back.
 
+### After the first playtests (2026-10-19, see docs/playtests/)
+Four source-unread testers and the HF-character harness agreed on these. They changed the rules:
+- **Holding is a capability, not a free override.** It carries only while she trusts you enough (`INSIST_FROM`, 0.45). Each hold costs trust. Below that line a hold carries less than a tap, and she says so: "Don't push me. Not today." Always holding now loses more moments than plain speaking.
+- **Her phrases fade unless you say them again.** Each night a phrase you did not say again that day loses a fifth of its practice. This is host-side, because HF's 60-day half-life is too slow for one week (HF request 5). Training and then coasting no longer works. She still turns the pull away on her own sometimes.
+- **The hints are honest.** Her will runs at temperature 0, so "she might" and "if you push" are what HF predicts she will do. Runs differ through the seed's small differences in her habits.
+- **Honesty and kindness are not free.** Her convictions against lying and backbiting are lower, so the pull wins at those too. The first lie at the depot works ("Nobody checked."). The second time she owns up to being late, Murat writes it down in pen.
+- **Threads close.** Ece's "after six" becomes a Thursday scene. Saturday closes Ece, Murat, the shelf and the lock-screen photo in a line each.
+- **Repeats vary.** The coffee, bus and bed cards have a different line each day. The journal keeps each card's scene and pull line, so a card that closed while the player was away still reads.
+- **Bodily lines.** Routine hours now give water (tea at the desk), so she no longer reaches dinner "too thirsty". The forecast speaks only when an exertion would really cost her.
+
 ### What saying nothing does
-It is a real move. You see who she is without you. A turning-away she learned from you (below) only shows as hers when she uses it unprompted, and the evening notes it: "I did that one myself." Saying nothing also costs nothing in trust, and lets voice pressure fade.
+It is a real move. You see who she is without you. A turning-away she learned from you (below) only shows as hers when she uses it unprompted, and the evening notes it: "I did that one myself." Saying nothing costs no trust and lets voice pressure fade. It does let her phrases fade. A "say nothing" control on each card makes silence a visible move.
 
 ### Two voices, made concrete
 - `pull` is an HF voice with its own trust (starts higher than yours: it has been with her longer). Its suggestion goes into the same decision as yours. When giving in felt good, she trusts it more (HF `learnFromVoice`). Its handwriting grows and shrinks with that trust.
@@ -50,8 +60,8 @@ It is a real move. You see who she is without you. A turning-away she learned fr
 ## The back story (implied, never told)
 Dilan moved back to her hometown eight months ago after something ended. Objects that imply it: her lock screen is a beach photo with one person cropped out; a half-built shelf in the corner with the screws still in the bag; the gym email; her sister Aylin's voice notes ("Mum's asking again. Just ring her, it's ten minutes."). Murat runs the depot floor. Ece is the new driver.
 
-## HF use (pinned exactly, 2.7.0 at start)
-One `Person` (Dilan). Voices `you` and `pull`. Opt-ins: fatigue store, promptings (reading `inclination`, never shown), review (style `ruminating`, 22:00). Commitments via `promise`: in by eight (to the depot), calling Mum (to Mum, evening window, daily), Aylin's dinner (Wednesday). Norms from the HF catalog only; no invented rulings. `predict` gives each option a faint lean (pure). `bodyForecast` on offers with `followedBy`.
+## HF use (pinned exactly: 2.7.0 at start, 2.8.0 since 2026-10-19)
+One `Person` (Dilan). Voices `you` and `pull`. Opt-ins: fatigue store, promptings (reading `inclination`, never shown), review (style `ruminating`, 22:00). Commitments via `promise`: her alarm (to herself, daily), calling Mum (to Mum, evening window, daily), Aylin's dinner (Wednesday). Norms from the HF catalog only; no invented rulings. `predict` gives each option a faint lean (pure). `bodyForecast` on offers with `followedBy`.
 
 ## Rules
 - Inputs are stamped with the sim minute; replay of seed + input log rebuilds the state exactly.

@@ -6,6 +6,8 @@
 import type { Ctx, Moment, Opt } from './types.ts';
 
 const T = ['temptation'];
+/** The same moment on another day reads differently: one variant per weekday (Monday first). */
+const byDay = (c: Ctx, lines: string[]): string => lines[(c.day - 1) % lines.length] ?? lines[0] ?? '';
 const at = (h: number, m = 0) => h * 60 + m;
 
 // ---------- recurring cards ----------
@@ -78,11 +80,16 @@ function late(day: number): Moment {
         action: 'own-up',
         duration: 3,
         advertises: { esteem: -0.05 },
-        gives: { esteem: 0.1, safety: 0.1 },
+        // Honesty is not free: the second time, Murat has to write it down.
+        gives: (c) =>
+          (c.flags.lateDays ?? 0) >= 2 ? { esteem: -0.2, competence: -0.1 } : { esteem: 0.1, safety: 0.1 },
         norms: [{ normId: 'lying', relation: 'fulfills' }],
         placeId: 'depot',
         phrase: { id: 'plain', kind: 'leave', text: 'Just say it plainly' },
-        done: '“Overslept. Sorry.” Murat shrugged. “Happens. Board’s yours.”',
+        done: (c) =>
+          (c.flags.lateDays ?? 0) >= 2
+            ? '“Overslept.” Murat sighed. “That’s twice. I have to put it down, Dilan.” He did, in pen.'
+            : '“Overslept. Sorry.” Murat shrugged. “Happens. Board’s yours.”',
       },
       {
         id: 'lie',
@@ -91,14 +98,20 @@ function late(day: number): Moment {
         action: 'lie',
         duration: 2,
         advertises: { esteem: 0.15, safety: 0.1 },
-        gives: { esteem: -0.15, safety: -0.05 },
+        // The first lie works. The second one he has heard before.
+        gives: (c) =>
+          c.flags.lied === undefined ? { esteem: 0.15, safety: 0.15 } : { esteem: -0.2, safety: -0.1 },
         tags: T,
         norms: [{ normId: 'lying', relation: 'violates' }],
         placeId: 'depot',
-        done: '“The ring road was solid.” Murat nodded slowly.',
+        done: (c) =>
+          c.flags.lied === undefined
+            ? '“The ring road was solid.” Murat nodded. Nobody checked. It worked, which was almost worse.'
+            : '“The ring road again.” Murat didn’t look up. “It’s very unlucky, that road.”',
       },
     ],
     after: (s, chosen) => {
+      s.flags.lateDays = (s.flags.lateDays ?? 0) + 1;
       if (chosen === 'lie') s.flags.lied = s.day;
     },
   };
@@ -112,11 +125,30 @@ function slump(day: number): Moment {
     place: 'depot',
     scene: (c) =>
       c.tired
-        ? '15:20. The board is red with late drops. Her eyes keep closing on the screen.'
-        : '15:20. The board is red with late drops. The kettle is right there.',
+        ? byDay(c, [
+            '15:20. The board is red with late drops. Her eyes keep closing on the screen.',
+            '15:20. The board again. The same red. Her eyes sting.',
+            '15:20. The board is red. Her head is full of sand.',
+            '15:20. Red again. She reads the same postcode three times.',
+            '15:20. Friday red. She yawns so hard her jaw clicks.',
+          ])
+        : byDay(c, [
+            '15:20. The board is red with late drops. The kettle is right there.',
+            '15:20. The board again. The same red. The kettle again.',
+            '15:20. The afternoon dip. Somebody has left biscuits by the kettle.',
+            '15:20. The board goes red on schedule. So does she.',
+            '15:20. Friday afternoon. Red board, warm kettle, two hours to go.',
+          ]),
     pull: {
       to: 'coffee',
-      line: 'Third coffee. You’ve earned it.',
+      line: (c) =>
+        byDay(c, [
+          'Third coffee. You’ve earned it.',
+          'Coffee. Same as yesterday. Yesterday was fine.',
+          'Coffee. Today of all days.',
+          'Coffee. Who sleeps anyway.',
+          'Coffee. It’s Friday. Nobody counts on Friday.',
+        ]),
       borrow: 'You said rest matters. Coffee is rest, basically.',
     },
     options: [
@@ -129,7 +161,14 @@ function slump(day: number): Moment {
         advertises: { rest: 0.2, competence: 0.15 },
         gives: (c) => (c.tired ? { competence: 0.35, safety: 0.1 } : { competence: 0.1 }),
         placeId: 'depot',
-        done: 'The third coffee. The board was green by five.',
+        done: (c) =>
+          byDay(c, [
+            'The third coffee. The board was green by five.',
+            'Coffee. The board went green. Her hands buzzed a little.',
+            'Coffee, and a biscuit nobody claimed. Green by five.',
+            'Coffee. She cleared the board and felt like a wire.',
+            'Coffee. Green by five. Friday’s problem now is tonight.',
+          ]),
       },
       {
         id: 'walk',
@@ -206,13 +245,25 @@ function bus(day: number, extra: Partial<Moment> = {}): Moment {
     scene: (c) =>
       c.missedMum >= 2
         ? 'The bus home. Mum’s voice note is still at the top of her messages.'
-        : 'The bus home. Mum’s number is right there. So is everything else.',
+        : byDay(c, [
+            'The bus home. Mum’s number is right there. So is everything else.',
+            'The bus home. The same seat. Mum’s number, one tap away.',
+            'The bus home. Rain on the window. Mum’s number.',
+            'The bus home. A man opposite is on the phone to his mum, loudly. It’s a sign, or it isn’t.',
+            'The bus home. Friday. Mum’s number, and every video in the world.',
+          ]),
     pull: {
       to: 'scroll',
       line: (c) =>
         c.missedMum >= 2
           ? 'She said no need. Take her at her word.'
-          : 'You’ll call her when you’re human again.',
+          : byDay(c, [
+              'You’ll call her when you’re human again.',
+              'You called yesterday. Or the day before. Recently.',
+              'She’ll only ask if you’re eating.',
+              'Tomorrow. You’ll have more to say tomorrow.',
+              'It’s Friday. She’ll be watching her programme.',
+            ]),
       borrow: 'You told me to be kind to myself. Call her tomorrow.',
     },
     options: [callMum, scrollBus, textMum],
@@ -229,10 +280,24 @@ function bed(day: number, extra: Partial<Moment> = {}): Moment {
     day,
     at: at(21, 30),
     place: 'bed',
-    scene: '21:30. Bed. The phone is warm in her hand. The beach photo is still the lock screen.',
+    scene: (c) =>
+      byDay(c, [
+        '21:30. Bed. The phone is warm in her hand. The beach photo is still the lock screen.',
+        '21:30. Bed. The beach photo lights up when she touches the phone. Someone is cropped out of it.',
+        'Bed, late. Cake crumbs in the bag. The beach photo, still.',
+        '21:30. Bed. The notebook from March is under the phone, which is under her thumb.',
+        '22:00. Bed. The week is nearly done with her.',
+      ]),
     pull: {
       to: 'scroll',
-      line: 'One more video. Then sleep. Honestly.',
+      line: (c) =>
+        byDay(c, [
+          'One more video. Then sleep. Honestly.',
+          'Just one. You were good today. Ish.',
+          'You can’t write tonight, you’re full of cake.',
+          'One video for each thing that went wrong. That’s fair.',
+          'It’s nearly the weekend. Videos are basically the weekend.',
+        ]),
       borrow: 'You said switch off. Videos are switching off.',
       strength: 0.45,
     },
@@ -248,7 +313,14 @@ function bed(day: number, extra: Partial<Moment> = {}): Moment {
         advertises: { meaning: 0.1 },
         gives: { meaning: 0.25 },
         placeId: 'bed',
-        done: 'She wrote half a page in the notebook she bought in March.',
+        done: (c) =>
+          byDay(c, [
+            'She wrote half a page in the notebook she bought in March.',
+            'A page. Her handwriting was worse than she remembered, and more hers.',
+            'Three lines. One of them was about the cake.',
+            'A page and a bit. She drew a box round one sentence.',
+            'She filled the page and turned it over.',
+          ]),
       },
       {
         id: 'scroll',
@@ -259,7 +331,14 @@ function bed(day: number, extra: Partial<Moment> = {}): Moment {
         advertises: { leisure: 0.25, rest: 0.1 },
         gives: { leisure: 0.05 },
         placeId: 'phone',
-        done: 'It was not one more video.',
+        done: (c) =>
+          byDay(c, [
+            'It was not one more video.',
+            'A man restoring a rusty knife. Then another man, another knife.',
+            'She watched a stranger’s whole house tour. It had a better shelf.',
+            'Forty minutes of other people’s holidays.',
+            'It was not one more video. It was never going to be.',
+          ]),
       },
       {
         id: 'sleep',
@@ -918,6 +997,48 @@ const thursday: Moment[] = [
     ],
   },
   slump(4),
+  {
+    id: 'shadow-4',
+    day: 4,
+    at: at(17, 45),
+    place: 'depot',
+    when: (c) => c.chosen['ece-4'] === 'yes',
+    scene:
+      'Six o’clock, nearly. Ece is waiting by the board with two teas and a notebook. She has drawn columns.',
+    pull: {
+      to: 'go',
+      line: 'You said after six. It’s nearly six. Technically you’re free.',
+      borrow: 'You said look after yourself. Go home.',
+    },
+    options: [
+      {
+        id: 'stay',
+        ink: 'Stay. Show her the board.',
+        label: 'show Ece the board',
+        action: 'shadow',
+        duration: 40,
+        effort: 0.2,
+        advertises: { belonging: 0.15, meaning: 0.15 },
+        gives: { belonging: 0.3, meaning: 0.35, competence: 0.15 },
+        norms: [{ normId: 'keep-promise', relation: 'fulfills' }],
+        placeId: 'depot',
+        done: 'Forty minutes, street by street. Ece’s columns were better than the board’s. Dilan caught the late bus.',
+      },
+      {
+        id: 'go',
+        ink: 'Tell her another day.',
+        label: 'go home',
+        action: 'go-home',
+        duration: 3,
+        advertises: { rest: 0.2 },
+        gives: { rest: 0.05, belonging: -0.2 },
+        tags: T,
+        norms: [{ normId: 'keep-promise', relation: 'violates' }],
+        placeId: 'depot',
+        done: '“Another day?” Ece said of course, and closed the notebook on her columns.',
+      },
+    ],
+  },
   bus(4),
   {
     id: 'shelf-4',

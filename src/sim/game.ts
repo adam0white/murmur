@@ -43,7 +43,7 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = '0.1.0';
+export const GAME_VERSION = '0.2.0';
 export const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const WINDOW = 5;
 const SAY = 0.6;
@@ -73,6 +73,7 @@ function blankStats(p: Person): DayStats {
     pullWon: 0,
     turnedAlone: [],
     borrowedHeard: 0,
+    reinforced: [],
     borrowable: 0,
     borrowed: 0,
     learned: [],
@@ -174,7 +175,16 @@ function pullSuggestion(s: GameState, m: Moment, borrowed: boolean): Suggestion 
   };
 }
 
-function yourSuggestion(option: string, insist?: boolean): Suggestion {
+/**
+ * Insisting is a capability, not a free override: it carries only while she trusts you enough
+ * (INSIST_FROM). Below that, holding is just a louder say, and she can still refuse.
+ */
+export const INSIST_FROM = 0.45;
+export const insistCarries = (p: Person) => trustOf(p, YOU) >= INSIST_FROM;
+
+function yourSuggestion(p: Person, option: string, insist?: boolean): Suggestion {
+  // Pushing when she does not trust you enough backfires: it carries less than a plain say.
+  if (insist && !insistCarries(p)) return { voiceId: YOU, affordanceId: option, strength: SAY / 2 };
   return insist
     ? { voiceId: YOU, affordanceId: option, strength: INSIST, insist: true }
     : { voiceId: YOU, affordanceId: option, strength: SAY };
@@ -255,8 +265,8 @@ export function cardView(s: GameState): CardView | null {
     options: opts.map((o) => ({
       id: o.id,
       ink: text(o.ink, c),
-      lean: leanOf(predict(p, offers, yourSuggestion(o.id), { others }).verdict),
-      pushed: leanOf(predict(p, offers, yourSuggestion(o.id, true), { others }).verdict),
+      lean: leanOf(predict(p, offers, yourSuggestion(p, o.id), { others }).verdict),
+      pushed: leanOf(predict(p, offers, yourSuggestion(p, o.id, true), { others }).verdict),
       isPull: o.id === m.pull.to,
     })),
   };
@@ -297,6 +307,10 @@ function apply(s: GameState, inp: Input) {
     const m = momentById(s.card.moment);
     if (!optionsOf(s, m).some((o) => o.id === inp.option)) return;
     resolve(s, { option: inp.option, insist: inp.insist === true });
+    return;
+  }
+  if (inp.kind === 'quiet') {
+    if (s.phase === 'day' && s.card) resolve(s, null);
     return;
   }
   if (inp.kind === 'next') {
@@ -345,6 +359,11 @@ function open(s: GameState, m: Moment) {
     borrowed: borrows(s, m),
   };
   s.answer = null;
+  // The journal keeps what was asked, so a card that closed while the player was away still reads.
+  const c = ctxOf(s);
+  const v = cardView(s);
+  s.log.push({ at: s.minute, who: 'scene', text: text(m.scene, c) });
+  if (v) s.log.push({ at: s.minute, who: 'pull', text: v.pullLine });
 }
 
 function resolve(s: GameState, said: { option: string; insist: boolean } | null) {
@@ -360,8 +379,9 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
   const pull = pullSuggestion(s, m, card.borrowed);
   // Your real voice drowns out a borrowed one: one suggestion per voice.
   const suggestions: Suggestion[] = said
-    ? [yourSuggestion(said.option, said.insist), ...(card.borrowed ? [] : [pull])]
+    ? [yourSuggestion(p, said.option, said.insist), ...(card.borrowed ? [] : [pull])]
     : [pull];
+  const carried = said?.insist ? insistCarries(p) : true;
   const rec: DecisionRecord = decide(p, offers, { suggestions });
   const chosenAff =
     offers.find((a) => a.id === rec.chosenAffordanceId) ?? offers.find((a) => a.id === m.pull.to);
@@ -384,7 +404,12 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
     if (yours) {
       answer.verdict = yours.verdict as Verdict;
       answer.says = yours.says;
-      if (yours.verdict === 'assented' || yours.verdict === 'complied') st.heard += 1;
+      const heard = yours.verdict === 'assented' || yours.verdict === 'complied';
+      // A hold that did not carry: she says why, in her words.
+      if (!carried && !heard) answer.says = 'Don’t push me. Not today.';
+      if (heard) st.heard += 1;
+      const ph = opts.find((o) => o.id === said.option)?.phrase;
+      if (heard && ph && said.option === chosen.id) st.reinforced.push(ph.id);
       if (yours.verdict === 'refused') st.refused += 1;
     }
   } else {
@@ -505,7 +530,8 @@ function routine(s: GameState): Block[] {
     from,
     to,
     aff: offer('dispatch', { effort: 0.22, focus: 0.6, placeId: 'depot', advertises: { competence: 0.05 } }),
-    needs: { competence: 0.05 },
+    // Tea at the desk: she drinks through the shift without thinking about it.
+    needs: { competence: 0.05, water: 0.5 },
   });
   const blocks: Block[] = [];
   if (!s.flags.late) blocks.push(meal(t(7, 20), t(7, 32)));
@@ -519,6 +545,7 @@ function routine(s: GameState): Block[] {
       from: t(19, 10),
       to: t(21, 30),
       aff: offer('home', { advertises: { rest: 0.2, leisure: 0.1 }, placeId: 'home' }),
+      needs: { water: 0.3 },
     });
   }
   if (s.day === 5 && s.flags.bowling)
@@ -526,7 +553,7 @@ function routine(s: GameState): Block[] {
       from: t(18, 0),
       to: t(22, 15),
       aff: offer('bowling', { effort: 0.2, placeId: 'bowling', advertises: { belonging: 0.2 } }),
-      needs: { belonging: 0.2, food: 0.4 },
+      needs: { belonging: 0.2, food: 0.4, water: 0.5 },
     });
   return blocks;
 }
@@ -584,8 +611,19 @@ function endDay(s: GameState) {
   s.phase = 'evening';
 }
 
+/**
+ * Her phrases fade overnight unless you said them again that day: borrowed words need saying to stay hers. HF's
+ * own practice half-life is 60 days, too slow for one week, so the host scales practice down here (HF request 5).
+ */
+const PHRASE_FADES = 0.8;
+function fadePhrases(s: GameState) {
+  for (const r of s.person.promptings?.responses ?? [])
+    if (!s.stats.reinforced.includes(r.id)) r.practice *= PHRASE_FADES;
+}
+
 function nextDay(s: GameState) {
   const p = s.person;
+  fadePhrases(s);
   const bed = Math.max(p.now, s.flags.bedAt ?? p.now);
   const wake = dayStart(s.day + 1) + WAKE - 1;
   if (p.now < bed) tick(p, bed);
@@ -654,14 +692,18 @@ function aboutYou(s: GameState): string {
   const p = s.person;
   const dYou = trustOf(p, YOU) - st.trustYouAtStart;
   if (st.borrowedHeard > 0) return 'Some of what I heard today wasn’t you.';
-  if (st.insisted >= 2) return 'You pushed me a lot today. I did it. I didn’t like it.';
+  if (st.insisted >= 3) return 'You pushed me a lot today. I did it. I didn’t like it.';
+  if (st.insisted >= 1 && dYou < -0.02) return 'You pushed. Next time ask me first.';
   if (st.said === 0)
     return st.turnedAlone.length > 0
       ? 'You were quiet today. I did one myself.'
       : 'You were quiet today. I managed. Sort of.';
   if (st.refused >= 2) return 'I didn’t listen to you much today.';
   if (dYou > 0.02) return 'You were right more than you were wrong.';
-  if (dYou < -0.02) return 'I listened to you, and I’m not sure I should have.';
+  if (dYou < -0.02)
+    return s.day % 2 === 0
+      ? 'Some of what you said today didn’t sit right.'
+      : 'I listened to you, and I’m not sure I should have.';
   if (st.said >= 6) return 'You had something to say about everything.';
   return 'You were there. Mostly I heard you.';
 }
@@ -711,6 +753,32 @@ export function voiceNote(s: GameState): string {
   return parts.join(' ');
 }
 
+/** Saturday closes what the week opened, in a line each. */
+function threadsOf(s: GameState): string[] {
+  const f = s.flags;
+  const ch = s.chosen;
+  const out: string[] = [];
+  if (ch['shadow-4'] === 'stay')
+    out.push('Ece has her own columns now. She sends Dilan a photo of them every morning.');
+  else if (ch['shadow-4'] === 'go') out.push('Ece never asked to shadow her again. She asked Murat.');
+  else if (f.eceBlamed && ch['ece-4'] !== 'tell') out.push('Ece still thinks it was her scanner.');
+  else if (ch['ece-1'] === 'talk')
+    out.push('Ece knows the new estate now. She knows who talked her round it.');
+  if ((f.lied ?? 0) > 0 && (f.lateDays ?? 0) >= 2)
+    out.push('Murat stopped asking about the ring road. That was worse.');
+  else if ((f.lateDays ?? 0) >= 2 && !f.lied)
+    out.push('Murat’s note says late twice. In pen. It also says reliable.');
+  if (ch['shelf-4'] === 'aylin')
+    out.push('Aylin came round on Saturday for the shelf. There was still cake.');
+  else if ((f.shelf ?? 0) === 0)
+    out.push('The screws are still in their little bag. March is a long time ago now.');
+  if (ch['gymgo-5'] === 'gym') out.push('The gym bag is by the door again. On purpose.');
+  if (f.sent === 'send' || f.sent === 'call')
+    out.push('She changed the lock screen. The beach can stay in the album.');
+  else out.push('The beach photo is still the lock screen.');
+  return out;
+}
+
 function finalPage(s: GameState): Final {
   const p = s.person;
   const first = s.pages[0]?.hands ?? { you: 0.45, pull: 0.62 };
@@ -724,6 +792,7 @@ function finalPage(s: GameState): Final {
         : 'She deleted it. On Sunday she rang anyway.';
   return {
     note: voiceNote(s),
+    threads: threadsOf(s),
     sent,
     phrases: phrasesOf(s),
     unasked,

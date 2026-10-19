@@ -23,7 +23,7 @@ import {
   step,
   trustOf,
 } from '../sim/game.ts';
-import type { Answer, Final, GameState, Input, Page } from '../sim/types.ts';
+import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
 
 const SAVE = 'murmur-save-v1';
 /** Real seconds an open card lasts (its whole window). */
@@ -52,7 +52,7 @@ let answeredAt = -1e9;
 let hurry = false;
 let turnAt = 0;
 let view: { key: string; v: CardView } | null = null;
-let drawn = { log: -1, sheet: '' };
+let drawn = { log: '', sheet: '' };
 let lastSaid: Record<string, string> = {};
 let toast = '';
 let wake: { release(): Promise<void> } | null = null;
@@ -110,19 +110,23 @@ function wob(x1: number, y1: number, x2: number, y2: number, key: number, amp = 
 }
 /** Tally marks in pencil: one to three strokes. */
 function tally(marks: number, key: number): string {
-  const w = 10 + marks * 9;
+  const w = 8 + marks * 7;
   let p = '';
   for (let i = 0; i < marks; i++) {
-    const x = 6 + i * 9;
-    p += `<path d="${wob(x, 3, x + 1.5, 21, key + i, 0.9)}"/>`;
+    const x = 3 + i * 7;
+    p += `<path d="${wob(x, 5, x + 4, 17, key + i, 0.6)}"/>`;
   }
-  return `<svg class="tally" viewBox="0 0 ${w} 24" width="${w}" height="24" aria-hidden="true">${p}</svg>`;
+  return `<svg class="tally" viewBox="0 0 ${w} 20" width="${w}" height="20" aria-hidden="true">${p}</svg>`;
 }
 const tick = (key: number) =>
   `<svg class="tick" viewBox="0 0 18 16" width="18" height="16" aria-hidden="true"><path d="M2 9 L7 13 L16 2" transform="rotate(${(Math.sin(key) * 4).toFixed(1)} 9 8)"/></svg>`;
 const rule = (key: number) =>
   `<svg class="rule" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path d="${wob(2, 3, 298, 3, key, 1)}"/></svg>`;
 const markLink = '<a class="mark" href="https://human.adamwhite.work/">◇ human framework</a>';
+/** The same header on every screen: mark, the day and clock (on the day screen), the back-page button. */
+const header = (menu = true, when = false) =>
+  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname hand"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="The back page">≡</button>' : '<span></span>'}</header>`;
+const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 };
 const footer = () =>
   '<div class="footer"><a href="https://human.adamwhite.work/games/">◇ all notebooks</a></div>';
 
@@ -153,8 +157,7 @@ export function start() {
 function title() {
   cancelAnimationFrame(raf);
   const save = readSave();
-  app.innerHTML = `<div class="page title">
-    ${markLink}
+  app.innerHTML = `${header(false)}<div class="page title">
     <h1>The Two Voices</h1>
     <p class="soft">an ordinary week, from the inside</p>
     <p>Dilan is thirty-three. She dispatches vans at a courier depot in the town she came back to.</p>
@@ -240,10 +243,10 @@ function enter() {
 function day() {
   if (!s) return;
   requestWake();
-  drawn = { log: -1, sheet: '' };
+  drawn = { log: '', sheet: '' };
   hurry = false;
-  app.innerHTML = `<div class="day">
-    <div class="top">${markLink}<span class="grow"></span><span class="dayname hand" id="dayname"></span><span class="clock" id="clock"></span><button class="menu-btn" id="menu" aria-label="The back page">≡</button></div>
+  app.innerHTML = `<div class="day" id="dayroot">
+    ${header(true, true)}
     ${toast ? `<div class="toast" id="toast">${esc(toast)}</div>` : ''}
     <div class="journal" id="journal"></div>
     <div class="sheet" id="sheet"></div>
@@ -334,30 +337,64 @@ function drawDay() {
   const dn = document.getElementById('dayname');
   const ck = document.getElementById('clock');
   if (dn) dn.textContent = DAY_NAMES[s.day] ?? '';
+  const ds = document.getElementById('dayshort');
+  if (ds) ds.textContent = (DAY_NAMES[s.day] ?? '').slice(0, 3);
   if (ck) ck.textContent = clock(s.minute);
-  if (drawn.log !== s.log.length) {
-    drawn.log = s.log.length;
-    drawJournal();
+  const shown = journalLines();
+  const logKey = `${shown.length}:${s.card?.openedAt ?? ''}`;
+  if (drawn.log !== logKey) {
+    drawn.log = logKey;
+    drawJournal(shown);
   }
+  document.getElementById('dayroot')?.classList.toggle('has-card', !!s.card);
   const key = s.card
     ? `card:${s.card.moment}:${s.card.openedAt}`
-    : `gap:${s.answer?.moment ?? ''}:${s.answer?.at ?? ''}`;
+    : `gap:${s.answer?.moment ?? ''}:${s.answer?.at ?? ''}:${doneLine(s.answer) ? 1 : 0}`;
   if (drawn.sheet !== key) {
     drawn.sheet = key;
     drawSheet();
+    // The sheet's new height moves the journal's bottom; keep the latest line in view.
+    const j = document.getElementById('journal');
+    if (j) j.scrollTop = j.scrollHeight;
   }
   drawTimer();
 }
 
-function drawJournal() {
+/** Today's journal as far as the clock has reached; the open card's own scene and pull stay on the card. */
+function journalLines(): LogLine[] {
+  if (!s) return [];
+  const st = s;
+  return st.log.filter(
+    (l) =>
+      dayOfMinute(l.at) === st.day &&
+      l.at <= st.minute &&
+      !(st.card && l.at === st.card.openedAt && (l.who === 'scene' || l.who === 'pull')),
+  );
+}
+
+/** Did the player act (say something, or choose quiet) on the card that opened at `at`? */
+function actedOn(at: number, until: number): boolean {
+  return !!s?.inputs.some((i) => (i.kind === 'say' || i.kind === 'quiet') && i.at >= at && i.at < until);
+}
+
+function drawJournal(lines: LogLine[]) {
   if (!s) return;
   const el = document.getElementById('journal');
   if (!el) return;
-  const today = s.log.filter((l) => dayOfMinute(l.at) === s?.day);
-  el.innerHTML = `${rule(s.day * 3)}${today
+  const scenes = lines.filter((l) => l.who === 'scene').map((l) => l.at);
+  const head = lines.length === 0 ? `<p class="jhead hand">${esc(DAY_NAMES[s.day] ?? '')}</p>` : '';
+  el.innerHTML = `${head}${lines
     .map((l) => {
-      const cls =
-        l.who === 'narrator' ? 'n' : l.who === 'pull' ? 'pencil' : l.who === 'you' ? 'yours' : 'hand her';
+      if (l.who === 'scene') {
+        const next = scenes.find((x) => x > l.at) ?? Number.POSITIVE_INFINITY;
+        const away = !actedOn(l.at, next);
+        // Most scenes start with their own time; don't stamp it twice.
+        const stamp = /^\d\d:\d\d/.test(l.text) ? '' : `<span class="jt">${clock(l.at)}</span> `;
+        return `${away ? '<p class="away">while you were away</p>' : ''}<p class="jl jscene">${stamp}${esc(l.text)}</p>`;
+      }
+      if (l.who === 'pull') return `<p class="jl pencil">${esc(l.text)}</p>`;
+      if (l.who === 'dilan') return `<p class="jl hand her">“${esc(l.text.replace(/\.$/, ''))}.”</p>`;
+      const cls = l.who === 'you' ? 'yours' : 'n';
       return `<p class="jl ${cls}"><span class="jt">${clock(l.at)}</span> ${esc(l.text)}</p>`;
     })
     .join('')}`;
@@ -373,6 +410,7 @@ function drawSheet() {
     el.className = 'sheet open';
     el.innerHTML = cardHtml(v);
     for (const b of el.querySelectorAll<HTMLButtonElement>('button.opt')) bindHold(b);
+    document.getElementById('hush')?.addEventListener('click', hush);
     return;
   }
   el.className = 'sheet';
@@ -388,27 +426,36 @@ function cardHtml(v: CardView): string {
   const p = s.person;
   const tYou = trustOf(p, YOU);
   const tPull = trustOf(p, PULL);
-  const firstHint = s.day === 1 && v.id === 'alarm-1' ? 'Tap one to say it. Or say nothing.' : undefined;
-  const hint = v.hint ?? firstHint;
+  const first = s.day === 1 && v.id === 'alarm-1';
+  // Holding helps only while she trusts you enough; when a hold would land worse than a tap, say so in words.
+  const pushSore = s.day >= 2 && v.options.some((o) => RANK[o.pushed] < RANK[o.lean]);
+  const hint = pushSore
+    ? 'She’s had enough of being pushed.'
+    : (v.hint ?? (first ? 'Tap one to say it.' : undefined));
   const pull = v.borrowed
     ? `<p class="pull borrowed" style="${inkStyle(tYou)}">${esc(v.pullLine)}</p>`
     : `<p class="pull hand" style="${pencilStyle(tPull)}">${esc(v.pullLine)}</p>`;
   const resolve = v.resolve
-    ? `<p class="resolve"><span class="hand">${esc(v.resolve.line)}</span> ${tally(v.resolve.marks, v.id.length)}</p>`
+    ? `<p class="resolve">${tally(v.resolve.marks, v.id.length)}<span class="hand">${esc(v.resolve.line)}</span></p>`
     : '';
   const forecast = v.forecast ? `<p class="thought hand">${esc(v.forecast)}</p>` : '';
   const opts = v.options
     .map(
-      (o, i) =>
-        `<button class="opt" data-o="${esc(o.id)}"><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean hand" data-i="${i}">${esc(cue(o.lean, o.pushed, s?.day ?? 1))}</span></button>`,
+      (o) =>
+        `<button class="opt" data-o="${esc(o.id)}"><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean hand">${esc(cue(o.lean, o.pushed, s?.day ?? 1))}</span></button>`,
     )
     .join('');
   return `<div class="card ink-in">
-    <svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, v.id.length, 1)}"/></svg>
-    <p class="scene">${esc(v.scene)}</p>
-    ${resolve}${forecast}${pull}
-    ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
-    <div class="opts">${opts}</div>
+    <div class="timerrow"><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, v.id.length, 1)}"/></svg>${first ? '<span class="caption">she won’t wait long</span>' : ''}</div>
+    <div class="card-text">
+      <p class="scene">${esc(v.scene)}</p>
+      ${resolve}${forecast}${pull}
+      ${first && !v.borrowed ? '<p class="caption">the pencil is the other voice</p>' : ''}
+      ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
+    </div>
+    <div class="opts">${first ? '<p class="caption right">the small words are how she’s leaning</p>' : ''}${opts}
+      <button class="hush" id="hush">say nothing</button>
+    </div>
   </div>`;
 }
 
@@ -421,6 +468,13 @@ function drawTimer() {
   el.setAttribute('stroke-dasharray', `${(left * 100).toFixed(1)} 100`);
 }
 
+/** The narrator's line for this answer, once the clock has reached it. */
+function doneLine(a: Answer | null): LogLine | undefined {
+  if (!s || !a) return undefined;
+  const st = s;
+  return st.log.find((l) => l.who === 'narrator' && l.at >= a.at && l.at <= st.minute);
+}
+
 function gapHtml(a: Answer | null): string {
   if (!s) return '';
   if (!a) {
@@ -428,18 +482,22 @@ function gapHtml(a: Answer | null): string {
   }
   const p = s.person;
   const yours = a.said ? lastSaid[a.said] : undefined;
+  const quiet = !a.said && s.inputs.some((i) => i.kind === 'quiet' && i.at === a.at);
   const lines: string[] = [];
   if (yours)
     lines.push(
       `<p class="yousaid"><span class="ink" style="${inkStyle(trustOf(p, YOU))}">${esc(yours)}</span>${a.insisted ? ' <span class="insisted">you insisted</span>' : ''}</p>`,
     );
-  else if (!a.said) lines.push('<p class="soft">You said nothing.</p>');
+  else if (!a.said) lines.push(`<p class="soft">${quiet ? 'You let her be.' : 'You said nothing.'}</p>`);
   if (a.says) lines.push(`<p class="her hand">${esc(a.says)}</p>`);
-  const done = [...s.log].reverse().find((l) => l.who === 'narrator' && l.at >= a.at);
+  const done = doneLine(a);
   if (done) lines.push(`<p class="n">${esc(done.text)}</p>`);
-  if (a.learned) lines.push(`<p class="margin hand">“${esc(a.learned)}.” She kept that one.</p>`);
+  if (a.learned)
+    lines.push(`<p class="margin hand">She took it as “${esc(a.learned)}.” She kept that one.</p>`);
   if (a.turnedAlone) lines.push(`<p class="margin hand">“${esc(a.turnedAlone)}.” Her own words now.</p>`);
-  if (a.said && a.pullWon) lines.push('<p class="soft small">The pencil had its way.</p>');
+  if (a.said && a.verdict === 'deferred') lines.push('<p class="soft small">Later, she said.</p>');
+  else if (a.said && a.said !== a.chosen && a.pullWon)
+    lines.push('<p class="soft small">The pencil had its way.</p>');
   return `<div class="gap ink-in">${lines.join('')}</div>
     <div class="gap-actions"><button class="quiet" id="hurry">on with the day ▸</button></div>`;
 }
@@ -480,6 +538,19 @@ function bindHold(b: HTMLButtonElement) {
   });
 }
 
+/** Say nothing, now: she decides with only the pull. */
+function hush(): Answer | null {
+  if (s?.phase !== 'day' || !s.card) return null;
+  queueInput(s, { kind: 'quiet' });
+  writeSave();
+  answeredAt = performance.now();
+  carry = 0;
+  const a = s.answer;
+  if (fast) runToCard(s);
+  drawDay();
+  return a;
+}
+
 function sayIt(option: string, insist: boolean): Answer | null {
   if (s?.phase !== 'day' || !s.card) return null;
   queueInput(s, insist ? { kind: 'say', option, insist: true } : { kind: 'say', option });
@@ -499,8 +570,7 @@ function evening() {
   if (!s) return;
   const pg = s.pages.at(-1);
   if (!pg) return;
-  app.innerHTML = `<div class="page notebook">
-    <div class="top bare">${markLink}<span class="grow"></span><button class="menu-btn" id="menu" aria-label="The back page">≡</button></div>
+  app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     ${pageHtml(pg)}
     <div class="grow"></div>
@@ -517,7 +587,7 @@ function pageHtml(pg: Page): string {
   const kept = pg.kept.map((x, i) => `<li class="kept">${tick(k + i)} ${esc(x)}</li>`).join('');
   const missed = pg.missed.map((x) => `<li class="missed"><s>${esc(x)}</s></li>`).join('');
   const resolves = pg.resolves
-    .map((r, i) => `<li><span class="hand">${esc(r.label)}</span> ${tally(r.marks, k + 3 + i)}</li>`)
+    .map((r, i) => `<li>${tally(r.marks, k + 3 + i)}<span class="hand">${esc(r.label)}</span></li>`)
     .join('');
   const phrases = pg.phrases
     .map(
@@ -525,7 +595,7 @@ function pageHtml(pg: Page): string {
         `<span class="phrase hand" style="opacity:${(0.45 + clamp(ph.weight, 0, 1) * 0.55).toFixed(2)};font-size:${(19 + clamp(ph.weight, 0, 1) * 8).toFixed(0)}px">${esc(ph.text)}</span>`,
     )
     .join('');
-  const alone = pg.turnedAlone
+  const alone = [...new Set(pg.turnedAlone)]
     .map((x) => `<p class="hand her">I did that one myself. “${esc(x)}.”</p>`)
     .join('');
   return `<h2 class="hand dayhead">${esc(DAY_NAMES[pg.day] ?? '')}, in bed</h2>
@@ -534,7 +604,7 @@ function pageHtml(pg: Page): string {
     <p class="hand her">${esc(pg.herLine)}</p>
     ${alone}
     ${kept || missed ? `<ul class="km">${kept}${missed}</ul>` : ''}
-    ${resolves ? `<div class="block"><p class="label">tomorrow</p><ul class="resolves">${resolves}</ul></div>` : ''}
+    ${resolves ? `<div class="block"><p class="label">she means to keep</p><ul class="resolves">${resolves}</ul></div>` : ''}
     <div class="block"><p class="label">about you</p><p class="hand to-you">${esc(pg.aboutYou)}</p></div>
     ${phrases ? `<div class="block margin-list"><p class="label">in the margin</p><div class="phrases">${phrases}</div></div>` : ''}`;
 }
@@ -554,8 +624,7 @@ function ending() {
   cancelAnimationFrame(raf);
   if (!s?.final) return;
   const f = s.final;
-  app.innerHTML = `<div class="page notebook">
-    <div class="top bare">${markLink}<span class="grow"></span><button class="menu-btn" id="menu" aria-label="The back page">≡</button></div>
+  app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     ${finalHtml(f)}
     <div class="grow"></div>
@@ -591,13 +660,33 @@ function finalHtml(f: Final): string {
     ${rule(61)}
     <div class="voicenote"><p class="label">voice note to Mum, ${sentWord}</p><p class="note">“${esc(f.note)}”</p></div>
     <p class="n">${esc(f.line)}</p>
+    ${(f.threads ?? []).length > 0 ? `<div class="block threads"><p class="label">and</p>${(f.threads ?? []).map((x) => `<p class="n">${esc(x)}</p>`).join('')}</div>` : ''}
     <div class="block"><p class="label">the week</p><div class="strip">${strip}</div></div>
     ${phrases ? `<div class="block margin-list"><p class="label">her own words now</p><div class="phrases">${phrases}</div></div>` : ''}
     ${unasked ? `<div class="block"><p class="label">what she did unasked</p>${unasked}</div>` : ''}
-    <div class="block hands"><p class="label">two hands, Monday and Saturday</p>
-      <p class="handrow"><span class="hand pencil-inline" style="${pencilStyle(f.hands.start.pull)}">the other one</span><span class="arrow">→</span><span class="hand pencil-inline" style="${pencilStyle(f.hands.end.pull)}">the other one</span></p>
-      <p class="handrow"><span class="ink" style="${inkStyle(f.hands.start.you)}">you</span><span class="arrow">→</span><span class="ink" style="${inkStyle(f.hands.end.you)}">you</span></p>
-    </div>`;
+    <div class="block hands"><p class="label">two hands</p>${handsHtml(f)}</div>`;
+}
+
+/** Two handwritten lines whose size shows how the two hands changed over the week. Never a number. */
+function handsHtml(f: Final): string {
+  const side = (h: { you: number; pull: number }) => {
+    const d = pos(h.pull) - pos(h.you);
+    return d > 0.08 ? 'pencil' : d < -0.08 ? 'you' : 'even';
+  };
+  const line = (when: string, h: { you: number; pull: number }, then?: { you: number; pull: number }) => {
+    const pencil = `<span class="hand pencil-inline" style="${pencilStyle(h.pull)}">the pencil</span>`;
+    const you = `<span class="ink" style="${inkStyle(h.you)}">you</span>`;
+    const now = side(h);
+    const still = then && side(then) === now ? ' still' : '';
+    const rel =
+      now === 'pencil'
+        ? `${pencil}${still} wrote bigger than ${you}`
+        : now === 'you'
+          ? `${you}${still} wrote darker than ${pencil}`
+          : `${pencil} and ${you}${still} wrote about the same`;
+    return `<p class="handline">${when}, ${rel}.</p>`;
+  };
+  return line('On Monday', f.hands.start) + line('By Saturday', f.hands.end, f.hands.start);
 }
 
 // ---------- the back page (menu) ----------
@@ -681,7 +770,7 @@ document.addEventListener('visibilitychange', () => {
 // ---------- automated playtesters ----------
 
 /**
- * `window.__murmur`. `say` answers the open card; `next` turns the evening page; `skipToCard` lets an open card
+ * `window.__murmur`. `say` answers the open card; `quiet` says nothing on it, at once; `next` turns the evening page; `skipToCard` lets an open card
  * close in silence, then runs to the next card (or the evening). With `fast` on, nothing waits on real time:
  * gaps are skipped at once and cards stay open until answered or skipped.
  */
@@ -704,6 +793,9 @@ export const tester = {
   },
   say(option: string, insist = false) {
     return sayIt(option, insist);
+  },
+  quiet() {
+    return hush();
   },
   next() {
     nextDay();

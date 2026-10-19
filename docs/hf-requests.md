@@ -25,3 +25,7 @@ Game: The Two Voices (`adam0white/murmur`), built on `@adam0white/human-framewor
 ## 4. A goal cannot argue against a temptation
 
 **Confirmed (source):** goal terms are never negative. The half-built shelf can pull her toward building it, but it cannot count against the phone on the same evening. Only norms and commitments oppose a prompt. **Assumed:** this is intended, since goals pull and do not forbid. A note in the api doc would settle it. No change requested.
+
+## 5. A host-set practice half-life for prompting responses
+
+**Confirmed (source):** practice for a prompting response decays with a fixed 60-day half-life (`PROMPTINGS_DEFAULTS.practiceHalfLifeDays`). `enablePromptings` keeps the practice of an existing response. A one-week game cannot make a phrase fade with disuse through the public API. **Workaround:** each night the host scales `practice` on responses not used that day (`fadePhrases` in `src/sim/game.ts`). This writes into HF-owned state. **Proposal:** an optional `practiceHalfLifeDays` in `enablePromptings`, or a per-response `halfLifeDays`. Target 2.9.0.

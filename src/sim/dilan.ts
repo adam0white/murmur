@@ -44,8 +44,8 @@ export function makeDilan(seed: number): Person {
     },
     norms: [
       { normId: 'punctuality', standing: 'recommended', conviction: 0.6 },
-      { normId: 'lying', standing: 'forbidden', conviction: 0.28 },
-      { normId: 'backbiting', standing: 'forbidden', conviction: 0.28 },
+      { normId: 'lying', standing: 'forbidden', conviction: 0.2 },
+      { normId: 'backbiting', standing: 'forbidden', conviction: 0.22 },
       { normId: 'kindness-to-parents', standing: 'obligatory', conviction: 0.5 },
       { normId: 'keep-promise', standing: 'obligatory', conviction: 0.3 },
       { normId: 'help-neighbor', standing: 'recommended', conviction: 0.5 },
@@ -62,8 +62,9 @@ export function makeDilan(seed: number): Person {
       review: { style: 'ruminating', at: REVIEW_AT, styleSource: 'host:dilan' },
     },
   });
-  // An ordinary person: she mostly does what weighs most, not always.
-  p.will.temperature = 0.15;
+  // She does what weighs most (argmax), so the card's read of her ("she might", "if you push") is honest.
+  // Runs differ by the seed's small differences in her habits, not by a coin at each card.
+  p.will.temperature = 0;
   // Habits she brought back with her. Cued by place; last done yesterday.
   const y = now - 1440;
   p.habits.push(

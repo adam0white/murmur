@@ -88,14 +88,16 @@ describe('The Two Voices sim', () => {
     expect(fingerprint(b)).toBe(fingerprint(a));
   });
 
-  it('insisting all week wins the moments but costs her trust in you', () => {
+  it('insisting all week costs her trust in you, and then a hold stops carrying', () => {
     const insist: Policy = (s) => {
       const o = opposeFirst(s);
       return o ? { ...o, insist: true } : null;
     };
     const loud = play(9, insist);
     const quiet = play(9, opposeFirst);
-    expect(trustOf(loud.person, 'you')).toBeLessThan(trustOf(quiet.person, 'you') - 0.2);
+    expect(trustOf(loud.person, 'you')).toBeLessThan(trustOf(quiet.person, 'you') - 0.05);
+    const lost = loud.pages.reduce((n, p) => n + p.missed.length, 0);
+    expect(lost).toBeGreaterThan(0);
   });
 
   it('silence lets the pull win more than speaking does', () => {
