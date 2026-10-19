@@ -124,6 +124,9 @@ export interface DayStats {
   pullWon: number;
   turnedAlone: string[];
   borrowedHeard: number;
+  /** Cards today where the pull could have borrowed your ink, and where it did. */
+  borrowable: number;
+  borrowed: number;
   learned: string[];
   trustYouAtStart: number;
   trustPullAtStart: number;

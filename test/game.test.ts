@@ -4,6 +4,7 @@ import {
   cloneState,
   fingerprint,
   newGame,
+  nextCardAt,
   queueInput,
   replay,
   restoreState,
@@ -104,10 +105,56 @@ describe('The Two Voices sim', () => {
     expect(won(silent)).toBeGreaterThan(won(spoken));
   });
 
+  it('the pull borrows your ink on some cards, at most once a day, only from Thursday', () => {
+    for (const seed of [1, 3, 42]) {
+      const s = newGame(seed);
+      const borrowedByDay: Record<number, number> = {};
+      for (let g = 0; g < 2000 && s.phase !== 'end'; g++) {
+        if (s.phase === 'evening') {
+          queueInput(s, { kind: 'next' });
+          continue;
+        }
+        runToCard(s);
+        if (!s.card) continue;
+        if (s.card.borrowed) borrowedByDay[s.day] = (borrowedByDay[s.day] ?? 0) + 1;
+        const said = opposeFirst(s);
+        if (said) queueInput(s, { kind: 'say', ...said });
+        else while (s.card) step(s);
+      }
+      for (const [day, n] of Object.entries(borrowedByDay)) {
+        expect(Number(day)).toBeGreaterThanOrEqual(4);
+        expect(n).toBe(1);
+      }
+    }
+  });
+
   it('a missed commitment is carried into the next day as a resolve', () => {
     const s = play(17, () => null, 1);
     expect(s.phase).toBe('evening');
     expect(s.pages[0]?.missed.length).toBeGreaterThan(0);
     expect(s.pages[0]?.resolves.length).toBeGreaterThan(0);
+  });
+});
+
+describe('nextCardAt (UI pacing)', () => {
+  it('predicts the minute each card opens, through a week', () => {
+    const s = newGame(5);
+    let checked = 0;
+    for (let g = 0; g < 200 && s.phase !== 'end'; g++) {
+      if (s.phase === 'evening') {
+        queueInput(s, { kind: 'next' });
+        continue;
+      }
+      const want = nextCardAt(s);
+      runToCard(s);
+      if (s.card) {
+        expect(s.card.openedAt).toBe(want);
+        checked += 1;
+        const o = cardView(s)?.options.find((x) => !x.isPull);
+        if (o && g % 2 === 0) queueInput(s, { kind: 'say', option: o.id });
+        else while (s.card) step(s);
+      } else expect(want).toBeNull();
+    }
+    expect(checked).toBeGreaterThan(30);
   });
 });

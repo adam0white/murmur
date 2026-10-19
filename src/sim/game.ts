@@ -73,6 +73,8 @@ function blankStats(p: Person): DayStats {
     pullWon: 0,
     turnedAlone: [],
     borrowedHeard: 0,
+    borrowable: 0,
+    borrowed: 0,
     learned: [],
     trustYouAtStart: trustOf(p, YOU),
     trustPullAtStart: trustOf(p, PULL),
@@ -179,9 +181,21 @@ function yourSuggestion(option: string, insist?: boolean): Suggestion {
 }
 
 /** Thursday on, the pull borrows your ink where she trusts you more than it. */
+/**
+ * Thursday on, the pull sometimes borrows your ink: once a day at most, where she trusts you more than it. Which
+ * eligible card it picks (the first, second or third of the day) is fixed by the seed, so it is not always the alarm.
+ * Called once per card open; it counts.
+ */
 function borrows(s: GameState, m: Moment): boolean {
   const you = trustOf(s.person, YOU);
-  return s.day >= 4 && !!m.pull.borrow && you > BORROW_FROM && you > trustOf(s.person, PULL);
+  if (s.day < 4 || !m.pull.borrow || you <= BORROW_FROM || you <= trustOf(s.person, PULL)) return false;
+  const st = s.stats;
+  const pick = ((s.seed * 31 + s.day * 7) >>> 0) % 3;
+  const n = st.borrowable;
+  st.borrowable += 1;
+  if (st.borrowed > 0 || n < pick) return false;
+  st.borrowed += 1;
+  return true;
 }
 
 export type Lean = 'yes' | 'if pushed' | 'later' | 'rather not' | 'no';
@@ -758,6 +772,22 @@ export function fingerprint(s: GameState): string {
     rng: s.person.rng,
     trust: s.person.will.voices.map((v) => [v.voiceId, v.trust]),
   });
+}
+
+/**
+ * The minute the next card can open, or null when no card is left today (or one is open). Read-only, for UI pacing:
+ * mirrors `step`'s opening rule (skip moments whose `when` is false; never before her own clock).
+ */
+export function nextCardAt(s: GameState): number | null {
+  if (s.phase !== 'day' || s.card) return null;
+  const c = ctxOf(s);
+  for (const id of s.queue) {
+    const m = momentById(id);
+    if (m.when && !m.when(c)) continue;
+    const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(c) : m.at);
+    return Math.max(at, s.person.now);
+  }
+  return null;
 }
 
 /** Run the sim until a card opens, the day ends, or `max` minutes pass (headless and tests). */
