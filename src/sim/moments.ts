@@ -126,7 +126,7 @@ function slump(day: number): Moment {
     scene: (c) =>
       c.tired
         ? byDay(c, [
-            '15:20. The board is red with late drops. Her eyes keep closing on the screen.',
+            '15:20. The delivery board is red with late drops. Her eyes keep closing on the screen.',
             '15:20. The board again. The same red. Her eyes sting.',
             '15:20. The board is red. Her head is full of sand.',
             '15:20. Red again. She reads the same postcode three times.',
@@ -144,7 +144,9 @@ function slump(day: number): Moment {
       line: (c) =>
         byDay(c, [
           'Third coffee. You’ve earned it.',
-          'Coffee. Same as yesterday. Yesterday was fine.',
+          c.chosen[`slump-${c.day - 1}`] === 'coffee'
+            ? 'Coffee. Same as yesterday.'
+            : 'Coffee. Get the board green.',
           'Coffee. Today of all days.',
           'Coffee. Who sleeps anyway.',
           'Coffee. It’s Friday. Nobody counts on Friday.',
@@ -427,7 +429,7 @@ const monday: Moment[] = [
         placeId: 'depot',
         done: (c) =>
           c.flags.late
-            ? 'Fifteen minutes, street by street. Ece made her drop. Dilan’s board did not.'
+            ? 'Fifteen minutes, street by street. Ece made her drop. Dilan’s deliveries were still late.'
             : 'Fifteen minutes, street by street. Ece made her drop.',
       },
       {
@@ -554,7 +556,8 @@ const tuesday: Moment[] = [
     day: 2,
     at: at(11, 10),
     place: 'depot',
-    scene: 'The eleven o’clock drops went to the wrong depot. Her routing. Murat asks the room who did it.',
+    scene:
+      'The eleven o’clock drops went to the wrong depot. Her routing error. Murat asks the room who did it.',
     pull: { to: 'system', line: 'Say the system did it. It does that.', strength: 1 },
     options: [
       {
@@ -877,7 +880,7 @@ const thursday: Moment[] = [
     scene: (c) =>
       c.flags.eceBlamed
         ? 'Ece is back. Someone told her Tuesday’s wrong drops were her scanner. She’s apologising to Murat.'
-        : 'Ece is back. She asks if she can shadow Dilan on the board after her shift.',
+        : 'Ece is back. She asks if she can watch Dilan work the delivery board after her shift.',
     pull: {
       to: 'let',
       line: 'It blew over. Leave it.',
@@ -992,7 +995,7 @@ const thursday: Moment[] = [
         gives: { esteem: 0.1, meaning: 0.15, ...lunchFood },
         norms: [{ normId: 'backbiting', relation: 'fulfills' }],
         placeId: 'canteen',
-        done: '“He covered your route on Monday.” Ece went pink and did a kinder Murat.',
+        done: '“He covered your route on Monday.” Ece went pink and did a kinder impression of Murat.',
       },
     ],
   },

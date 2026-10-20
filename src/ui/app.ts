@@ -4,7 +4,7 @@
  * slowed while a card is open (never a hard pause), then a short readable beat after each answer.
  */
 import { FRAMEWORK_VERSION } from '@adam0white/human-framework';
-import { DAY0, PULL, YOU } from '../sim/dilan.ts';
+import { PULL, YOU } from '../sim/dilan.ts';
 import {
   type CardView,
   cardView,
@@ -24,6 +24,7 @@ import {
   trustOf,
 } from '../sim/game.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
+import { doneLine, journalLines } from './journal.ts';
 import { lab } from './lab.ts';
 
 const SAVE = 'murmur-save-v1';
@@ -97,7 +98,6 @@ const pencilStyle = (t: number) =>
 /** Your ink: heavier and darker as she trusts you. */
 const inkStyle = (t: number) =>
   `font-weight:${Math.round(330 + pos(t) * 330)};color:color-mix(in srgb, var(--ink) ${Math.round(48 + pos(t) * 52)}%, var(--ink-soft))`;
-const dayOfMinute = (m: number) => Math.floor((m - DAY0) / 1440) + 1;
 /** A hand-drawn stroke: jittered points between two ends, deterministic per key. */
 function wob(x1: number, y1: number, x2: number, y2: number, key: number, amp = 1.2): string {
   let d = `M${x1.toFixed(1)} ${y1.toFixed(1)}`;
@@ -343,7 +343,7 @@ function drawDay() {
   const ds = document.getElementById('dayshort');
   if (ds) ds.textContent = (DAY_NAMES[s.day] ?? '').slice(0, 3);
   if (ck) ck.textContent = clock(s.minute);
-  const shown = journalLines();
+  const shown = journalLines(s);
   const logKey = `${shown.length}:${s.card?.openedAt ?? ''}`;
   if (drawn.log !== logKey) {
     drawn.log = logKey;
@@ -352,7 +352,7 @@ function drawDay() {
   document.getElementById('dayroot')?.classList.toggle('has-card', !!s.card);
   const key = s.card
     ? `card:${s.card.moment}:${s.card.openedAt}`
-    : `gap:${s.answer?.moment ?? ''}:${s.answer?.at ?? ''}:${doneLine(s.answer) ? 1 : 0}`;
+    : `gap:${s.answer?.moment ?? ''}:${s.answer?.at ?? ''}:${doneLine(s, s.answer) ? 1 : 0}`;
   if (drawn.sheet !== key) {
     drawn.sheet = key;
     drawSheet();
@@ -361,18 +361,6 @@ function drawDay() {
     if (j) j.scrollTop = j.scrollHeight;
   }
   drawTimer();
-}
-
-/** Today's journal as far as the clock has reached; the open card's own scene and pull stay on the card. */
-function journalLines(): LogLine[] {
-  if (!s) return [];
-  const st = s;
-  return st.log.filter(
-    (l) =>
-      dayOfMinute(l.at) === st.day &&
-      l.at <= st.minute &&
-      !(st.card && l.at === st.card.openedAt && (l.who === 'scene' || l.who === 'pull')),
-  );
 }
 
 /** Did the player act (say something, or choose quiet) on the card that opened at `at`? */
@@ -471,13 +459,7 @@ function drawTimer() {
   el.setAttribute('stroke-dasharray', `${(left * 100).toFixed(1)} 100`);
 }
 
-/** The narrator's line for this answer, once the clock has reached it. */
-function doneLine(a: Answer | null): LogLine | undefined {
-  if (!s || !a) return undefined;
-  const st = s;
-  return st.log.find((l) => l.who === 'narrator' && l.at >= a.at && l.at <= st.minute);
-}
-
+/** Her reply and outcome while the day moves toward the next card. */
 function gapHtml(a: Answer | null): string {
   if (!s) return '';
   if (!a) {
@@ -503,7 +485,7 @@ function gapHtml(a: Answer | null): string {
           : 'She didn’t. She did something else.';
     lines.push(`<p class="turn small">${how}</p>`);
   }
-  const done = doneLine(a);
+  const done = doneLine(s, a);
   if (done) lines.push(`<p class="n">${esc(done.text)}</p>`);
   if (a.learned)
     lines.push(`<p class="margin hand">She took it as “${esc(a.learned)}.” She kept that one.</p>`);

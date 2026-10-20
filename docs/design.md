@@ -79,6 +79,6 @@ One `Person` (Dilan). Voices `you` and `pull`. Opt-ins: fatigue store, prompting
 - Faith stays quiet and unnamed. The prompting reading is never shown.
 - Short lines, at most two lines of scene per card. One laugh in the first minute.
 
-## Deferred (target: after the owner's first playtest)
-- A second week.
+## Deferred (target: 2026-11-03)
+- More campaigns, including a second week.
 - Other people as HF persons (Ece, Mum).
