@@ -19,7 +19,7 @@ function required<T>(value: T | null | undefined): T {
 }
 
 function first(option?: string): GameState {
-  const s = newGame(9);
+  const s = newGame(9, '0.2.1');
   runToCard(s);
   queueInput(s, option ? { kind: 'say', option } : { kind: 'quiet' });
   return s;
@@ -43,7 +43,7 @@ describe('persistent moment records', () => {
   });
 
   it('preserves acceptance and a held suggestion', () => {
-    const s = newGame(9);
+    const s = newGame(9, '0.2.1');
     runToCard(s);
     queueInput(s, { kind: 'say', option: 'snooze', insist: true });
     const record = required(answerRecord(s, required(s.answer)));
@@ -55,7 +55,7 @@ describe('persistent moment records', () => {
   it('distinguishes explicit silence from the clock running out', () => {
     const quiet = first();
     expect(answerRecord(quiet, required(quiet.answer))?.quiet).toBe('explicit');
-    const timeout = newGame(9);
+    const timeout = newGame(9, '0.2.1');
     runToCard(timeout);
     while (timeout.card) step(timeout);
     const record = required(answerRecord(timeout, required(timeout.answer)));
@@ -65,14 +65,14 @@ describe('persistent moment records', () => {
   });
 
   it('does not reveal the unresolved card as a choice', () => {
-    const s = newGame(9);
+    const s = newGame(9, '0.2.1');
     runToCard(s);
     expect(momentRecords(s)).toEqual([]);
     expect(momentRecord(s, required(s.card).openedAt)).toBeUndefined();
   });
 
   it('uses the original conditional option ink even if later flags differ', () => {
-    const s = newGame(9);
+    const s = newGame(9, '0.2.1');
     for (let guard = 0; guard < 100; guard++) {
       if (s.phase === 'evening') queueInput(s, { kind: 'next' });
       runToCard(s);
@@ -91,7 +91,7 @@ describe('persistent moment records', () => {
   });
 
   it('keeps every resolved scene through evening transitions and the final page', () => {
-    const s = newGame(9);
+    const s = newGame(9, '0.2.1');
     for (let guard = 0; guard < 120 && s.phase !== 'end'; guard++) {
       if (s.phase === 'evening') queueInput(s, { kind: 'next' });
       runToCard(s);
@@ -112,7 +112,7 @@ describe('persistent moment records', () => {
     const before = JSON.stringify(cloneState(restored));
     expect(momentRecords(restored)).toEqual(momentRecords(s));
     expect(JSON.stringify(cloneState(restored))).toBe(before);
-    const rebuilt = replay(s.seed, s.inputs, s.minute);
+    const rebuilt = replay(s.seed, s.inputs, s.minute, s.version);
     expect(fingerprint(rebuilt)).toBe(fingerprint(s));
     queueInput(restored, { kind: 'quiet' });
     queueInput(rebuilt, { kind: 'quiet' });

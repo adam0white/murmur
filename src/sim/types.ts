@@ -109,6 +109,10 @@ export interface Answer {
   /** She kept a new phrase of yours as her own. */
   learned?: string;
   pullWon: boolean;
+  /** Her immediate acknowledgement of retained, unforced advice. */
+  stayed?: string;
+  /** Earlier advice resurfacing at this related moment. */
+  recalled?: string;
 }
 
 export interface LogLine {
@@ -137,6 +141,7 @@ export interface DayStats {
 }
 
 export interface Page {
+  stayed?: string[];
   day: number;
   review?: string;
   style: string;
@@ -189,4 +194,13 @@ export interface GameState {
   chosen: Record<string, string>;
   hinted: string[];
   final: Final | null;
+  /** Provenance for retained HF advice, never a parallel score. */
+  thoughts?: {
+    moment: string;
+    at: number;
+    action: string;
+    ink: string;
+    label: string;
+    surfacedAt?: number;
+  }[];
 }

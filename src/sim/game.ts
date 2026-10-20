@@ -28,6 +28,16 @@ import {
   tick,
 } from '@adam0white/human-framework';
 import { DAY0, dayStart, LABEL, makeDilan, PULL, REVIEW_AT, WAKE, YOU } from './dilan.ts';
+import {
+  configureListening,
+  keepSuggestion,
+  LISTENING_EDITION,
+  LISTENING_TEMPERATURE,
+  landingChance,
+  listeningForecast,
+  moodOf,
+  recalledThought,
+} from './listening.ts';
 import { LAST_DAY, momentById, momentsOf } from './moments.ts';
 import type {
   Answer,
@@ -43,7 +53,9 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = '0.2.1';
+export const GAME_VERSION = '0.3.0';
+export const LEGACY_VERSION = '0.2.1';
+export const isEdition = (version: string) => version === LISTENING_EDITION || version === LEGACY_VERSION;
 export const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const WINDOW = 5;
 const SAY = 0.6;
@@ -82,10 +94,12 @@ function blankStats(p: Person): DayStats {
   };
 }
 
-export function newGame(seed: number): GameState {
+export function newGame(seed: number, version = GAME_VERSION): GameState {
+  if (!isEdition(version)) throw new Error(`Unknown Murmur edition: ${version}`);
   const person = makeDilan(seed);
+  if (version === LISTENING_EDITION) configureListening(person);
   const s: GameState = {
-    version: GAME_VERSION,
+    version,
     seed,
     day: 1,
     phase: 'day',
@@ -229,9 +243,18 @@ export interface CardView {
   borrowed: boolean;
   hint?: string;
   forecast?: string;
+  recalled?: string;
   resolve?: { label: string; marks: number; line: string };
   closesAt: number;
-  options: { id: string; ink: string; lean: Lean; pushed: Lean; isPull: boolean }[];
+  options: {
+    id: string;
+    ink: string;
+    lean: Lean;
+    pushed: Lean;
+    isPull: boolean;
+    mood?: string;
+    likelihood?: number;
+  }[];
 }
 
 const RESOLVE_FOR: Record<string, string> = {
@@ -245,6 +268,11 @@ const marksOf = (strength: number) => (strength < 0.3 ? 1 : strength < 0.6 ? 2 :
 
 /** The open card as the player sees it. Pure: no state change, no randomness. */
 export function cardView(s: GameState): CardView | null {
+  // A card opens before step increments the clock. Forecast the exact input minute on a copy.
+  if (s.version === LISTENING_EDITION && s.person.now < s.minute) {
+    s = { ...s, person: restore(snapshot(s.person)) };
+    tick(s.person, s.minute);
+  }
   const m = openMoment(s);
   const card = s.card;
   if (!m || !card) return null;
@@ -262,14 +290,25 @@ export function cardView(s: GameState): CardView | null {
     pullTo: m.pull.to,
     borrowed: card.borrowed,
     closesAt: card.closesAt,
-    options: opts.map((o) => ({
-      id: o.id,
-      ink: text(o.ink, c),
-      lean: leanOf(predict(p, offers, yourSuggestion(p, o.id), { others }).verdict),
-      pushed: leanOf(predict(p, offers, yourSuggestion(p, o.id, true), { others }).verdict),
-      isPull: o.id === m.pull.to,
-    })),
+    options: opts.map((o) => {
+      const tap =
+        s.version === LISTENING_EDITION
+          ? listeningForecast(p, offers, yourSuggestion(p, o.id), others)
+          : predict(p, offers, yourSuggestion(p, o.id), { others });
+      return {
+        id: o.id,
+        ink: text(o.ink, c),
+        lean: leanOf(tap.verdict),
+        pushed: leanOf(predict(p, offers, yourSuggestion(p, o.id, true), { others }).verdict),
+        isPull: o.id === m.pull.to,
+        ...(s.version === LISTENING_EDITION ? { mood: moodOf(tap), likelihood: landingChance(tap) } : {}),
+      };
+    }),
   };
+  if (s.version === LISTENING_EDITION) {
+    const recalled = recalledThought(s, offers);
+    if (recalled) view.recalled = recalled;
+  }
   if (m.hint && !s.hinted.includes(m.hint)) view.hint = m.hint;
   const heavy = offers.find((a) => a.followedBy && a.followedBy.length > 0);
   if (heavy) view.forecast = bodyForecast(p, heavy).line;
@@ -364,6 +403,17 @@ function open(s: GameState, m: Moment) {
   const v = cardView(s);
   s.log.push({ at: s.minute, who: 'scene', text: text(m.scene, c) });
   if (v) s.log.push({ at: s.minute, who: 'pull', text: v.pullLine });
+  if (v?.recalled) {
+    for (const t of s.thoughts ?? []) {
+      if (
+        t.surfacedAt === undefined &&
+        t.at < s.minute &&
+        offersOf(s, m).some((a) => a.action === t.action) &&
+        (s.person.will.advice ?? []).some((a) => a.sourceId === YOU && a.action === t.action && a.at === t.at)
+      )
+        t.surfacedAt = s.minute;
+    }
+  }
 }
 
 /** Her reason when she turns your word down and HF gave her no words: tiredness, the easier way, or plain no. */
@@ -390,7 +440,43 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
     ? [yourSuggestion(p, said.option, said.insist), ...(card.borrowed ? [] : [pull])]
     : [pull];
   const carried = said?.insist ? insistCarries(p) : true;
+  const forecast =
+    s.version === LISTENING_EDITION && said
+      ? listeningForecast(p, offers, suggestions[0] as Suggestion, suggestions.slice(1))
+      : undefined;
+  const recalled = s.version === LISTENING_EDITION ? recalledThought(s, offers) : undefined;
+  // Only ordinary moment decisions draw. Insistence and the routine keep their established rules.
+  p.will.temperature = s.version === LISTENING_EDITION && !said?.insist ? LISTENING_TEMPERATURE : 0;
   const rec: DecisionRecord = decide(p, offers, { suggestions });
+  p.will.temperature = 0;
+  if (s.version === LISTENING_EDITION && rec.chosenAffordanceId === null) {
+    const yours = rec.suggestions?.find((r) => r.voiceId === YOU);
+    s.answer = {
+      moment: m.id,
+      at: s.minute,
+      chosen: 'none',
+      borrowed: card.borrowed,
+      pullWon: false,
+      ...(said
+        ? {
+            said: said.option,
+            insisted: said.insist,
+            verdict: 'refused' as const,
+            says: yours?.says || 'I can’t do either of those just now.',
+          }
+        : {}),
+    };
+    if (said) {
+      s.stats.said += 1;
+      s.stats.refused += 1;
+      if (said.insist) s.stats.insisted += 1;
+    } else s.stats.silent += 1;
+    s.chosen[m.id] = 'none';
+    s.log.push({ at: s.minute, who: 'narrator', text: 'She stayed where she was.' });
+    s.card = null;
+    s.queue.shift();
+    return;
+  }
   const chosenAff =
     offers.find((a) => a.id === rec.chosenAffordanceId) ?? offers.find((a) => a.id === m.pull.to);
   const chosen = chosenAff ? (opts.find((o) => o.id === chosenAff.id) as Opt) : (opts[0] as Opt);
@@ -403,6 +489,7 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
     borrowed: card.borrowed,
     pullWon: chosen.id === m.pull.to,
   };
+  if (recalled) answer.recalled = recalled;
   const st = s.stats;
   if (said) {
     answer.said = said.option;
@@ -451,6 +538,23 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
     learnPhrase(s, chosen.phrase);
     answer.learned = chosen.phrase.text;
     st.learned.push(chosen.phrase.text);
+  }
+  if (
+    s.version === LISTENING_EDITION &&
+    said &&
+    !said.insist &&
+    said.option !== chosen.id &&
+    forecast &&
+    forecast.kind !== 'cannot' &&
+    forecast.kind !== 'willNot' &&
+    landingChance(forecast) >= 0.1 &&
+    trustOf(p, YOU) >= 0.3 &&
+    (p.will.voices.find((v) => v.voiceId === YOU)?.pressure ?? 0) < 0.6
+  ) {
+    const option = opts.find((o) => o.id === said.option);
+    if (option) {
+      answer.stayed = keepSuggestion(s, option, text(option.ink, c));
+    }
   }
   s.answer = answer;
   s.chosen[m.id] = chosen.id;
@@ -685,6 +789,11 @@ function pageOf(s: GameState): Page {
     learned: [...st.learned],
     hands: { you: trustOf(p, YOU), pull: trustOf(p, PULL) },
   };
+  if (s.version === LISTENING_EDITION) {
+    const thoughts = (s.thoughts ?? []).filter((t) => t.at >= dayStart(s.day));
+    if (thoughts.length)
+      page.stayed = thoughts.slice(-2).map((t) => `When you said “${t.ink}”, I didn’t. It stayed with me.`);
+  }
   const line = today ? reviewLine(p) : undefined;
   if (line) page.review = line;
   return page;
@@ -820,12 +929,18 @@ export function cloneState(s: GameState): GameState {
 }
 
 export function restoreState(json: GameState): GameState {
+  if (!isEdition(json.version)) throw new Error(`Unknown Murmur edition: ${json.version}`);
   return { ...structuredClone({ ...json, person: null as unknown as Person }), person: restore(json.person) };
 }
 
 /** Rebuild a run from its seed and input log. */
-export function replay(seed: number, inputs: readonly Input[], until?: number): GameState {
-  const s = newGame(seed);
+export function replay(
+  seed: number,
+  inputs: readonly Input[],
+  until?: number,
+  version = LEGACY_VERSION,
+): GameState {
+  const s = newGame(seed, version);
   for (const inp of inputs) {
     // A 'next' belongs to the evening: run the day out first, even when it ended on the minute of the last answer.
     while (s.phase === 'day' && (s.minute < inp.at || inp.kind === 'next')) step(s);

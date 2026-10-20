@@ -27,7 +27,7 @@ Taken: A + the evening scene, five weekdays + Saturday, pencil vs ink, size of h
 Four source-unread testers and the HF-character harness agreed on these. They changed the rules:
 - **Holding is a capability, not a free override.** It carries only while she trusts you enough (`INSIST_FROM`, 0.45). Each hold costs trust. Below that line a hold carries less than a tap, and she says so: "You keep pushing me. I'm not listening to that today." Always holding now loses more moments than plain speaking.
 - **Her phrases fade unless you say them again.** Each night a phrase you did not say again that day loses a fifth of its practice. This is host-side, because HF's 60-day half-life is too slow for one week (HF request 5). Training and then coasting no longer works. She still turns the pull away on her own sometimes.
-- **The hints are honest.** Her will runs at temperature 0, so the mood words on each option ("she's willing", "only with a push") are what HF predicts she will do. Runs differ through the seed's small differences in her habits.
+- **The hints are honest (edition 0.2.1).** Her will runs at temperature 0, so the mood words on each option ("she's willing", "only with a push") are what HF predicts she will do. Runs differ through the seed's small differences in her habits.
 - **Honesty and kindness are not free.** Her convictions against lying and backbiting are lower, so the pull wins at those too. The first lie at the depot works ("Nobody checked."). The second time she owns up to being late, Murat writes it down in pen.
 - **Threads close.** Ece's "after six" becomes a Thursday scene. Saturday closes Ece, Murat, the shelf and the lock-screen photo in a line each.
 - **Repeats vary.** The coffee, bus and bed cards have a different line each day. The journal keeps each card's scene and pull line, so a card that closed while the player was away still reads.
@@ -97,6 +97,20 @@ What remains: Opus driver acceptance and a fresh source-unread retest of whether
 - Refusal recovery uses the exact pre-decision state. Monday's alarm, Aylin, Murat, Ece, lunch and Mum responses differ in her words and describe possible future changes. Tiredness, lateness, lost trust and willing alternatives determine the response. A resolved moment stays resolved.
 - Each resolved moment keeps “You suggested” beside “She chose” in the journal. Explicit silence and timeout are distinguished. The same reconstructed labels appear below the current reply after import; conditional wording comes from the original moment. Narration appears only when the simulation clock reaches completion.
 - Simulation, input schema, playback policy, framework pin and old exports stay unchanged. Exact legacy replay and continuation remain acceptance checks.
+
+## Design change 2026-10-20 (owner may veto)
+
+New runs start on edition **0.3.0**. Farah (F-245): “this sequence of taps felt too much like watching her follow the other voice.” Lina (F-253): “I wanted influence through suggestions, and I had not felt that influence yet.” Her request: “Let a gentle suggestion produce a noticeable response early, even when she refuses.”
+
+A plain suggestion can now carry against her leaning. HF draws from its own scores with temperature 0.14 and the RNG in her state. Trust raises the suggestion's score; pressure lowers it; a smaller score gap makes listening likelier. HF still vetoes real incapacity and held convictions. Holds retain deterministic resolution, capability limits and trust costs. Her starting bed and phone habits are slightly less settled, making Monday's first choices close calls. No opening win is scripted.
+
+A gentle refusal can remain as HF standing advice when she was listening, trusts the voice, and has not been pressed too far. HF owns its decay, score and discharge; repeated advice refreshes one entry rather than stacking. She acknowledges the thought immediately. Its next related card, reply and journal can name it; the evening can remember the original refusal. The trace records retained advice, not a promise to comply. A live repetition replaces that source's remembered term, as HF already specifies.
+
+**The hints are honest in this edition:** “she leans toward it, but hasn't decided” means probability at least one half; “she's against it, but she's listening” means one tenth to below one half; “she's firmly against it; a small chance she'll listen” means above zero to below one tenth. “She can't” / “she won't” only appear for zero chance; “she's willing” only for certainty. These bands are builder checks, never shown as feeling numbers. The new forecast reads the actual input minute without changing state or RNG. The card shows remaining real response seconds. A release belongs to the exact card and control pressed; an expired or replaced card receives no input from it.
+
+Cost and risk: more uncertainty makes her less predictable. Retained words add reading. Some suggestions are forgotten or have no related moment before Saturday. The same eight-seed measurement compares both editions and includes silence, opposition, holds, pull, reader and edge policies; it is evidence about those policies, not owner acceptance of feel. No requested part of this change is deferred. The lead designer keeps final taste review and owner acceptance.
+
+**Replay and revert:** 0.2.1 saves and exports stay on 0.2.1, including unversioned historical saves. Creation and replay take an explicit edition; stored metadata and journal reconstruction preserve it. Canonical full-state hashes were captured from commit `a9447c2` before simulation edits: 12 complete runs across three seeds and four policies, plus 36 checkpoint replays/restored continuations. New runs use `GAME_VERSION` in `src/sim/game.ts`. To revert the default, set it to `'0.2.1'` and deploy. Keep `LISTENING_EDITION` and both supported branches so existing 0.3.0 runs still replay.
 
 ## Deferred (target: 2026-11-03)
 - More campaigns, including a second week.

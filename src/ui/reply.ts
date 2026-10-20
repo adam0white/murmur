@@ -34,7 +34,7 @@ function mightHear(before: GameState, a: Answer): string {
 
 /** Her reply plus a way forward. Reconstruct the decision without changing the run or its export. */
 export function replyWords(s: GameState, a: Answer): string | undefined {
-  if (!a.said || a.said === a.chosen) return a.says;
+  if (!a.said || a.said === a.chosen || s.version !== '0.2.1') return a.says;
 
   let recovery = `Let me choose this time. ${nextMoment}`;
   const index = s.inputs.findLastIndex(
@@ -45,7 +45,7 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
       (input.insist === true) === (a.insisted === true),
   );
   if (index >= 0) {
-    const before = replay(s.seed, s.inputs.slice(0, index), a.at);
+    const before = replay(s.seed, s.inputs.slice(0, index), a.at, s.version);
     // resolve() advances her body to the input minute before deciding. Forecast that same state.
     if (before.person.now < a.at) tick(before.person, a.at);
     const view = cardView(before);

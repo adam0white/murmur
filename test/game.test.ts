@@ -79,7 +79,7 @@ describe('The Two Voices sim', () => {
 
   it('replays exactly from seed and input log', () => {
     const s = play(11, opposeFirst);
-    const r = replay(s.seed, s.inputs);
+    const r = replay(s.seed, s.inputs, undefined, s.version);
     expect(fingerprint(r)).toBe(fingerprint(s));
   });
 

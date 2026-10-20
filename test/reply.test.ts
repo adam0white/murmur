@@ -19,7 +19,7 @@ function answer(s: GameState): Answer {
 }
 
 function first(option: string, insist = false): GameState {
-  const s = newGame(9);
+  const s = newGame(9, '0.2.1');
   runToCard(s);
   queueInput(s, { kind: 'say', option, insist });
   return s;
@@ -27,7 +27,7 @@ function first(option: string, insist = false): GameState {
 
 describe('refusal recovery in her words', () => {
   it('answers each Monday refusal with a possible change specific to that moment', () => {
-    const s = newGame(9);
+    const s = newGame(9, '0.2.1');
     const route = [
       ['alarm-1', 'up', /next.*alarm.*hold.*feet/i],
       ['note-1', 'reply', /Aylin.*bus.*hold/i],
@@ -57,7 +57,7 @@ describe('refusal recovery in her words', () => {
   });
 
   it('remembers her tiredness when she refuses the next alarm', () => {
-    const s = newGame(9);
+    const s = newGame(9, '0.2.1');
     while (s.day === 1) {
       if (s.phase === 'evening') {
         queueInput(s, { kind: 'next' });
@@ -87,7 +87,7 @@ describe('refusal recovery in her words', () => {
   });
 
   it('suggests plain words or silence at the next moment after pushing loses her trust', () => {
-    const s = newGame(9);
+    const s = newGame(9, '0.2.1');
     while (s.card?.moment !== 'slump-1') {
       runToCard(s);
       if (s.card?.moment === 'slump-1') break;
@@ -105,7 +105,7 @@ describe('refusal recovery in her words', () => {
   });
 
   it('names a willing alternative when a firmer version would still refuse', () => {
-    const s = newGame(2);
+    const s = newGame(2, '0.2.1');
     for (let g = 0; g < 100; g++) {
       if (s.phase === 'evening') {
         queueInput(s, { kind: 'next' });
@@ -136,7 +136,7 @@ describe('refusal recovery in her words', () => {
     const s = first('snooze');
     expect(answer(s).chosen).toBe('snooze');
     expect(replyWords(s, answer(s))).toBe(answer(s).says);
-    const quiet = newGame(9);
+    const quiet = newGame(9, '0.2.1');
     runToCard(quiet);
     queueInput(quiet, { kind: 'quiet' });
     expect(replyWords(quiet, answer(quiet))).toBe(answer(quiet).says);
@@ -152,8 +152,8 @@ describe('refusal recovery in her words', () => {
     expect(fingerprint(s)).toBe(before);
     expect(JSON.stringify(s.person.rng)).toBe(rng);
     expect(JSON.stringify(cloneState(s))).toBe(exported);
-    expect(fingerprint(replay(s.seed, s.inputs, s.minute))).toBe(before);
-    const continued = replay(s.seed, s.inputs, s.minute);
+    expect(fingerprint(replay(s.seed, s.inputs, s.minute, s.version))).toBe(before);
+    const continued = replay(s.seed, s.inputs, s.minute, s.version);
     runToCard(s);
     runToCard(continued);
     expect(fingerprint(continued)).toBe(fingerprint(s));

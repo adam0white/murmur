@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { type Browser, chromium, type Page } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { cardView, cloneState, replay, step } from '../src/sim/game.ts';
+import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
 import type { Input } from '../src/sim/types.ts';
 
 let server: ViteDevServer;
@@ -21,13 +21,18 @@ afterAll(async () => {
   await server?.close();
 }, 30_000);
 
-async function firstChoice(page: Page) {
+async function firstChoice(page: Page, version = '0.2.1') {
   await page.goto(`${origin}?seed=1`);
   await page.evaluate(() => {
     const game = (window as unknown as { __murmur: { fast: boolean } }).__murmur;
     game.fast = true;
   });
-  await page.locator('#new').click();
+  await page.evaluate((edition) => {
+    (window as unknown as { __murmur: { start(seed: number, version: string): void } }).__murmur.start(
+      1,
+      edition,
+    );
+  }, version);
   await page.locator('#hush').waitFor();
 }
 
@@ -505,4 +510,190 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
       }
     },
   );
+});
+
+describe('design round card safety and time', { timeout: 30_000 }, () => {
+  it('states the real response time as part of her moment', async () => {
+    const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
+    try {
+      await page.clock.install();
+      await firstChoice(page, '0.3.0');
+      await page.evaluate(() => {
+        (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
+      });
+      await page.clock.resume();
+      await page.clock.runFor(100);
+      expect(await page.locator('#time-left').count()).toBe(1);
+      expect(await page.locator('#time-left').innerText()).toBe('She decides in 32s');
+      await page.clock.runFor(8200);
+      expect(await page.locator('#time-left').innerText()).toMatch(/She decides in 2[34]s/);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('ignores silence and option releases after the card is replaced', async () => {
+    const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
+    try {
+      await firstChoice(page, '0.3.0');
+      await page.evaluate(() => {
+        const game = (window as unknown as { __murmur: { skipToCard(): void } }).__murmur;
+        const old = document.getElementById('hush');
+        old?.dispatchEvent(new PointerEvent('pointerdown', { button: 0, isPrimary: true }));
+        game.skipToCard();
+        // A delayed click on the detached control must not answer the replacement.
+        old?.dispatchEvent(new MouseEvent('click', { detail: 1 }));
+      });
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs,
+        ),
+      ).toEqual([]);
+      // A release retargeted to a new control had no pointerdown on that control.
+      await page.locator('#hush').dispatchEvent('pointerup', { isPrimary: true });
+      await page.locator('#hush').dispatchEvent('click', { detail: 1 });
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs,
+        ),
+      ).toEqual([]);
+      await page.locator('.opt').first().dispatchEvent('pointerup', { isPrimary: true });
+      await page.locator('.opt').first().dispatchEvent('click', { detail: 1 });
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs,
+        ),
+      ).toEqual([]);
+      await page.locator('#hush').tap();
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs[0],
+        ),
+      ).toMatchObject({ kind: 'quiet' });
+    } finally {
+      await page.close();
+    }
+  });
+});
+
+describe('edition persistence in the browser', { timeout: 30_000 }, () => {
+  it('stores the run edition with the local continue record', async () => {
+    const page = await browser.newPage();
+    try {
+      await firstChoice(page, '0.3.0');
+      const editions = await page.evaluate(() => ({
+        state: (window as unknown as { __murmur: { state: { version: string } } }).__murmur.state.version,
+        save: JSON.parse(localStorage.getItem('murmur-save-v1') ?? '{}').version,
+      }));
+      expect(editions.save).toBe(editions.state);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('rejects an unknown imported edition', async () => {
+    const page = await browser.newPage();
+    try {
+      await page.goto(origin);
+      await page.locator('#file').setInputFiles({
+        name: 'unknown.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(JSON.stringify({ seed: 1, inputs: [], version: 'unknown' })),
+      });
+      await page.locator('#new').waitFor();
+      expect(await page.locator('#dayroot').count()).toBe(0);
+    } finally {
+      await page.close();
+    }
+  });
+});
+
+describe('design round remembered words', { timeout: 30_000 }, () => {
+  it('uses uncertain mood words and shows a retained suggestion in her reply, history and next related card', async () => {
+    const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
+    try {
+      await firstChoice(page, '0.3.0');
+      expect(await page.locator('[data-o="up"] .lean').innerText()).toMatch(/listening|hasn't decided/);
+      const stayed = await page.evaluate(() => {
+        const game = (
+          window as unknown as {
+            __murmur: {
+              start(seed: number): void;
+              say(option: string): void;
+              quiet(): void;
+              skipToCard(): void;
+              fast: boolean;
+              state: { day: number; phase: string; card: unknown; answer: { stayed?: string } };
+            };
+          }
+        ).__murmur;
+        for (let seed = 1; seed <= 16; seed++) {
+          game.fast = false;
+          game.start(seed);
+          game.skipToCard();
+          game.say('up');
+          if (game.state.answer.stayed) return game.state.answer.stayed;
+        }
+        return null;
+      });
+      expect(stayed).toBeTruthy();
+      expect(await page.locator('.gap .stayed').innerText()).toContain(stayed);
+      await page.evaluate(() => {
+        (window as unknown as { __murmur: { skipToCard(): void } }).__murmur.skipToCard();
+      });
+      expect(await page.locator('.journal .stayed').first().innerText()).toContain(stayed);
+      await page.evaluate(() => {
+        const game = (
+          window as unknown as {
+            __murmur: {
+              quiet(): void;
+              skipToCard(): void;
+              fast: boolean;
+              state: { day: number; phase: string; card: unknown };
+            };
+          }
+        ).__murmur;
+        game.fast = true;
+        while (game.state.day === 1 && game.state.phase === 'day' && game.state.card) game.quiet();
+      });
+      await page.locator('#next').waitFor();
+      expect(await page.locator('.notebook .stayed').count()).toBeGreaterThan(0);
+      await page.locator('#next').click();
+      await page.locator('#hush').waitFor();
+      expect(await page.locator('.card .stayed').innerText()).toMatch(/get up|feet|alarm/i);
+    } finally {
+      await page.close();
+    }
+  });
+});
+
+describe('silent edition exports', { timeout: 30_000 }, () => {
+  it('imports a full week whose last decision timed out without another input', async () => {
+    const state = newGame(7);
+    while (state.phase !== 'end') {
+      if (state.phase === 'evening') queueInput(state, { kind: 'next' });
+      else {
+        runToCard(state);
+        while (state.card) step(state);
+      }
+    }
+    const page = await browser.newPage();
+    try {
+      await page.goto(origin);
+      await page.locator('#file').setInputFiles({
+        name: 'silent-week.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(
+          JSON.stringify({ version: state.version, seed: state.seed, inputs: state.inputs, state }),
+        ),
+      });
+      await page.locator('.toast').waitFor();
+      expect(await page.locator('.toast').innerText()).toBe('Replayed. It matches the file.');
+      expect(
+        await page.evaluate(() => (window as unknown as { __murmur: { state: unknown } }).__murmur.state),
+      ).toEqual(cloneState(state));
+    } finally {
+      await page.close();
+    }
+  });
 });

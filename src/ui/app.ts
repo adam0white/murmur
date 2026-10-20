@@ -13,6 +13,8 @@ import {
   DAY_NAMES,
   fingerprint,
   GAME_VERSION,
+  isEdition,
+  LEGACY_VERSION,
   type Lean,
   newGame,
   nextCardAt,
@@ -41,6 +43,7 @@ const TURN_MS = 3000;
 const HOLD_MS = 600;
 
 interface Save {
+  version?: string;
   seed: number;
   inputs: Input[];
 }
@@ -66,7 +69,12 @@ function readSave(): Save | null {
   try {
     const raw = localStorage.getItem(SAVE);
     const sv = raw ? (JSON.parse(raw) as Save) : null;
-    return sv && typeof sv.seed === 'number' && Array.isArray(sv.inputs) ? sv : null;
+    return sv &&
+      typeof sv.seed === 'number' &&
+      Array.isArray(sv.inputs) &&
+      (!sv.version || isEdition(sv.version))
+      ? sv
+      : null;
   } catch {
     return null;
   }
@@ -74,7 +82,7 @@ function readSave(): Save | null {
 function writeSave() {
   if (!s) return;
   try {
-    localStorage.setItem(SAVE, JSON.stringify({ seed: s.seed, inputs: s.inputs }));
+    localStorage.setItem(SAVE, JSON.stringify({ version: s.version, seed: s.seed, inputs: s.inputs }));
   } catch {}
 }
 function clearSave() {
@@ -180,16 +188,16 @@ function title() {
   </div>`;
   document.getElementById('cont')?.addEventListener('click', () => {
     if (!save) return;
-    s = replay(save.seed, save.inputs);
+    s = replay(save.seed, save.inputs, undefined, save.version ?? LEGACY_VERSION);
     enter();
   });
   document.getElementById('new')?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed()));
   bindImport(document.getElementById('load'), document.getElementById('file'));
 }
 
-function newWeek(seed: number) {
+function newWeek(seed: number, version = GAME_VERSION) {
   clearSave();
-  s = newGame(seed);
+  s = newGame(seed, version);
   writeSave();
   enter();
 }
@@ -204,13 +212,19 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
     try {
       const ex = JSON.parse(await f.text()) as {
         game?: string;
+        version?: string;
         seed: number;
         inputs: Input[];
         state?: GameState;
       };
       if (typeof ex.seed !== 'number' || !Array.isArray(ex.inputs)) throw new Error('not a run');
-      const until = ex.state && ex.state.phase === 'day' ? ex.state.minute : undefined;
-      const r = replay(ex.seed, ex.inputs, until);
+      const version = ex.version ?? ex.state?.version ?? LEGACY_VERSION;
+      if (!isEdition(version) || (ex.version && ex.state?.version && ex.version !== ex.state.version))
+        throw new Error('unknown or conflicting edition');
+      const until = ex.state?.minute;
+      const r = replay(ex.seed, ex.inputs, until, version);
+      // A timeout can end a day without advancing its minute. Include that boundary.
+      if (ex.state && ex.state.phase !== 'day' && r.phase === 'day' && r.minute === until) step(r);
       let note = 'Replayed.';
       if (ex.state) {
         let want = '';
@@ -398,7 +412,7 @@ function recordHtml(record: MomentRecord): string {
     : record.quiet === 'explicit'
       ? 'You chose to say nothing.'
       : 'You said nothing · time ran out.';
-  return `<div class="moment-record"><p class="record-yours">${yours}</p><p class="record-chosen">She chose: “${esc(record.chosen.ink)}”</p></div>`;
+  return `<div class="moment-record"><p class="record-yours">${yours}</p><p class="record-chosen">She chose: “${esc(record.chosen.ink)}”</p>${thoughtHtml(record.answer)}</div>`;
 }
 
 function drawJournal(lines: LogLine[]) {
@@ -436,7 +450,8 @@ function drawSheet() {
     el.className = 'sheet open';
     el.innerHTML = cardHtml(v);
     for (const b of el.querySelectorAll<HTMLButtonElement>('button.opt')) bindHold(b);
-    document.getElementById('hush')?.addEventListener('click', hush);
+    const silence = document.getElementById('hush');
+    if (silence) bindSilence(silence);
     return;
   }
   el.className = 'sheet';
@@ -468,14 +483,14 @@ function cardHtml(v: CardView): string {
   const opts = v.options
     .map(
       (o) =>
-        `<button class="opt" data-o="${esc(o.id)}" aria-keyshortcuts="Shift+Enter" title="Tap to suggest; hold or Shift+Enter to insist."><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean hand">${esc(cue(o.lean, o.pushed))}</span>${first && RANK[o.pushed] > RANK[o.lean] ? '<span class="gesture">hold to insist · costs trust</span>' : ''}</button>`,
+        `<button class="opt" data-o="${esc(o.id)}" aria-keyshortcuts="Shift+Enter" title="Tap to suggest; hold or Shift+Enter to insist."><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean hand">${esc(o.mood ?? cue(o.lean, o.pushed))}</span>${first && RANK[o.pushed] > RANK[o.lean] ? '<span class="gesture">hold to insist · costs trust</span>' : ''}</button>`,
     )
     .join('');
   return `<div class="card ink-in">
-    <div class="timerrow"><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, v.id.length, 1)}"/></svg>${first ? '<span class="caption">she won’t wait long</span>' : ''}</div>
+    <div class="timerrow"><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, v.id.length, 1)}"/></svg><span class="caption time-left" id="time-left"></span></div>
     <div class="card-text">
       <p class="scene">${esc(v.scene)}</p>
-      ${resolve}${forecast}${pull}
+      ${resolve}${forecast}${pull}${v.recalled ? `<p class="stayed hand">“${esc(v.recalled)}” <span class="who">she thinks</span></p>` : ''}
       ${first && !v.borrowed ? '<p class="caption">the pencil is the other voice</p>' : ''}
       ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
     </div>
@@ -490,8 +505,13 @@ function drawTimer() {
   const el = document.getElementById('timer');
   if (!el) return;
   const win = Math.max(1, s.card.closesAt - s.card.openedAt);
-  const left = clamp((s.card.closesAt - s.minute - (fast ? 0 : carry)) / win, 0, 1);
+  const left = clamp((s.card.closesAt - s.minute + 1 - (fast ? 0 : carry)) / win, 0, 1);
   el.setAttribute('stroke-dasharray', `${(left * 100).toFixed(1)} 100`);
+  const time = document.getElementById('time-left');
+  if (time)
+    time.textContent = fast
+      ? 'She’s waiting for your words'
+      : `She decides in ${Math.max(1, Math.ceil(left * CARD_SECONDS))}s`;
 }
 
 /** Her reply and outcome while the day moves toward the next card. */
@@ -523,6 +543,7 @@ function gapHtml(a: Answer | null): string {
           : 'She didn’t. She did something else.';
     lines.push(`<p class="turn small">${how}</p>`);
   }
+  lines.push(thoughtHtml(a));
   const done = doneLine(s, a);
   if (done) lines.push(`<p class="n">${esc(done.text)}</p>`);
   if (a.learned)
@@ -530,6 +551,37 @@ function gapHtml(a: Answer | null): string {
   if (a.turnedAlone) lines.push(`<p class="margin hand">“${esc(a.turnedAlone)}.” Her own words now.</p>`);
   return `<div class="gap ink-in">${lines.join('')}</div>
     <div class="gap-actions"><button class="quiet" id="hurry">on with the day ▸</button></div>`;
+}
+
+/** These are her reported thoughts, not a promise to agree next time. */
+function thoughtHtml(answer: Answer): string {
+  return [answer.stayed, answer.recalled]
+    .filter((line): line is string => !!line)
+    .map((line) => `<p class="stayed hand">“${esc(line)}” <span class="who">she thinks</span></p>`)
+    .join('');
+}
+
+/** A release must belong to this control on this exact card, including silence. */
+function bindSilence(button: HTMLElement) {
+  const card = s?.card;
+  let down = false;
+  const current = () => button.isConnected && s?.card === card;
+  const cancel = () => {
+    down = false;
+  };
+  button.addEventListener('pointerdown', (event) => {
+    down = event.button === 0 && event.isPrimary && current();
+  });
+  button.addEventListener('pointerleave', cancel);
+  button.addEventListener('pointercancel', cancel);
+  button.addEventListener('pointerup', (event) => {
+    const answer = event.isPrimary && down && current();
+    cancel();
+    if (answer) hush();
+  });
+  button.addEventListener('click', (event) => {
+    if (event.detail === 0 && current()) hush();
+  });
 }
 
 function bindHold(b: HTMLButtonElement) {
@@ -643,6 +695,7 @@ function pageHtml(pg: Page): string {
     ${pg.review ? `<p class="review hand">${esc(pg.review)}</p>` : ''}
     <p class="hand her">${esc(pg.herLine)}</p>
     ${alone}
+    ${(pg.stayed ?? []).map((line) => `<p class="stayed hand">${esc(line)}</p>`).join('')}
     ${kept || missed ? `<ul class="km">${kept}${missed}</ul>` : ''}
     ${resolves ? `<div class="block"><p class="label">she means to keep</p><ul class="resolves">${resolves}</ul></div>` : ''}
     <div class="block"><p class="label">about you</p><p class="hand to-you">${esc(pg.aboutYou)}</p></div>
@@ -751,7 +804,7 @@ function backPage() {
     <input type="file" id="bp-file" accept="application/json,.json" hidden />
     <button class="row" id="bp-new">Start a new week</button>
     <button class="row" id="bp-title">Back to the cover</button>
-    <p class="soft small">Week ${s.seed}. Game ${GAME_VERSION}. Dilan is a person from the Human Framework ${FRAMEWORK_VERSION}; what she says comes from it.</p>
+    <p class="soft small">Week ${s.seed}. Edition ${s.version}. Dilan is a person from the Human Framework ${FRAMEWORK_VERSION}; what she says comes from it.</p>
     <button class="primary" id="bp-close">Close</button>
   </div>`;
   app.appendChild(el);
@@ -778,7 +831,7 @@ function backPage() {
 
 function exportRun() {
   if (!s) return null;
-  return { game: 'murmur', version: GAME_VERSION, seed: s.seed, inputs: s.inputs, state: cloneState(s) };
+  return { game: 'murmur', version: s.version, seed: s.seed, inputs: s.inputs, state: cloneState(s) };
 }
 
 function download() {
@@ -835,8 +888,8 @@ export const tester = {
   set fast(v: boolean) {
     fast = v;
   },
-  start(seed?: number) {
-    newWeek(seed ?? urlSeed() ?? randomSeed());
+  start(seed?: number, version = GAME_VERSION) {
+    newWeek(seed ?? urlSeed() ?? randomSeed(), version);
     return s;
   },
   view(): CardView | null {

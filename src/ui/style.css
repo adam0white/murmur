@@ -745,3 +745,15 @@ button:focus-visible {
     border-right: 1.5px solid var(--paper-2);
   }
 }
+
+/* Keep the response cue readable without shifting the choices each second. */
+.time-left {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+.stayed {
+  border-left: 1.5px solid var(--ink-soft);
+  padding-left: 8px;
+  color: var(--ink);
+  font-size: 20px;
+}

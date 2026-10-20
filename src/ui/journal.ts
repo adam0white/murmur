@@ -41,7 +41,7 @@ export interface MomentRecord {
  * Call once when rendering a changed journal, then index by sceneAt.
  */
 export function momentRecords(s: GameState): MomentRecord[] {
-  const history = newGame(s.seed);
+  const history = newGame(s.seed, s.version);
   const records: MomentRecord[] = [];
   const advance = (action: () => void, quiet: 'explicit' | 'timeout' | null) => {
     const card = history.card;
@@ -58,7 +58,9 @@ export function momentRecords(s: GameState): MomentRecord[] {
     action();
     const answer = history.answer;
     if (!card || history.card || !answer || answer.moment !== card.moment) return;
-    const chosen = words.get(answer.chosen);
+    const chosen =
+      words.get(answer.chosen) ??
+      (answer.chosen === 'none' ? { id: 'none', ink: 'Stay where she is.' } : undefined);
     if (!chosen) return;
     const done = history.log.slice(logLength).find((l) => l.who === 'narrator');
     records.push({
