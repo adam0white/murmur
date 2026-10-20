@@ -135,7 +135,7 @@ Cost: a single quiet phrase does not show every word she has learned. The player
 
 ## The second week (edition 0.4.0, 2026-10-20; owner may veto)
 
-What remains: a Protocol 2 retest and owner acceptance of feel. The delivery artifact is a deployed 0.4.0 whose Saturday page offers a second week; the lead designer accepts the slice, the owner accepts feel.
+What remains: owner acceptance of feel. The Protocol 2 retest ran on 2026-10-20 (human-framework `docs/lab/reviews/murmur-week2-2026-10-20/`, ledger F-367 to F-377). The delivery artifact is a deployed 0.4.0 whose Saturday page offers a second week; the lead designer accepts the slice, the owner accepts feel.
 
 Owner, 2026-10-20: "We both need more of the same as well as other campaigns." "I am her. I want to keep pushing her to do better." The lab's named trap: "more weeks whose state persists while the decisions repeat." A Codex wildcard pass proposed the theme; an adversarial review (Claude, contrarian narrative designer) cut and reshaped it. Both texts: `~/code/.lab-scratch/murmur-more/` (local).
 
@@ -171,3 +171,7 @@ Deferred (target 2026-11-03): another person's week (Aylin); replay-variety Tues
 - **The last page** shows both weeks side by side, and the two-hands line reaches back a fortnight.
 
 **Honest difficulty note.** Week two's pull is only a little louder. Engaged players still win most prompts (8 seeds, week two only: an insisting player lets the pull win 0 of 7 prompts; a reader 1 of 10.5; a silent player 8.4 of 13.3; a pull-follower 11.1 of 14.5). Week two's difficulty is in trade-offs, not in the pull: helping Ece costs Dilan's evenings and her own promises, and advice that worked for her goes wrong for someone else. Not tuned further on purpose; if the owner wants it harder, the pull bonus is one constant (`WEEK_TWO_PULL`).
+
+**Retest, 2026-10-20 (Protocol 2, phone).** Every valid tester's best moment was the same: Dilan handing Ece the advice the player gave her ("Feet on the floor. Drive it round yourself."). The worst was the routine cards (alarm, bus call, bedtime), which repeat each day with the same answers; two of three first wishes to leave came there (4:09 free, 10:55 floor; a third tester stopped satisfied at 3:03 and would return). Fixed the same day: the cover shortcut now opens Monday of the second week, and week-two labels speak in Dilan's first person.
+
+Deferred from the retest (target 2026-11-03): week-two routine cards offer a different answer or turn on most nights; "say nothing" stays above 690 px on three-answer cards; plain words for "the pencil's way" after a refusal. The routines are "more of the same" by design, so whether to vary them is the owner's call.
