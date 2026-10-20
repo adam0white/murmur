@@ -19,7 +19,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser?.close();
   await server?.close();
-});
+}, 30_000);
 
 async function firstChoice(page: Page) {
   await page.goto(`${origin}?seed=1`);
@@ -50,7 +50,8 @@ async function documentTargets(page: Page, height: number) {
   }
 }
 
-describe('first-minute clarity', () => {
+// Browser navigation and font loading can exceed Vitest's five-second unit-test default.
+describe('first-minute clarity', { timeout: 30_000 }, () => {
   it('states purpose and influence before play, keeping the biography optional', async () => {
     const page = await browser.newPage();
     try {
