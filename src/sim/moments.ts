@@ -4,6 +4,7 @@
  * pull favours without any held norm against them are places where the pull may simply be right.
  */
 import type { Ctx, Moment, Opt } from './types.ts';
+import { WEEK_TWO } from './week2.ts';
 
 const T = ['temptation'];
 /** The same moment on another day reads differently: one variant per weekday (Monday first). */
@@ -1352,8 +1353,18 @@ const saturday: Moment[] = [
   },
 ];
 
-export const MOMENTS: Moment[] = [...monday, ...tuesday, ...wednesday, ...thursday, ...friday, ...saturday];
+export const MOMENTS: Moment[] = [
+  ...monday,
+  ...tuesday,
+  ...wednesday,
+  ...thursday,
+  ...friday,
+  ...saturday,
+  ...WEEK_TWO,
+];
+/** The last day of week one. Week two (edition 0.4.0) runs days 8-13; day 7 is an offstage Sunday. */
 export const LAST_DAY = 6;
+export const WEEK_TWO_LAST_DAY = 13;
 export const momentById = (id: string): Moment => {
   const m = MOMENTS.find((x) => x.id === id);
   if (!m) throw new Error(`no moment ${id}`);

@@ -63,6 +63,14 @@ export interface Ctx {
   chosen: Record<string, string>;
   /** Saturday's voice note, composed from the week. */
   note: string;
+  /** 1 for the first week (days 1-6), 2 for the second (days 8-13; day 7 is an offstage Sunday). */
+  week: number;
+  /** 1 = Monday ... 6 = Saturday, in either week. */
+  weekday: number;
+  /** Her learned phrases, strongest practice first (HF prompting responses she kept from your words). */
+  phrases: { id: string; text: string; practice: number }[];
+  /** Week one's last page, once the run has gone on to a second week. Week two must not contradict it. */
+  weekOne?: Final;
 }
 
 export interface Flags {
@@ -84,6 +92,8 @@ export interface Flags {
   bedAt?: number;
   calls?: number;
   sent?: string;
+  /** Week-two content state, owned by src/sim/week2.ts (keys are that file's to name). */
+  w2?: Record<string, string | number | boolean>;
 }
 
 export type Verdict = 'assented' | 'complied' | 'deferred' | 'modified' | 'refused' | 'commanded';
@@ -194,6 +204,8 @@ export interface GameState {
   chosen: Record<string, string>;
   hinted: string[];
   final: Final | null;
+  /** Earlier weeks' last pages, oldest first (edition 0.4.0, after "Another week"). */
+  past?: Final[];
   /** Provenance for retained HF advice, never a parallel score. */
   thoughts?: {
     moment: string;

@@ -132,3 +132,30 @@ Retained words use action-specific acknowledgments. Their first related card can
 All changes are presentation-only. Edition **0.3.0** and the HF **2.8.0** pin stay exact. Before editing, we captured 12 final canonical full-state hashes plus 36 checkpoints and restored continuations from 052ad26, alongside the existing 0.2.1 fixtures. Retiring a displayed thought does not discharge or change HF advice. It can still influence later choices while HF retains it; the UI stops repeating it.
 
 Cost: a single quiet phrase does not show every word she has learned. The player's earlier exchange remains in the journal, so a sentence can persist as history after leaving the reply; it is not announced again as a new recall. Reversal: revert this follow-up's UI changes and tests; keep both replay fixtures. No new-run edition switch is needed.
+
+## The second week (edition 0.4.0, 2026-10-20; owner may veto)
+
+What remains: the build, a Protocol 2 retest and owner acceptance of feel. The delivery artifact is a deployed 0.4.0 whose Saturday page offers a second week; the lead designer accepts the slice, the owner accepts feel.
+
+Owner, 2026-10-20: "We both need more of the same as well as other campaigns." "I am her. I want to keep pushing her to do better." The lab's named trap: "more weeks whose state persists while the decisions repeat." A Codex wildcard pass proposed the theme; an adversarial review (Claude, contrarian narrative designer) cut and reshaped it. Both texts: `~/code/.lab-scratch/murmur-more/` (local).
+
+**Theme: getting better causes trouble.** Last week Dilan got a little more dependable. This week somebody starts depending on her. Ece's title for it: "Leave it with me."
+
+- **The same person goes on.** After Saturday's last page, a quiet "Another week" continues the same run: her trust in both voices, her phrases and their practice, habits, tiredness, and every open thread. Finished 0.3.0 runs can continue too: week one under 0.4.0 is rule-for-rule and line-for-line 0.3.0, so the old inputs replay as 0.4.0 and go on. The 0.3.0 export itself still replays as 0.3.0.
+- **Week one's last page is canon.** Its thread lines and closing line ("On Sunday she rang anyway", "Ece has her own columns now", "Aylin came round on Saturday for the shelf", the lock screen) are true in week two. Nothing in week two contradicts them.
+- **More of the same, at the same density.** Five or six cards a day: the alarm, the bus home (the call to Mum), bed, and three new situations. Habits she built show as lines she does unasked. While "Feet on the floor" is strong she gets up alone and the journal says so.
+- **One new kind of choice a day:**
+  - Monday, *accept help*: Ece offers to clear the returns. Let her, or redo them herself. Mum's answer to Saturday opens the day; a tenancy renewal letter arrives and is never explained.
+  - Tuesday, *your words in her mouth*: Ece asks Dilan how to handle something, and Dilan answers with a phrase she learned from you. It may be wrong for Ece. Let it stand, soften it, or tell her to ask Ece what she thinks. Ece also asks for practice on the board: Dilan promises twenty minutes, Thursday evening, or nothing (an HF promise to Ece).
+  - Wednesday, *correct your own advice*: the pull quotes her own learned phrase, bent ("Just say it plainly. In front of everyone."). Then Ece makes a mistake: correct her privately or across the room. The evening is family.
+  - Thursday, *let another method stand*: Ece runs the board her own way. It works, and Dilan can't read it. Leave it, change it together, or put it back. Any promise to Ece falls due on the same evening as Dilan's own thread.
+  - Friday, *take back a promise*: she wants the early bus, and something is in her bag. Ece asks her to stay. Stay, withdraw a promise openly (HF `release`), or slip out.
+  - Saturday: Ece's message about the week, then the last page with both weeks.
+- **Kept unresolved for good:** who was cropped out of the photo, what ended, the subscription, the tenancy letter, what is in her bag on Friday.
+- **The edge we keep:** leaving can be selfish and still work. Staying can help Ece and cost Dilan something she won't explain. Kindness gets no guaranteed reward. The week-two pull is harder, because it uses her own phrases.
+
+Cut after review: a Sunday "aim for the week" (it read as a quest log with a pass/fail stamp), and a Tuesday double booking that repeated Wednesday of week one. HF pin stays 2.8.0 (`promise`, `release` and promptings cover the slice).
+
+**Replay and revert:** 0.2.1 and 0.3.0 saves stay on their editions and end on Saturday as before. New runs use `GAME_VERSION` 0.4.0. To revert the default, set it to `'0.3.0'` and deploy; keep the 0.4.0 branch so existing week-two runs replay.
+
+Deferred (target 2026-11-03): another person's week (Aylin); replay-variety Tuesdays; a Sunday aim, if Saturday of week two feels aimless; Ece and Mum as HF persons.

@@ -56,7 +56,26 @@ import type {
 export const GAME_VERSION = '0.3.0';
 export const LEGACY_VERSION = '0.2.1';
 export const isEdition = (version: string) => version === LISTENING_EDITION || version === LEGACY_VERSION;
-export const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+export const DAY_NAMES = [
+  '',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+/** Edition 0.4.0 adds a second week after Saturday's last page. */
+export const WEEK_TWO_EDITION = '0.4.0';
+export const weekOf = (day: number) => (day <= 7 ? 1 : 2);
+export const weekdayOf = (day: number) => ((day - 1) % 7) + 1;
 const WINDOW = 5;
 const SAY = 0.6;
 const INSIST = 0.85;
@@ -136,6 +155,16 @@ export function ctxOf(s: GameState): Ctx {
     tired: bedLate || bedSmall || p.body.sleepPressure > 0.55,
     chosen: s.chosen,
     note: voiceNote(s),
+    week: weekOf(s.day),
+    weekday: weekdayOf(s.day),
+    phrases: s.phrases
+      .map((ph) => ({
+        id: ph.id,
+        text: ph.text,
+        practice: p.promptings?.responses.find((r) => r.id === ph.id)?.practice ?? 0,
+      }))
+      .sort((a, b) => b.practice - a.practice),
+    ...(s.past?.[0] ? { weekOne: s.past[0] } : {}),
   };
 }
 
@@ -920,6 +949,18 @@ function finalPage(s: GameState): Final {
     hands: { start: first, end: { you: trustOf(p, YOU), pull: trustOf(p, PULL) } },
     line,
   };
+}
+
+// ---------- another week ----------
+
+/** Whether this finished run can go on to a second week (0.4.0 runs, and finished 0.3.0 runs replayed as 0.4.0). */
+export function canAnotherWeek(_s: GameState): boolean {
+  return false;
+}
+
+/** The same run, going on into week two. Returns the state to continue with (a new object for a 0.3.0 run). */
+export function anotherWeek(_s: GameState): GameState {
+  throw new Error('not yet');
 }
 
 // ---------- saves and replays ----------
