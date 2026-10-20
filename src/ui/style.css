@@ -1,4 +1,4 @@
-/* Field Notebook tokens (human-framework docs/design-language.md). Only --rope is loud, and here it means: insist. */
+/* Field Notebook tokens (human-framework docs/design-language.md). --rope marks the current responses. */
 :root {
   --paper: #f3ecdd;
   --paper-2: #e9dfcb;
@@ -180,6 +180,15 @@ button:focus-visible {
   gap: 10px;
   margin-top: 8px;
 }
+.about summary {
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+.about p {
+  margin-top: 12px;
+}
 /* One header, the same size and place on every screen. */
 .top {
   display: grid;
@@ -201,8 +210,8 @@ button:focus-visible {
 }
 .menu-btn {
   width: 44px;
-  height: 40px;
-  min-height: 40px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   background: transparent;
   border-color: var(--ink-soft);
@@ -347,7 +356,7 @@ button:focus-visible {
 }
 .hush {
   align-self: flex-start;
-  min-height: 40px;
+  min-height: 44px;
   padding: 4px 12px;
   background: transparent;
   border: 1.5px dashed var(--ink-soft);
@@ -431,6 +440,8 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  border-left: 3px solid var(--rope);
+  padding-left: 8px;
 }
 .opt {
   position: relative;

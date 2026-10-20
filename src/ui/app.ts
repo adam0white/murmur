@@ -93,8 +93,8 @@ const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
 /** Trust as a 0..1 position on the page (never shown as a number). */
 const pos = (t: number) => clamp((t - 0.25) / 0.5, 0, 1);
 /** The pull's pencil: its hand grows with her trust in it. */
-const pencilStyle = (t: number) =>
-  `font-size:${(18 + pos(t) * 16).toFixed(1)}px;transform:rotate(${(-1.2 - pos(t) * 1.6).toFixed(2)}deg)`;
+const pencilStyle = (t: number, growth = 16) =>
+  `font-size:${(18 + pos(t) * growth).toFixed(1)}px;transform:rotate(${(-1.2 - pos(t) * 1.6).toFixed(2)}deg)`;
 /** Your ink: heavier and darker as she trusts you. */
 const inkStyle = (t: number) =>
   `font-weight:${Math.round(330 + pos(t) * 330)};color:color-mix(in srgb, var(--ink) ${Math.round(48 + pos(t) * 52)}%, var(--ink-soft))`;
@@ -161,9 +161,13 @@ function title() {
   const save = readSave();
   app.innerHTML = `${header(false)}<div class="page title">
     <h1>The Two Voices</h1>
-    <p class="soft">an ordinary week, from the inside</p>
-    <p>Dilan is thirty-three. She dispatches vans at a courier depot in the town she came back to.</p>
-    <p>There are two voices in her head. One is yours. <span class="hand pencil-inline">The other got there first.</span></p>
+    <p>Accompany Dilan through her week. Your words can change her choices and become her own.</p>
+    <details class="about">
+      <summary>More about Dilan</summary>
+      <p class="soft">an ordinary week, from the inside</p>
+      <p>Dilan is thirty-three. She dispatches vans at a courier depot in the town she came back to.</p>
+      <p>There are two voices in her head. One is yours. <span class="hand pencil-inline">The other got there first.</span></p>
+    </details>
     <div class="grow"></div>
     <div class="actions">
       ${save ? '<button class="primary" id="cont">Continue the week</button>' : ''}
@@ -425,7 +429,7 @@ function cardHtml(v: CardView): string {
     : (v.hint ?? (first ? 'Tap one to say it.' : undefined));
   const pull = v.borrowed
     ? `<p class="pull borrowed" style="${inkStyle(tYou)}">${esc(v.pullLine)}</p>`
-    : `<p class="pull hand" style="${pencilStyle(tPull)}">${esc(v.pullLine)}</p>`;
+    : `<p class="pull hand" style="${pencilStyle(tPull, 6)}">${esc(v.pullLine)}</p>`;
   const resolve = v.resolve
     ? `<p class="resolve">${tally(v.resolve.marks, v.id.length)}<span class="hand">${esc(v.resolve.line)}</span></p>`
     : '';
