@@ -1,0 +1,153 @@
+{
+  "seed": 2,
+  "inputs": [
+    {
+      "kind": "say",
+      "option": "up",
+      "insist": true,
+      "at": 576401
+    },
+    {
+      "kind": "say",
+      "option": "read",
+      "insist": false,
+      "at": 576436
+    },
+    {
+      "kind": "say",
+      "option": "talk",
+      "insist": false,
+      "at": 576641
+    },
+    {
+      "kind": "say",
+      "option": "defend",
+      "insist": true,
+      "at": 576761
+    },
+    {
+      "kind": "say",
+      "option": "coffee",
+      "insist": false,
+      "at": 576921
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "insist": false,
+      "at": 577091
+    },
+    {
+      "kind": "say",
+      "option": "sleep",
+      "insist": true,
+      "at": 577291
+    },
+    {
+      "kind": "next",
+      "at": 577291
+    },
+    {
+      "kind": "say",
+      "option": "snooze",
+      "insist": true,
+      "at": 577841
+    },
+    {
+      "kind": "say",
+      "option": "truth",
+      "insist": false,
+      "at": 577946
+    },
+    {
+      "kind": "say",
+      "option": "own",
+      "insist": false,
+      "at": 578111
+    },
+    {
+      "kind": "say",
+      "option": "sit",
+      "insist": true,
+      "at": 578201
+    },
+    {
+      "kind": "say",
+      "option": "walk",
+      "insist": false,
+      "at": 578361
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "insist": false,
+      "at": 578531
+    },
+    {
+      "kind": "say",
+      "option": "sleep",
+      "insist": true,
+      "at": 578731
+    },
+    {
+      "kind": "next",
+      "at": 578731
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "insist": true,
+      "at": 579281
+    },
+    {
+      "kind": "say",
+      "option": "read",
+      "insist": false,
+      "at": 579316
+    },
+    {
+      "kind": "say",
+      "option": "laugh",
+      "insist": false,
+      "at": 579641
+    },
+    {
+      "kind": "say",
+      "option": "no",
+      "insist": true,
+      "at": 579891
+    },
+    {
+      "kind": "say",
+      "option": "truth",
+      "insist": false,
+      "at": 580066
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "insist": false,
+      "at": 580181
+    },
+    {
+      "kind": "next",
+      "at": 580181
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "insist": false,
+      "at": 580721
+    },
+    {
+      "kind": "say",
+      "option": "lie",
+      "insist": true,
+      "at": 580826
+    }
+  ],
+  "minute": 580891,
+  "completion": 580894,
+  "option": "yes",
+  "words": "Not now. After I say next week. I could have heard \u201cSay next week.\u201d When the next moment comes, try a different suggestion, or say nothing."
+}

@@ -79,6 +79,16 @@ One `Person` (Dilan). Voices `you` and `pull`. Opt-ins: fatigue store, prompting
 - Faith stays quiet and unnamed. The prompting reading is never shown.
 - Short lines, at most two lines of scene per card. One laugh in the first minute.
 
+## Clarity follow-up (2026-10-20, F-229)
+
+The delivery artifact for this round is the implementation report at `human-framework/scratch/followups/murmur-report.md`, with tests, rendered phone/desktop evidence, a signed commit and a matching clean live release. The Opus driver accepts the follow-up; the owner accepts feel separately.
+
+- **DL-15:** one line beside the running day reports the current simulation minutes per real second and why it is slow (a waiting choice or reading her reply). The existing playback rates, minute steps, decisions and exports stay unchanged. The game menu keeps the clock running.
+- **DL-26:** the menu button's accessible name and panel title are “Game menu”. Local export is “Download this run” in both menu and ending; the collection link is “All games”.
+- **DL-4/DL-5:** a declined suggestion keeps her original reply and adds a possible response in her words. A pure reconstruction of that exact decision forecasts whether insisting could have carried. If so, she names pressing and holding a future suggestion. If pushing no longer carries, she asks for a plain word or silence. Otherwise she can name an alternative she was willing to hear. Every line makes clear that the resolved moment stays resolved; agreement is never promised.
+- **Verification:** deterministic refusal tests, a pre-change 0.2.1 full-state replay/continuation hash fixture generated from commit `60e926d`, browser rate/menu/download tests, and touch-emulated 360×690 plus 1280×800 renders. Long refusal plus completed narration fits; the response control keeps its position when narration arrives. No simulation or HF dependency change.
+- **Acceptance limit:** this is builder verification. Leyla's willingness to return needs another source-unread playtest; this round does not claim to establish it.
+
 ## Deferred (target: 2026-11-03)
 - More campaigns, including a second week.
 - Other people as HF persons (Ece, Mum).

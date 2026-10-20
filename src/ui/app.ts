@@ -26,6 +26,7 @@ import {
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
 import { doneLine, journalLines } from './journal.ts';
 import { lab } from './lab.ts';
+import { replyWords } from './reply.ts';
 
 const SAVE = 'murmur-save-v1';
 /** Real seconds an open card lasts (its whole window). */
@@ -126,10 +127,10 @@ const rule = (key: number) =>
 const markLink = '<a class="mark" href="https://human.adamwhite.work/">◇ human framework</a>';
 /** The same header on every screen: mark, the day and clock (on the day screen), the back-page button. */
 const header = (menu = true, when = false) =>
-  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname hand"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="The back page">≡</button>' : '<span></span>'}</header>`;
+  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname hand"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="Game menu">≡</button>' : '<span></span>'}</header>${when ? '<p class="pace" id="pace"></p>' : ''}`;
 const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 };
 const footer = () =>
-  '<div class="footer"><a href="https://human.adamwhite.work/games/">◇ all notebooks</a></div>';
+  '<div class="footer"><a href="https://human.adamwhite.work/games/">◇ All games</a></div>';
 
 /** Her mood about each option, in a few words: never a number, never odds. */
 function cue(lean: Lean, pushed: Lean, day: number): string {
@@ -364,6 +365,17 @@ function drawDay() {
     const j = document.getElementById('journal');
     if (j) j.scrollTop = j.scrollHeight;
   }
+  const pace = document.getElementById('pace');
+  if (pace) {
+    const now = performance.now();
+    const speed = rate(now);
+    const amount = speed < 1 ? speed.toFixed(2) : speed.toFixed(0);
+    const mode = s.card ? 'choice waiting' : speed === 1 ? 'reading her reply' : 'between moments';
+    pace.textContent =
+      s.phase !== 'day'
+        ? 'Day ended · clock stopped'
+        : `${s.card || speed === 1 ? 'Slow' : 'Fast'} · ${amount} min/s · ${mode}`;
+  }
   drawTimer();
 }
 
@@ -478,7 +490,8 @@ function gapHtml(a: Answer | null): string {
       `<p class="yousaid"><span class="ink" style="${inkStyle(trustOf(p, YOU))}">${esc(yours)}</span>${a.insisted ? ' <span class="insisted">you insisted</span>' : ''}</p>`,
     );
   else if (!a.said) lines.push(`<p class="soft">${quiet ? 'You let her be.' : 'You said nothing.'}</p>`);
-  if (a.says) lines.push(`<p class="her hand">“${esc(a.says)}” <span class="who">she says</span></p>`);
+  const reply = replyWords(s, a);
+  if (reply) lines.push(`<p class="her hand">“${esc(reply)}” <span class="who">she says</span></p>`);
   // Say plainly when she did not do what you said, before the narrator line shows what she did.
   if (a.said && a.said !== a.chosen) {
     const how =
@@ -630,7 +643,7 @@ function ending() {
     <div class="grow"></div>
     <div class="actions">
       <button class="primary" id="again">Another week</button>
-      <button class="quiet" id="export">Export this run</button>
+      <button class="quiet" id="export">Download this run</button>
       <button class="quiet" id="send">Send this run to the notebook</button>
     </div>
     ${footer()}
@@ -701,9 +714,9 @@ function backPage() {
   // The back page is a sheet over the day; time keeps its slow pace under it.
   const el = document.createElement('div');
   el.className = 'backpage-wrap';
-  el.innerHTML = `<div class="backpage ink-in" role="dialog" aria-label="The back page">
-    <p class="label">the back page</p>
-    <button class="row" id="bp-export">Export this run</button>
+  el.innerHTML = `<div class="backpage ink-in" role="dialog" aria-label="Game menu">
+    <p class="label">Game menu</p>
+    <button class="row" id="bp-export">Download this run</button>
     <button class="row" id="bp-send">Send this run to the notebook</button>
     <button class="row" id="bp-load">Replay a run file</button>
     <input type="file" id="bp-file" accept="application/json,.json" hidden />
