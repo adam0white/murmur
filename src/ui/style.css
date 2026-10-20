@@ -68,6 +68,14 @@ body {
 a {
   color: var(--ink);
 }
+.mark,
+.footer a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+}
 p {
   margin: 0;
   max-width: 60ch;
@@ -191,19 +199,22 @@ button:focus-visible {
 }
 /* One header, the same size and place on every screen. */
 .top {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 44px;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  height: calc(52px + var(--safe-t));
+  min-height: calc(52px + var(--safe-t));
   padding: var(--safe-t) 12px 0 16px;
   flex: 0 0 auto;
 }
 .top .mark {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: 1 1 120px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  justify-content: flex-start;
 }
 .when {
+  margin-left: auto;
   display: flex;
   align-items: baseline;
   gap: 8px;
@@ -327,18 +338,20 @@ button:focus-visible {
   gap: 8px;
   flex: 0 1 auto;
   min-height: 0;
+  overflow-y: auto;
   background: var(--paper-2);
   border: 1.5px solid var(--ink);
   border-radius: 12px 10px 13px 9px;
   padding: 8px 12px 10px;
 }
+.card > * {
+  flex-shrink: 0;
+}
 .card-text {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-y: auto;
-  min-height: 0;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
 }
 .timerrow {
   display: flex;
@@ -349,7 +362,7 @@ button:focus-visible {
   font-size: 13px;
   font-style: italic;
   color: var(--ink-soft);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .caption.right {
   text-align: right;
@@ -448,6 +461,7 @@ button:focus-visible {
   overflow: hidden;
   text-align: left;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   min-height: 54px;
@@ -462,14 +476,17 @@ button:focus-visible {
   border-radius: 9px 11px 12px 10px;
 }
 .opt .ink {
-  flex: 1;
+  flex: 1 1 8rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
   position: relative;
 }
 .opt .lean {
   position: relative;
   font-size: 18px;
   color: var(--ink-soft);
-  white-space: nowrap;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .opt .fill {
   position: absolute;

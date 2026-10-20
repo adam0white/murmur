@@ -82,3 +82,5 @@ One `Person` (Dilan). Voices `you` and `pull`. Opt-ins: fatigue store, prompting
 ## Deferred (target: 2026-11-03)
 - More campaigns, including a second week.
 - Other people as HF persons (Ece, Mum).
+- DL-27 exact resume and saved-location sentence (review finding 1; target 2026-11-03): versioned snapshots, legacy migration and reload tests need a separate persistence change; current seed/input-only Continue can skip an unanswered interval.
+- DL-28 replay-preserving send compaction (review finding 4; target 2026-11-03): both send paths need a compact export contract with exact in-progress replay boundaries and representative upload-bound tests.
