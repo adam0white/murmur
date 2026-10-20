@@ -26,6 +26,55 @@ function first(option: string, insist = false): GameState {
 }
 
 describe('refusal recovery in her words', () => {
+  it('answers each Monday refusal with a possible change specific to that moment', () => {
+    const s = newGame(9);
+    const route = [
+      ['alarm-1', 'up', /next.*alarm.*hold.*feet/i],
+      ['note-1', 'reply', /Aylin.*bus.*hold/i],
+      ['late-1', 'truth', /Murat.*overslept.*hold/i],
+      ['ece-1', 'talk', /already late.*Ece.*hold/i],
+      ['lunch-1', 'defend', /Ece.*speak up.*hold/i],
+      ['slump-1', 'coffee', null],
+      ['bus-1', 'call', /Mum.*bus.*hold/i],
+    ] as const;
+    const recoveries: string[] = [];
+    for (const [moment, option, context] of route) {
+      runToCard(s);
+      expect(s.card?.moment).toBe(moment);
+      queueInput(s, { kind: 'say', option });
+      if (!context) continue;
+      const a = answer(s);
+      expect(a.chosen).not.toBe(option);
+      const words = replyWords(s, a) as string;
+      expect(words).toContain(a.says);
+      const recovery = words.slice(a.says?.length ?? 0).trim();
+      expect(recovery).toMatch(context);
+      expect(recovery).toMatch(/might|could/i);
+      expect(recovery).toMatch(/next|another time/i);
+      recoveries.push(recovery);
+    }
+    expect(new Set(recoveries).size).toBe(6);
+  });
+
+  it('remembers her tiredness when she refuses the next alarm', () => {
+    const s = newGame(9);
+    while (s.day === 1) {
+      if (s.phase === 'evening') {
+        queueInput(s, { kind: 'next' });
+      } else {
+        runToCard(s);
+        queueInput(s, { kind: 'quiet' });
+      }
+    }
+    runToCard(s);
+    expect(s.card?.moment).toBe('alarm-2');
+    queueInput(s, { kind: 'say', option: 'up' });
+    expect(answer(s).chosen).toBe('snooze');
+    expect(replyWords(s, answer(s))).toMatch(/still tired/i);
+    const rested = first('up');
+    expect(replyWords(rested, answer(rested))).not.toMatch(/still tired/i);
+  });
+
   it('offers a hold next time when a tap refused but insisting could carry at the decision', () => {
     const s = first('up');
     const a = answer(s);

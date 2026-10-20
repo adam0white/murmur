@@ -24,7 +24,7 @@ import {
   trustOf,
 } from '../sim/game.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
-import { doneLine, journalLines } from './journal.ts';
+import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
 import { lab } from './lab.ts';
 import { replyWords } from './reply.ts';
 
@@ -56,7 +56,7 @@ let hurry = false;
 let turnAt = 0;
 let view: { key: string; v: CardView } | null = null;
 let drawn = { log: '', sheet: '' };
-let lastSaid: Record<string, string> = {};
+let history: { state: GameState; minute: number; applied: number; records: MomentRecord[] } | null = null;
 let toast = '';
 let wake: { release(): Promise<void> } | null = null;
 
@@ -133,10 +133,10 @@ const footer = () =>
   '<div class="footer"><a href="https://human.adamwhite.work/games/">◇ All games</a></div>';
 
 /** Her mood about each option, in a few words: never a number, never odds. */
-function cue(lean: Lean, pushed: Lean, day: number): string {
+function cue(lean: Lean, pushed: Lean): string {
   if (lean === 'yes') return 'she’s willing';
   if (lean === 'if pushed') return 'she’d grumble';
-  if (day >= 2 && (pushed === 'yes' || pushed === 'if pushed')) return 'only with a push';
+  if (pushed === 'yes' || pushed === 'if pushed') return 'only with a push';
   if (lean === 'later') return 'she’d put it off';
   return 'she’s against it';
 }
@@ -335,7 +335,6 @@ function currentView(): CardView | null {
     const v = cardView(s);
     if (!v) return null;
     view = { key, v };
-    lastSaid = Object.fromEntries(v.options.map((o) => [o.id, o.ink]));
   }
   return view.v;
 }
@@ -384,20 +383,40 @@ function actedOn(at: number, until: number): boolean {
   return !!s?.inputs.some((i) => (i.kind === 'say' || i.kind === 'quiet') && i.at >= at && i.at < until);
 }
 
+/** Presentation cache only; the records are reconstructed without changing the simulation. */
+function records(): MomentRecord[] {
+  if (!s) return [];
+  if (history?.state !== s || history.minute !== s.minute || history.applied !== s.applied) {
+    history = { state: s, minute: s.minute, applied: s.applied, records: momentRecords(s) };
+  }
+  return history.records;
+}
+
+function recordHtml(record: MomentRecord): string {
+  const yours = record.said
+    ? `You suggested${record.insisted ? ' · you insisted' : ''}: “${esc(record.said.ink)}”`
+    : record.quiet === 'explicit'
+      ? 'You chose to say nothing.'
+      : 'You said nothing · time ran out.';
+  return `<div class="moment-record"><p class="record-yours">${yours}</p><p class="record-chosen">She chose: “${esc(record.chosen.ink)}”</p></div>`;
+}
+
 function drawJournal(lines: LogLine[]) {
   if (!s) return;
   const el = document.getElementById('journal');
   if (!el) return;
   const scenes = lines.filter((l) => l.who === 'scene').map((l) => l.at);
+  const past = new Map(records().map((record) => [record.sceneAt, record]));
   const head = lines.length === 0 ? `<p class="jhead hand">${esc(DAY_NAMES[s.day] ?? '')}</p>` : '';
   el.innerHTML = `${head}${lines
     .map((l) => {
       if (l.who === 'scene') {
         const next = scenes.find((x) => x > l.at) ?? Number.POSITIVE_INFINITY;
-        const away = !actedOn(l.at, next);
+        const record = past.get(l.at);
+        const away = record ? record.quiet === 'timeout' : !actedOn(l.at, next);
         // Most scenes start with their own time; don't stamp it twice.
         const stamp = /^\d\d:\d\d/.test(l.text) ? '' : `<span class="jt">${clock(l.at)}</span> `;
-        return `${away ? '<p class="away">while you were away</p>' : ''}<p class="jl jscene">${stamp}${esc(l.text)}</p>`;
+        return `${away ? '<p class="away">while you were away</p>' : ''}<p class="jl jscene">${stamp}${esc(l.text)}</p>${record && (s?.card || s?.answer?.moment !== record.moment) ? recordHtml(record) : ''}`;
       }
       if (l.who === 'pull') return `<p class="jl pencil">${esc(l.text)}</p>`;
       if (l.who === 'dilan') return `<p class="jl hand her">“${esc(l.text.replace(/\.$/, ''))}.”</p>`;
@@ -435,7 +454,7 @@ function cardHtml(v: CardView): string {
   const tPull = trustOf(p, PULL);
   const first = s.day === 1 && v.id === 'alarm-1';
   // Holding helps only while she trusts you enough; when a hold would land worse than a tap, say so in words.
-  const pushSore = s.day >= 2 && v.options.some((o) => RANK[o.pushed] < RANK[o.lean]);
+  const pushSore = v.options.some((o) => RANK[o.pushed] < RANK[o.lean]);
   const hint = pushSore
     ? 'She’s had enough of being pushed. A hold now lands worse than a word.'
     : (v.hint ?? (first ? 'Tap one to say it.' : undefined));
@@ -449,7 +468,7 @@ function cardHtml(v: CardView): string {
   const opts = v.options
     .map(
       (o) =>
-        `<button class="opt" data-o="${esc(o.id)}"><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean hand">${esc(cue(o.lean, o.pushed, s?.day ?? 1))}</span></button>`,
+        `<button class="opt" data-o="${esc(o.id)}" aria-keyshortcuts="Shift+Enter" title="Tap to suggest; hold or Shift+Enter to insist."><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean hand">${esc(cue(o.lean, o.pushed))}</span>${first && RANK[o.pushed] > RANK[o.lean] ? '<span class="gesture">hold to insist · costs trust</span>' : ''}</button>`,
     )
     .join('');
   return `<div class="card ink-in">
@@ -482,14 +501,16 @@ function gapHtml(a: Answer | null): string {
     return `<div class="gap"><p class="soft">${s.day === 1 ? 'Her alarm is about to go.' : 'The day starts.'}</p></div>`;
   }
   const p = s.person;
-  const yours = a.said ? lastSaid[a.said] : undefined;
+  const record = records().find((r) => r.moment === a.moment && r.answer.at === a.at);
+  const yours = record?.said?.ink;
   const quiet = !a.said && s.inputs.some((i) => i.kind === 'quiet' && i.at === a.at);
   const lines: string[] = [];
   if (yours)
     lines.push(
-      `<p class="yousaid"><span class="ink" style="${inkStyle(trustOf(p, YOU))}">${esc(yours)}</span>${a.insisted ? ' <span class="insisted">you insisted</span>' : ''}</p>`,
+      `<p class="yousaid"><span class="record-label">You suggested: </span><span class="ink" style="${inkStyle(trustOf(p, YOU))}">${esc(yours)}</span>${a.insisted ? ' <span class="insisted">you insisted</span>' : ''}</p>`,
     );
   else if (!a.said) lines.push(`<p class="soft">${quiet ? 'You let her be.' : 'You said nothing.'}</p>`);
+  if (record) lines.push(`<p class="herchoice">She chose: “${esc(record.chosen.ink)}”</p>`);
   const reply = replyWords(s, a);
   if (reply) lines.push(`<p class="her hand">“${esc(reply)}” <span class="who">she says</span></p>`);
   // Say plainly when she did not do what you said, before the narrator line shows what she did.
@@ -516,13 +537,19 @@ function bindHold(b: HTMLButtonElement) {
   let fired = false;
   let down = false;
   const option = b.dataset.o ?? '';
+  const card = s?.card;
+  const gesture = b.querySelector('.gesture');
+  const label = gesture?.textContent ?? '';
+  const current = () => b.isConnected && s?.card === card;
   b.addEventListener('contextmenu', (e) => e.preventDefault());
   b.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || !e.isPrimary || !current() || down) return;
     down = true;
     fired = false;
     b.classList.add('holding');
+    if (gesture) gesture.textContent = 'insisting… · costs trust';
     timer = window.setTimeout(() => {
+      if (!down || !current()) return;
       fired = true;
       b.classList.remove('holding');
       b.classList.add('insisted');
@@ -533,17 +560,19 @@ function bindHold(b: HTMLButtonElement) {
     down = false;
     clearTimeout(timer);
     b.classList.remove('holding');
+    if (gesture) gesture.textContent = label;
   };
   b.addEventListener('pointerleave', cancel);
   b.addEventListener('pointercancel', cancel);
-  b.addEventListener('pointerup', () => {
-    const was = down;
+  b.addEventListener('pointerup', (e) => {
+    if (!e.isPrimary) return;
+    const was = down && current();
     cancel();
     if (was && !fired) sayIt(option, false);
   });
   // Keyboard: Enter or Space says it; Shift+Enter insists.
   b.addEventListener('click', (e) => {
-    if (e.detail === 0) sayIt(option, e.shiftKey);
+    if (e.detail === 0 && current()) sayIt(option, e.shiftKey);
   });
 }
 

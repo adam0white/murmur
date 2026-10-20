@@ -160,7 +160,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
       await page.locator('.opt[data-o="up"]').click();
-      expect(await page.locator('.gap .her').innerText()).toContain('press and hold a suggestion to insist');
+      expect(await page.locator('.gap .her').innerText()).toMatch(/next.*alarm.*press and hold/i);
       for (const selector of ['#pace', '.yousaid', '.gap .her', '.turn', '#hurry']) {
         const box = await page.locator(selector).boundingBox();
         expect(box?.y).toBeGreaterThanOrEqual(0);
@@ -320,4 +320,189 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.close();
     }
   });
+});
+
+describe('round 4 early insistence', { timeout: 30_000 }, () => {
+  it('lets a real touch hold carry the first ordinary suggestion before any refusals', async () => {
+    const page = await browser.newPage({
+      viewport: { width: 360, height: 690 },
+      hasTouch: true,
+      reducedMotion: 'reduce',
+    });
+    try {
+      await firstChoice(page);
+      await page.evaluate(() => {
+        (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
+      });
+      await page.evaluate(() => document.fonts.ready);
+      await page.clock.install();
+      const up = page.locator('.opt[data-o="up"]');
+      expect(await up.locator('.lean').innerText()).toBe('only with a push');
+      expect(await up.locator('.gesture').innerText()).toContain('hold to insist');
+      const box = await up.boundingBox();
+      if (!box) throw new Error('No alarm suggestion');
+      const touch = await page.context().newCDPSession(page);
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: box.x + 30, y: box.y + 25 }],
+      });
+      await page.clock.runFor(300);
+      expect(await up.locator('.gesture').innerText()).toContain('insisting');
+      expect((await up.boundingBox())?.y).toBe(box.y);
+      await page.clock.runFor(350);
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      const run = await page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              __murmur: {
+                state: { seed: number; inputs: Input[]; minute: number; answer: { chosen: string } };
+              };
+            }
+          ).__murmur.state,
+      );
+      expect(run.inputs).toHaveLength(1);
+      expect(run.inputs[0]).toMatchObject({ kind: 'say', option: 'up', insist: true });
+      expect(run.answer.chosen).toBe('up');
+      expect(await page.locator('.yousaid').innerText()).toContain('you insisted');
+      expect(cloneState(replay(run.seed, run.inputs, run.minute))).toEqual(run);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('does not send an old hold to the next card and supports keyboard insistence', async () => {
+    const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
+    try {
+      await firstChoice(page);
+      await page.evaluate(() => {
+        (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
+      });
+      await page.evaluate(() => document.fonts.ready);
+      await page.clock.install();
+      const up = page.locator('[data-o="up"]');
+      const box = await up.boundingBox();
+      if (!box) throw new Error('No alarm suggestion');
+      const touch = await page.context().newCDPSession(page);
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: box.x + 30, y: box.y + 25 }],
+      });
+      await page.clock.runFor(200);
+      await page.evaluate(() => {
+        const game = (window as unknown as { __murmur: { quiet(): void; skipToCard(): void } }).__murmur;
+        game.quiet();
+        game.skipToCard();
+      });
+      await page.clock.runFor(600);
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      const inputs = await page.evaluate(
+        () => (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs,
+      );
+      expect(inputs).toHaveLength(1);
+      expect(inputs[0]?.kind).toBe('quiet');
+      await page.locator('[data-o="reply"]').focus();
+      await page.keyboard.press('Shift+Enter');
+      const last = await page.evaluate(() =>
+        (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs.at(-1),
+      );
+      expect(last).toMatchObject({ kind: 'say', option: 'reply', insist: true });
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('cancels an unfinished touch hold and keeps an ordinary tap available', async () => {
+    const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
+    try {
+      await firstChoice(page);
+      await page.evaluate(() => {
+        (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
+      });
+      await page.evaluate(() => document.fonts.ready);
+      await page.clock.install();
+      const up = page.locator('.opt[data-o="up"]');
+      const box = await up.boundingBox();
+      if (!box) throw new Error('No alarm suggestion');
+      const touch = await page.context().newCDPSession(page);
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: box.x + 30, y: box.y + 25 }],
+      });
+      await page.clock.runFor(250);
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+      await page.clock.runFor(700);
+      expect(await up.locator('.gesture').innerText()).toContain('hold to insist');
+      expect(
+        await page.evaluate(
+          () =>
+            (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs.length,
+        ),
+      ).toBe(0);
+      await up.tap();
+      const input = await page.evaluate(
+        () => (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs[0],
+      );
+      expect(input).toMatchObject({ kind: 'say', option: 'up' });
+      expect(input && 'insist' in input ? input.insist : false).not.toBe(true);
+    } finally {
+      await page.close();
+    }
+  });
+});
+
+describe('round 4 suggestion history', { timeout: 30_000 }, () => {
+  it.each([
+    { width: 360, height: 690 },
+    { width: 1280, height: 800 },
+  ])(
+    'retains the suggestion and her choice after advancing and importing at $width×$height',
+    async (viewport) => {
+      const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
+      try {
+        await firstChoice(page);
+        await page.evaluate(() => {
+          (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
+        });
+        await page.locator('[data-o="up"]').click();
+        expect(await page.locator('.journal .moment-record').count()).toBe(0);
+        expect(await page.locator('.yousaid').innerText()).toContain('Up. Feet on the floor.');
+        expect(await page.locator('.herchoice').count()).toBe(1);
+        expect(await page.locator('.herchoice').innerText()).toContain('Five more.');
+        const after = await page.evaluate(
+          () => (window as unknown as { __murmur: { state: unknown } }).__murmur.state,
+        );
+        await page.getByRole('button', { name: 'Game menu', exact: true }).click();
+        await page.locator('#bp-file').setInputFiles({
+          name: 'reply.json',
+          mimeType: 'application/json',
+          buffer: Buffer.from(
+            JSON.stringify({
+              seed: (after as { seed: number }).seed,
+              inputs: (after as { inputs: Input[] }).inputs,
+              state: after,
+            }),
+          ),
+        });
+        expect(await page.locator('.journal .moment-record').count()).toBe(0);
+        expect(await page.locator('.yousaid').innerText()).toContain('Up. Feet on the floor.');
+        expect(await page.locator('.herchoice').count()).toBe(1);
+        expect(await page.locator('.herchoice').innerText()).toContain('Five more.');
+        await page.locator('#hurry').click();
+        await page.locator('#hush').waitFor();
+        const record = page.locator('.moment-record').first();
+        expect(await record.innerText()).toContain('You suggested');
+        expect(await record.innerText()).toContain('Up. Feet on the floor.');
+        expect(await record.innerText()).toContain('She chose');
+        expect(await record.innerText()).toContain('Five more.');
+        expect(await page.locator('.journal').innerText()).toContain('slept through');
+        await record.scrollIntoViewIfNeeded();
+        const box = await record.boundingBox();
+        expect(box?.y).toBeGreaterThanOrEqual(0);
+        expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
+      } finally {
+        await page.close();
+      }
+    },
+  );
 });

@@ -476,6 +476,9 @@ button:focus-visible {
   padding: 8px 12px;
   background: transparent;
   border-color: var(--ink);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .opt:nth-child(2) {
   border-radius: 12px 9px 11px 10px;
@@ -495,6 +498,12 @@ button:focus-visible {
   color: var(--ink-soft);
   max-width: 100%;
   overflow-wrap: anywhere;
+}
+.opt .gesture {
+  flex: 0 0 100%;
+  position: relative;
+  font-size: 13px;
+  color: var(--ink-soft);
 }
 .opt .fill {
   position: absolute;
@@ -518,6 +527,24 @@ button:focus-visible {
 .opt.insisted .fill {
   width: 100%;
   opacity: 0.28;
+}
+
+.moment-record {
+  border-left: 1.5px solid var(--ink-soft);
+  padding: 4px 0 4px 8px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.record-yours {
+  font-style: italic;
+}
+.record-chosen,
+.herchoice {
+  color: var(--pencil);
+}
+.herchoice,
+.record-label {
+  font-size: 14px;
 }
 
 /* after an answer */

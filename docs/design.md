@@ -55,8 +55,8 @@ It is a real move. You see who she is without you. A turning-away she learned fr
 - **Borrowed ink** (Thursday and Friday, when she trusts you more than the pull): some pull lines arrive in your ink with a slightly wrong slant ("You said rest matters."). Mechanically the pull's suggestion then comes under your voice id, so her trust in *you* pays for it if it goes badly. Saying something real on that card drowns it out. The evening may notice: "Some of what I heard today wasn't you."
 
 ### Progressive disclosure, one new kind of choice a day
-- **Monday:** say it or say nothing. The pull, the lie at the depot (only if she was late), the gossip at lunch, Mum.
-- **Tuesday:** hold to insist (introduced on the first card). Monday's resolve prints on its card.
+- **Monday:** tap to suggest, hold to insist, or say nothing. The first alarm offers a hold with its trust cost beside the suggestion; holding fills the ink and acknowledges insistence. The pull, the lie at the depot (only if she was late), the gossip at lunch, Mum.
+- **Tuesday:** Monday's resolve prints on its card.
 - **Wednesday:** bodily forecast: Murat asks her to cover Ece's evening route, the night of Aylin's birthday dinner ("I can do the route, but I'll be spent for Aylin's."). Mum's message if she missed two calls.
 - **Thursday:** borrowed ink. The shelf.
 - **Friday:** the gym renewal ("We miss you! Your plan renews Friday"). The week's last bus home.
@@ -88,6 +88,15 @@ The delivery artifact for this round is the implementation report at `human-fram
 - **DL-4/DL-5:** a declined suggestion keeps her original reply and adds a possible response in her words. A pure reconstruction of that exact decision forecasts whether insisting could have carried. If so, she names pressing and holding a future suggestion. If pushing no longer carries, she asks for a plain word or silence. Otherwise she can name an alternative she was willing to hear. Every line makes clear that the resolved moment stays resolved; agreement is never promised.
 - **Verification:** deterministic refusal tests, a pre-change 0.2.1 full-state replay/continuation hash fixture generated from commit `60e926d`, browser rate/menu/download tests, and touch-emulated 360×690 plus 1280×800 renders. Long refusal plus completed narration fits; the response control keeps its position when narration arrives. No simulation or HF dependency change.
 - **Acceptance limit:** this is builder verification. Leyla's willingness to return needs another source-unread playtest; this round does not claim to establish it.
+
+## Round 4 (2026-10-20, Farah retest)
+
+What remains: Opus driver acceptance and a fresh source-unread retest of whether early insistence and distinct refusals sustain engagement. The delivery artifact is the appended Round 4 section of `human-framework/scratch/followups/murmur-report.md`, with tests, touch phone/desktop renders, a signed commit and a matching clean live release. The owner accepts feel separately.
+
+- The first alarm exposes the real hold gesture beside a suggestion whose forecast improves when insisted. The player can hold it immediately, see ink fill and “insisting…”, and hear the existing simulation response. A plain tap and silence remain available. Its trust cost appears before acting. Cues no longer conceal a useful hold until Tuesday.
+- Refusal recovery uses the exact pre-decision state. Monday's alarm, Aylin, Murat, Ece, lunch and Mum responses differ in her words and describe possible future changes. Tiredness, lateness, lost trust and willing alternatives determine the response. A resolved moment stays resolved.
+- Each resolved moment keeps “You suggested” beside “She chose” in the journal. Explicit silence and timeout are distinguished. The same reconstructed labels appear below the current reply after import; conditional wording comes from the original moment. Narration appears only when the simulation clock reaches completion.
+- Simulation, input schema, playback policy, framework pin and old exports stay unchanged. Exact legacy replay and continuation remain acceptance checks.
 
 ## Deferred (target: 2026-11-03)
 - More campaigns, including a second week.
