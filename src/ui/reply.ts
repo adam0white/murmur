@@ -1,5 +1,5 @@
 import { tick } from '@adam0white/human-framework';
-import { cardView, ctxOf, insistCarries, optionsOf, replay } from '../sim/game.ts';
+import { cardView, ctxOf, insistCarries, listens, optionsOf, replay } from '../sim/game.ts';
 import { momentById } from '../sim/moments.ts';
 import type { Answer, GameState } from '../sim/types.ts';
 
@@ -47,7 +47,7 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
   );
   if (index >= 0) {
     const before = replay(s.seed, s.inputs.slice(0, index), a.at, s.version);
-    if (s.version === '0.3.0') {
+    if (listens(s)) {
       const chosen = optionsOf(before, momentById(a.moment)).find((o) => o.id === a.chosen);
       if (!chosen) return a.says;
       if (a.insisted) return a.says;

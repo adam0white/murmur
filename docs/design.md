@@ -135,13 +135,13 @@ Cost: a single quiet phrase does not show every word she has learned. The player
 
 ## The second week (edition 0.4.0, 2026-10-20; owner may veto)
 
-What remains: the build, a Protocol 2 retest and owner acceptance of feel. The delivery artifact is a deployed 0.4.0 whose Saturday page offers a second week; the lead designer accepts the slice, the owner accepts feel.
+What remains: a Protocol 2 retest and owner acceptance of feel. The delivery artifact is a deployed 0.4.0 whose Saturday page offers a second week; the lead designer accepts the slice, the owner accepts feel.
 
 Owner, 2026-10-20: "We both need more of the same as well as other campaigns." "I am her. I want to keep pushing her to do better." The lab's named trap: "more weeks whose state persists while the decisions repeat." A Codex wildcard pass proposed the theme; an adversarial review (Claude, contrarian narrative designer) cut and reshaped it. Both texts: `~/code/.lab-scratch/murmur-more/` (local).
 
 **Theme: getting better causes trouble.** Last week Dilan got a little more dependable. This week somebody starts depending on her. Ece's title for it: "Leave it with me."
 
-- **The same person goes on.** After Saturday's last page, a quiet "Another week" continues the same run: her trust in both voices, her phrases and their practice, habits, tiredness, and every open thread. Finished 0.3.0 runs can continue too: week one under 0.4.0 is rule-for-rule and line-for-line 0.3.0, so the old inputs replay as 0.4.0 and go on. The 0.3.0 export itself still replays as 0.3.0.
+- **The same person goes on.** After Saturday's last page, "Another week" (now the main button; "Start a new week" is the quiet one) continues the same run: her trust in both voices, her phrases and their practice, habits, tiredness, and every open thread. Finished 0.3.0 runs can continue too: week one under 0.4.0 is rule-for-rule and line-for-line 0.3.0, so the old inputs replay as 0.4.0 and go on. The 0.3.0 export itself still replays as 0.3.0.
 - **Week one's last page is canon.** Its thread lines and closing line ("On Sunday she rang anyway", "Ece has her own columns now", "Aylin came round on Saturday for the shelf", the lock screen) are true in week two. Nothing in week two contradicts them.
 - **More of the same, at the same density.** Five or six cards a day: the alarm, the bus home (the call to Mum), bed, and three new situations. Habits she built show as lines she does unasked. While "Feet on the floor" is strong she gets up alone and the journal says so.
 - **One new kind of choice a day:**
@@ -159,3 +159,15 @@ Cut after review: a Sunday "aim for the week" (it read as a quest log with a pas
 **Replay and revert:** 0.2.1 and 0.3.0 saves stay on their editions and end on Saturday as before. New runs use `GAME_VERSION` 0.4.0. To revert the default, set it to `'0.3.0'` and deploy; keep the 0.4.0 branch so existing week-two runs replay.
 
 Deferred (target 2026-11-03): another person's week (Aylin); replay-variety Tuesdays; a Sunday aim, if Saturday of week two feels aimless; Ece and Mum as HF persons.
+
+### What is new in 0.4.0, as built (2026-10-20)
+
+- **Another week** on Saturday continues the same Dilan into Monday (day 8). Sunday passes offstage: two nights of fading phrases, and her daily promises (alarm, call to Mum) renew.
+- **Begin at the second week**, on the cover, for players who already know week one: a quiet voice plays week one for you (her likeliest answer each time, never the pull), then you start Monday.
+- **Getting up alone.** When "Feet on the floor" has enough practice (0.45), she skips the alarm card and gets up by herself, and the journal says so. Measured over 8 seeds: about 4 of 5 mornings for players who argued for it, none for players who stayed silent.
+- **Your advice travels.** What you told Dilan in week one comes back in Ece's mouth. "Walk away from it" and "Feet on the floor" fit Dilan and fit Ece badly; Thursday shows the result.
+- **The pull has listened too.** In week two it is a little louder (+0.1) and quotes her own phrases back bent.
+- **Friday** can release a promise openly (HF `releaseCommitment`); the early bus really is earlier.
+- **The last page** shows both weeks side by side, and the two-hands line reaches back a fortnight.
+
+**Honest difficulty note.** Week two's pull is only a little louder. Engaged players still win most prompts (8 seeds, week two only: an insisting player lets the pull win 0 of 7 prompts; a reader 1 of 10.5; a silent player 8.4 of 13.3; a pull-follower 11.1 of 14.5). Week two's difficulty is in trade-offs, not in the pull: helping Ece costs Dilan's evenings and her own promises, and advice that worked for her goes wrong for someone else. Not tuned further on purpose; if the owner wants it harder, the pull bonus is one constant (`WEEK_TWO_PULL`).

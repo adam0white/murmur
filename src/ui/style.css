@@ -767,3 +767,42 @@ button:focus-visible {
   color: var(--ink);
   font-size: 20px;
 }
+
+/* The weekday stays familiar when the same person goes on. */
+.week-label {
+  font-family: var(--text);
+  font-size: 11px;
+  line-height: 1.15;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+.top .week-label {
+  max-width: 3.5em;
+}
+.continuation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.week-pages {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.week-pages .block {
+  min-width: 0;
+}
+.week-pages .n {
+  font-size: 14px;
+}
+.week-pages .strip {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+/* On a phone the day's own heading says "second week"; the header keeps its one line. */
+@media (max-width: 389px) {
+  .top .week-label {
+    display: none;
+  }
+}

@@ -5,8 +5,11 @@
  */
 import { FRAMEWORK_VERSION } from '@adam0white/human-framework';
 import { PULL, YOU } from '../sim/dilan.ts';
+import { playedFirstWeek } from '../sim/firstweek.ts';
 import {
+  anotherWeek,
   type CardView,
+  canAnotherWeek,
   cardView,
   clock,
   cloneState,
@@ -24,6 +27,8 @@ import {
   runToCard,
   step,
   trustOf,
+  weekdayOf,
+  weekOf,
 } from '../sim/game.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
 import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
@@ -136,7 +141,7 @@ const rule = (key: number) =>
 const markLink = '<a class="mark" href="https://human.adamwhite.work/">◇ human framework</a>';
 /** The same header on every screen: mark, the day and clock (on the day screen), the back-page button. */
 const header = (menu = true, when = false) =>
-  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname hand"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="Game menu">≡</button>' : '<span></span>'}</header>${when ? '<p class="pace" id="pace"></p><p class="kept-words hand" id="kept-words" hidden></p>' : ''}`;
+  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname hand"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="week-label" id="week-label" hidden>second week</span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="Game menu">≡</button>' : '<span></span>'}</header>${when ? '<p class="pace" id="pace"></p><p class="kept-words hand" id="kept-words" hidden></p>' : ''}`;
 const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 };
 const footer = () =>
   '<div class="footer"><a href="https://human.adamwhite.work/games/">◇ All games</a></div>';
@@ -182,6 +187,8 @@ function title() {
     <div class="actions">
       ${save ? '<button class="primary" id="cont">Continue the week</button>' : ''}
       <button class="${save ? '' : 'primary'}" id="new">${save ? 'New week' : 'Wake her up'}</button>
+      <button class="quiet" id="second" aria-describedby="second-explained">Begin at the second week</button>
+      <p class="soft small" id="second-explained">Her first week is played for you, by a quiet voice. You start on Monday of the second.</p>
       <button class="quiet" id="load">Replay a run file</button>
       <input type="file" id="file" accept="application/json,.json" hidden />
     </div>
@@ -193,6 +200,11 @@ function title() {
     enter();
   });
   document.getElementById('new')?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed()));
+  document.getElementById('second')?.addEventListener('click', () => {
+    s = playedFirstWeek(urlSeed() ?? randomSeed());
+    writeSave();
+    enter();
+  });
   bindImport(document.getElementById('load'), document.getElementById('file'));
 }
 
@@ -362,6 +374,8 @@ function drawDay() {
   const ds = document.getElementById('dayshort');
   if (ds) ds.textContent = (DAY_NAMES[s.day] ?? '').slice(0, 3);
   if (ck) ck.textContent = clock(s.minute);
+  const week = document.getElementById('week-label');
+  if (week) week.hidden = weekOf(s.day) !== 2;
   const margin = document.getElementById('kept-words');
   const words = keptWords(s);
   if (margin) {
@@ -428,7 +442,10 @@ function drawJournal(lines: LogLine[]) {
   if (!el) return;
   const scenes = lines.filter((l) => l.who === 'scene').map((l) => l.at);
   const past = new Map(records().map((record) => [record.sceneAt, record]));
-  const head = lines.length === 0 ? `<p class="jhead hand">${esc(DAY_NAMES[s.day] ?? '')}</p>` : '';
+  const head =
+    lines.length === 0
+      ? `<p class="jhead hand">${esc(DAY_NAMES[s.day] ?? '')}${weekOf(s.day) === 2 ? ' <span class="week-label">second week</span>' : ''}</p>`
+      : '';
   el.innerHTML = `${head}${lines
     .map((l) => {
       if (l.who === 'scene') {
@@ -729,8 +746,9 @@ function ending() {
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     ${finalHtml(f)}
     <div class="grow"></div>
+    ${canAnotherWeek(s) ? '<div class="continuation"><p class="hand soft">Monday will come round again.</p><button class="primary" id="another">Another week</button></div>' : ''}
     <div class="actions">
-      <button class="primary" id="again">Another week</button>
+      <button class="quiet" id="again">Start a new week</button>
       <button class="quiet" id="export">Download this run</button>
       <button class="quiet" id="send">Send this run to the notebook</button>
     </div>
@@ -738,6 +756,12 @@ function ending() {
   </div>`;
   document.getElementById('menu')?.addEventListener('click', backPage);
   toast = '';
+  document.getElementById('another')?.addEventListener('click', () => {
+    if (!s || !canAnotherWeek(s)) return;
+    s = anotherWeek(s);
+    writeSave();
+    enter();
+  });
   document.getElementById('again')?.addEventListener('click', () => newWeek(randomSeed()));
   document.getElementById('export')?.addEventListener('click', download);
   document
@@ -745,14 +769,20 @@ function ending() {
     ?.addEventListener('click', () => lab.openSendDialog({ getRun: () => exportRun() }));
 }
 
-function finalHtml(f: Final): string {
+function stripHtml(f: Final): string {
   const short = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
   const strip = f.strip
     .map(
       (d, i) =>
-        `<div class="sday"><span class="hand">${short[d.day] ?? ''}</span>${d.kept.map((x, j) => `<span class="kept">${tick(i * 5 + j)}${esc(x.replace(/^my /, ''))}</span>`).join('')}${d.missed.map((x) => `<span class="missed"><s>${esc(x.replace(/^my /, ''))}</s></span>`).join('')}</div>`,
+        `<div class="sday"><span class="hand">${short[weekdayOf(d.day)] ?? ''}</span>${d.kept.map((x, j) => `<span class="kept">${tick(i * 5 + j)}${esc(x.replace(/^my /, ''))}</span>`).join('')}${d.missed.map((x) => `<span class="missed"><s>${esc(x.replace(/^my /, ''))}</s></span>`).join('')}</div>`,
     )
     .join('');
+  return `<div class="strip">${strip}</div>`;
+}
+
+function finalHtml(f: Final): string {
+  const firstWeek = s?.past?.[0];
+  const secondWeek = s && weekOf(s.day) === 2;
   const phrases = f.phrases
     .map(
       (ph) =>
@@ -760,15 +790,19 @@ function finalHtml(f: Final): string {
     )
     .join('');
   const unasked = f.unasked.map((x) => `<p class="hand her">${esc(x)}.</p>`).join('');
-  const finalInput = s ? finalInputWords(s, records()) : undefined;
+  const finalInput = s && !secondWeek ? finalInputWords(s, records()) : undefined;
   const sentWord = f.sent === 'send' ? 'sent' : f.sent === 'call' ? 'rang instead' : 'deleted';
   return `<h2 class="hand dayhead">Saturday</h2>
     ${rule(61)}
-    <div class="voicenote"><p class="label">voice note to Mum, ${sentWord}</p><p class="note">“${esc(f.note)}”</p></div>
+    ${f.note ? `<div class="voicenote"><p class="label">voice note to Mum, ${sentWord}</p><p class="note">“${esc(f.note)}”</p></div>` : ''}
     ${finalInput ? `<p class="final-input hand">${esc(finalInput)}</p>` : ''}
     <p class="n">${esc(f.line)}</p>
     ${(f.threads ?? []).length > 0 ? `<div class="block threads"><p class="label">and</p>${(f.threads ?? []).map((x) => `<p class="n">${esc(x)}</p>`).join('')}</div>` : ''}
-    <div class="block"><p class="label">the week</p><div class="strip">${strip}</div></div>
+    ${
+      firstWeek
+        ? `<div class="week-pages"><div class="block first-week"><p class="label">the first week</p><p class="n">${esc(firstWeek.line)}</p>${stripHtml(firstWeek)}</div><div class="block current-week"><p class="label">the second week</p>${stripHtml(f)}</div></div>`
+        : `<div class="block current-week"><p class="label">the week</p>${stripHtml(f)}</div>`
+    }
     ${phrases ? `<div class="block margin-list"><p class="label">her own words now</p><div class="phrases">${phrases}</div></div>` : ''}
     ${unasked ? `<div class="block"><p class="label">what she did unasked</p>${unasked}</div>` : ''}
     <div class="block hands"><p class="label">two hands</p>${handsHtml(f)}</div>`;
@@ -793,7 +827,12 @@ function handsHtml(f: Final): string {
           : `${pencil} and ${you}${still} wrote about the same`;
     return `<p class="handline">${when}, ${rel}.</p>`;
   };
-  return line('On Monday', f.hands.start) + line('By Saturday', f.hands.end, f.hands.start);
+  const firstWeek = s?.past?.[0];
+  return (
+    (firstWeek ? line('A fortnight ago', firstWeek.hands.start) : '') +
+    line('On Monday', f.hands.start) +
+    line('By Saturday', f.hands.end, f.hands.start)
+  );
 }
 
 // ---------- the back page (menu) ----------
@@ -848,7 +887,7 @@ function download() {
   const blob = new Blob([JSON.stringify(ex)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `two-voices-${s.seed}-${(DAY_NAMES[s.day] ?? 'day').toLowerCase()}.json`;
+  a.download = `two-voices-${s.seed}-week${weekOf(s.day)}-${(DAY_NAMES[s.day] ?? 'day').toLowerCase()}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }

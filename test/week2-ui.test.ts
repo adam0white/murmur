@@ -1,0 +1,215 @@
+import { mkdir } from 'node:fs/promises';
+import { type Browser, chromium, type Page } from 'playwright';
+import { createServer, type ViteDevServer } from 'vite';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { playedFirstWeek } from '../src/sim/firstweek.ts';
+import { anotherWeek, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
+import type { GameState } from '../src/sim/types.ts';
+import type { tester } from '../src/ui/app.ts';
+
+declare global {
+  interface Window {
+    __murmur: typeof tester;
+  }
+}
+
+const shots = '/Users/abdul/code/.lab-scratch/murmur-more/ui-shots';
+let server: ViteDevServer;
+let browser: Browser;
+let origin: string;
+
+function finish(s: GameState) {
+  while (s.phase !== 'end') {
+    if (s.phase === 'evening') queueInput(s, { kind: 'next' });
+    else {
+      runToCard(s);
+      if (s.card) queueInput(s, { kind: 'quiet' });
+      else if (s.phase === 'day') step(s);
+    }
+  }
+  return s;
+}
+
+beforeAll(async () => {
+  server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
+  await server.listen();
+  origin = server.resolvedUrls?.local[0] ?? '';
+  browser = await chromium.launch({ headless: true });
+  await mkdir(shots, { recursive: true });
+}, 30_000);
+
+afterAll(async () => {
+  await browser?.close();
+  await server?.close();
+}, 30_000);
+
+async function importRun(page: Page, state: GameState) {
+  await page.goto(origin);
+  await page.evaluate(() => {
+    window.__murmur.fast = true;
+  });
+  await page.locator('#file').setInputFiles({
+    name: 'run.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        version: state.version,
+        seed: state.seed,
+        inputs: state.inputs,
+        state: cloneState(state),
+      }),
+    ),
+  });
+  await page.locator('.toast').waitFor();
+  expect(await page.locator('.toast').innerText()).toBe('Replayed. It matches the file.');
+}
+
+async function snapshot(page: Page, name: string) {
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({ path: `${shots}/${name}.png`, fullPage: true });
+}
+
+describe('a played first week', () => {
+  it.each([1, 42, 1003])(
+    'plays and replays seed %i through the normal inputs',
+    (seed) => {
+      const s = playedFirstWeek(seed);
+      expect(s.version).toBe('0.4.0');
+      expect(s.phase).toBe('end');
+      expect(s.day).toBe(6);
+      expect(s.inputs.some((i) => i.kind === 'say' && i.insist)).toBe(false);
+      const again = replay(seed, s.inputs, s.minute, '0.4.0');
+      // The last answer can end the day on its own minute; finish that day as anotherWeek does.
+      while (again.phase === 'day') step(again);
+      expect(cloneState(again)).toEqual(cloneState(s));
+      const next = anotherWeek(s);
+      expect(next.day).toBe(8);
+      expect(next.phase).toBe('day');
+      expect(next.past).toHaveLength(1);
+    },
+    30_000,
+  );
+});
+
+describe('second week browser flow', { timeout: 60_000 }, () => {
+  for (const viewport of [
+    { width: 360, height: 690 },
+    { width: 1280, height: 800 },
+  ]) {
+    const size = viewport.width === 360 ? 'phone' : 'desktop';
+    it(`continues the same Dilan and shows a readable Monday on ${size}`, async () => {
+      const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
+      try {
+        const state = playedFirstWeek(42);
+        const canon = structuredClone(state.final);
+        await importRun(page, state);
+        expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(1);
+        expect(await page.getByRole('button', { name: 'Start a new week', exact: true }).count()).toBe(1);
+        await snapshot(page, `week-one-ending-${size}`);
+        await page.getByRole('button', { name: 'Another week', exact: true }).click();
+        await page.locator('#hush').waitFor();
+        expect(await page.locator('body').innerText()).toContain('second week');
+        expect(await page.locator('.top').innerText()).toMatch(/Mon/);
+        expect(await page.evaluate(() => window.__murmur.state?.past?.[0])).toEqual(canon);
+        const card = await page.locator('.card').boundingBox();
+        expect(card?.y).toBeGreaterThanOrEqual(0);
+        expect((card?.y ?? 0) + (card?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
+        expect(await page.locator('.card').evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(
+          true,
+        );
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+          viewport.width,
+        );
+        await snapshot(page, `week-two-monday-${size}`);
+        await page.getByRole('button', { name: 'Game menu', exact: true }).click();
+        const pending = page.waitForEvent('download');
+        await page.locator('#bp-export').click();
+        expect((await pending).suggestedFilename()).toBe('two-voices-42-week2-monday.json');
+        await page.locator('#bp-close').click();
+        await page.reload();
+        await page.locator('#cont').click();
+        await page.locator('#hush').waitFor();
+        expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(8);
+        expect(await page.locator('body').innerText()).toContain('second week');
+      } finally {
+        await page.close();
+      }
+    });
+
+    it(`offers a played first week from the cover on ${size}`, async () => {
+      const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
+      try {
+        await page.goto(`${origin}?seed=1003`);
+        await page.getByRole('button', { name: 'Begin at the second week', exact: true }).click();
+        expect(await page.locator('.notebook').innerText()).toContain('Saturday');
+        expect(await page.evaluate(() => window.__murmur.state?.seed)).toBe(1003);
+        expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(6);
+        await page.evaluate(() => {
+          window.__murmur.fast = true;
+        });
+        await page.getByRole('button', { name: 'Another week', exact: true }).click();
+        await page.locator('#hush').waitFor();
+        expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(8);
+        expect(await page.locator('body').innerText()).toContain('second week');
+      } finally {
+        await page.close();
+      }
+    });
+
+    it(`renders both weeks and no empty voice note on ${size}`, async () => {
+      const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
+      try {
+        const state = finish(anotherWeek(playedFirstWeek(42)));
+        expect(state.day).toBe(13);
+        expect(state.final?.note).toBe('');
+        await importRun(page, state);
+        expect(await page.locator('.voicenote').count()).toBe(0);
+        expect(await page.locator('.final-input').count()).toBe(0);
+        expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(0);
+        expect(await page.getByRole('button', { name: 'Start a new week', exact: true }).count()).toBe(1);
+        expect(await page.locator('.first-week').innerText()).toContain(state.past?.[0]?.line);
+        expect(await page.locator('.current-week .sday > .hand').allTextContents()).toEqual([
+          'Mon',
+          'Tue',
+          'Wed',
+          'Thu',
+          'Fri',
+        ]);
+        expect(await page.locator('.hands').innerText()).toContain('A fortnight ago');
+        expect(await page.locator('.hands').innerText()).toContain('On Monday');
+        const first = await page.locator('.first-week').boundingBox();
+        const current = await page.locator('.current-week').boundingBox();
+        expect(first?.y).toBe(current?.y);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+          viewport.width,
+        );
+        expect(await page.evaluate(() => window.__murmur.state)).toEqual(cloneState(state));
+        await snapshot(page, `week-two-ending-${size}`);
+      } finally {
+        await page.close();
+      }
+    });
+  }
+
+  it.each(['0.2.1', '0.3.0'])('keeps the %s ending and its allowed actions', async (version) => {
+    const page = await browser.newPage();
+    try {
+      await importRun(page, finish(newGame(42, version)));
+      expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(
+        version === '0.3.0' ? 1 : 0,
+      );
+      expect(await page.locator('.voicenote').count()).toBe(1);
+      if (version === '0.3.0') {
+        await page.getByRole('button', { name: 'Another week', exact: true }).click();
+        expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.0');
+        expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(8);
+      }
+      await page.getByRole('button', { name: 'Game menu', exact: true }).click();
+      await page.locator('#bp-new').click();
+      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.0');
+      expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(1);
+    } finally {
+      await page.close();
+    }
+  });
+});
