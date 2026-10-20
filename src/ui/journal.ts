@@ -29,6 +29,7 @@ export interface MomentRecord {
   answer: Answer;
   said?: { id: string; ink: string };
   chosen: { id: string; ink: string };
+  chosenAction: string;
   insisted: boolean;
   quiet: 'explicit' | 'timeout' | null;
   done?: LogLine;
@@ -70,6 +71,7 @@ export function momentRecords(s: GameState): MomentRecord[] {
       answer,
       said: answer.said ? words.get(answer.said) : undefined,
       chosen,
+      chosenAction: options.find((o) => o.id === answer.chosen)?.action ?? '',
       insisted: answer.insisted === true,
       quiet: answer.said ? null : quiet,
       done: done && done.at <= s.minute ? done : undefined,

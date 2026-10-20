@@ -28,6 +28,7 @@ import {
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
 import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
 import { lab } from './lab.ts';
+import { answerThoughts, cardThought, finalInputWords, keptWords } from './presentation.ts';
 import { replyWords } from './reply.ts';
 
 const SAVE = 'murmur-save-v1';
@@ -135,7 +136,7 @@ const rule = (key: number) =>
 const markLink = '<a class="mark" href="https://human.adamwhite.work/">◇ human framework</a>';
 /** The same header on every screen: mark, the day and clock (on the day screen), the back-page button. */
 const header = (menu = true, when = false) =>
-  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname hand"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="Game menu">≡</button>' : '<span></span>'}</header>${when ? '<p class="pace" id="pace"></p>' : ''}`;
+  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname hand"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="Game menu">≡</button>' : '<span></span>'}</header>${when ? '<p class="pace" id="pace"></p><p class="kept-words hand" id="kept-words" hidden></p>' : ''}`;
 const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 };
 const footer = () =>
   '<div class="footer"><a href="https://human.adamwhite.work/games/">◇ All games</a></div>';
@@ -361,6 +362,12 @@ function drawDay() {
   const ds = document.getElementById('dayshort');
   if (ds) ds.textContent = (DAY_NAMES[s.day] ?? '').slice(0, 3);
   if (ck) ck.textContent = clock(s.minute);
+  const margin = document.getElementById('kept-words');
+  const words = keptWords(s);
+  if (margin) {
+    margin.hidden = !words;
+    margin.textContent = words ? `She kept “${words}”` : '';
+  }
   const shown = journalLines(s);
   const logKey = `${shown.length}:${s.card?.openedAt ?? ''}`;
   if (drawn.log !== logKey) {
@@ -464,6 +471,7 @@ function drawSheet() {
 
 function cardHtml(v: CardView): string {
   if (!s) return '';
+  const recalled = cardThought(s, v);
   const p = s.person;
   const tYou = trustOf(p, YOU);
   const tPull = trustOf(p, PULL);
@@ -490,7 +498,7 @@ function cardHtml(v: CardView): string {
     <div class="timerrow"><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, v.id.length, 1)}"/></svg><span class="caption time-left" id="time-left"></span></div>
     <div class="card-text">
       <p class="scene">${esc(v.scene)}</p>
-      ${resolve}${forecast}${pull}${v.recalled ? `<p class="stayed hand">“${esc(v.recalled)}” <span class="who">she thinks</span></p>` : ''}
+      ${resolve}${forecast}${pull}${recalled ? `<p class="stayed hand">“${esc(recalled)}” <span class="who">she thinks</span></p>` : ''}
       ${first && !v.borrowed ? '<p class="caption">the pencil is the other voice</p>' : ''}
       ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
     </div>
@@ -550,13 +558,12 @@ function gapHtml(a: Answer | null): string {
     lines.push(`<p class="margin hand">She took it as “${esc(a.learned)}.” She kept that one.</p>`);
   if (a.turnedAlone) lines.push(`<p class="margin hand">“${esc(a.turnedAlone)}.” Her own words now.</p>`);
   return `<div class="gap ink-in">${lines.join('')}</div>
-    <div class="gap-actions"><button class="quiet" id="hurry">on with the day ▸</button></div>`;
+    <div class="gap-actions"><p class="caption">The clock keeps running.</p><button class="quiet" id="hurry">Let time pass faster ▸</button></div>`;
 }
 
 /** These are her reported thoughts, not a promise to agree next time. */
 function thoughtHtml(answer: Answer): string {
-  return [answer.stayed, answer.recalled]
-    .filter((line): line is string => !!line)
+  return (s ? answerThoughts(s, answer, records()) : [])
     .map((line) => `<p class="stayed hand">“${esc(line)}” <span class="who">she thinks</span></p>`)
     .join('');
 }
@@ -695,7 +702,6 @@ function pageHtml(pg: Page): string {
     ${pg.review ? `<p class="review hand">${esc(pg.review)}</p>` : ''}
     <p class="hand her">${esc(pg.herLine)}</p>
     ${alone}
-    ${(pg.stayed ?? []).map((line) => `<p class="stayed hand">${esc(line)}</p>`).join('')}
     ${kept || missed ? `<ul class="km">${kept}${missed}</ul>` : ''}
     ${resolves ? `<div class="block"><p class="label">she means to keep</p><ul class="resolves">${resolves}</ul></div>` : ''}
     <div class="block"><p class="label">about you</p><p class="hand to-you">${esc(pg.aboutYou)}</p></div>
@@ -754,10 +760,12 @@ function finalHtml(f: Final): string {
     )
     .join('');
   const unasked = f.unasked.map((x) => `<p class="hand her">${esc(x)}.</p>`).join('');
+  const finalInput = s ? finalInputWords(s, records()) : undefined;
   const sentWord = f.sent === 'send' ? 'sent' : f.sent === 'call' ? 'rang instead' : 'deleted';
   return `<h2 class="hand dayhead">Saturday</h2>
     ${rule(61)}
     <div class="voicenote"><p class="label">voice note to Mum, ${sentWord}</p><p class="note">“${esc(f.note)}”</p></div>
+    ${finalInput ? `<p class="final-input hand">${esc(finalInput)}</p>` : ''}
     <p class="n">${esc(f.line)}</p>
     ${(f.threads ?? []).length > 0 ? `<div class="block threads"><p class="label">and</p>${(f.threads ?? []).map((x) => `<p class="n">${esc(x)}</p>`).join('')}</div>` : ''}
     <div class="block"><p class="label">the week</p><div class="strip">${strip}</div></div>

@@ -1,5 +1,6 @@
 import { tick } from '@adam0white/human-framework';
-import { cardView, ctxOf, insistCarries, replay } from '../sim/game.ts';
+import { cardView, ctxOf, insistCarries, optionsOf, replay } from '../sim/game.ts';
+import { momentById } from '../sim/moments.ts';
 import type { Answer, GameState } from '../sim/types.ts';
 
 const willing = (lean: string) => lean === 'yes' || lean === 'if pushed';
@@ -34,7 +35,7 @@ function mightHear(before: GameState, a: Answer): string {
 
 /** Her reply plus a way forward. Reconstruct the decision without changing the run or its export. */
 export function replyWords(s: GameState, a: Answer): string | undefined {
-  if (!a.said || a.said === a.chosen || s.version !== '0.2.1') return a.says;
+  if (!a.said || a.said === a.chosen) return a.says;
 
   let recovery = `Let me choose this time. ${nextMoment}`;
   const index = s.inputs.findLastIndex(
@@ -46,6 +47,42 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
   );
   if (index >= 0) {
     const before = replay(s.seed, s.inputs.slice(0, index), a.at, s.version);
+    if (s.version === '0.3.0') {
+      const chosen = optionsOf(before, momentById(a.moment)).find((o) => o.id === a.chosen);
+      if (!chosen) return a.says;
+      if (a.insisted) return a.says;
+      const c = ctxOf(before);
+      const reason = a.moment.startsWith('alarm-')
+        ? chosen.action === 'get-up'
+          ? 'The alarm has already gone.'
+          : c.tired
+            ? 'I’m still tired.'
+            : 'I’m not ready to face the morning.'
+        : a.moment.startsWith('ece-')
+          ? 'Ece caught me in the middle of work.'
+          : a.moment.startsWith('lunch-')
+            ? a.said === 'defend'
+              ? `Speaking up for ${a.moment === 'lunch-4' ? 'Murat' : 'Ece'} means facing the whole table.`
+              : 'Everyone at the table is listening.'
+            : a.moment.startsWith('bus-')
+              ? chosen.action === 'call-mum'
+                ? 'Mum’s message is waiting.'
+                : 'Mum’s call will have to wait.'
+              : a.moment.startsWith('slump-')
+                ? c.tired
+                  ? 'I need to get through this afternoon.'
+                  : 'I want something easy this afternoon.'
+                : a.moment.startsWith('bed-')
+                  ? chosen.action === 'watch' || chosen.action === 'scroll'
+                    ? 'I don’t want the day to be over yet.'
+                    : chosen.action === 'write'
+                      ? 'The notebook is right beside me.'
+                      : 'I need sleep.'
+                  : a.moment.startsWith('note-')
+                    ? `I haven’t got an answer for ${a.moment === 'note-3' && c.missedMum >= 2 ? 'Mum' : 'Aylin'} yet.`
+                    : undefined;
+      return reason ? `${reason} I’m going to ${chosen.label}.` : a.says;
+    }
     // resolve() advances her body to the input minute before deciding. Forecast that same state.
     if (before.person.now < a.at) tick(before.person, a.at);
     const view = cardView(before);

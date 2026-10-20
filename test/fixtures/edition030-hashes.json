@@ -1,0 +1,3297 @@
+[
+  {
+    "seed": 7,
+    "policy": "silent",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "next",
+        "at": 577296
+      },
+      {
+        "kind": "next",
+        "at": 578736
+      },
+      {
+        "kind": "next",
+        "at": 580186
+      },
+      {
+        "kind": "next",
+        "at": 581616
+      },
+      {
+        "kind": "next",
+        "at": 583086
+      }
+    ],
+    "minute": 583809,
+    "hash": "824fb738213d4ea3cb326b92670ee3ae2045fba5a4518ea12b86777d872073fc",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "0822b9d2706e5db31ad2067e9811c3d2d88f8be0d885ddf8e551438a12d1f3e2",
+        "after37": "9642501ed8c75a554871d93d0af3f6e675ba09dc24b9d9077db27f81e2b741de"
+      },
+      {
+        "minute": 577291,
+        "inputs": [],
+        "hash": "931516c1afb490f64f9270e960f9486bab6d13bfdbeb70818bf9fd00af923d9a",
+        "after37": "198d0230b0fc98d265868d9d65da4522056644e953192bc64d535eec6437bfc8"
+      },
+      {
+        "minute": 579386,
+        "inputs": [
+          {
+            "kind": "next",
+            "at": 577296
+          },
+          {
+            "kind": "next",
+            "at": 578736
+          }
+        ],
+        "hash": "efc6451ea2afeb52172aaf7176866bfe5791ca5a535170f897f0f887f4d30cf7",
+        "after37": "7f5f78d7e586fe953d9814d29a6ac82c7e4c5ab56ceff71e292cc51122dbeaf8"
+      }
+    ]
+  },
+  {
+    "seed": 7,
+    "policy": "oppose",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 576401
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "at": 576436
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "at": 576506
+      },
+      {
+        "kind": "say",
+        "option": "talk",
+        "at": 576641
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 576761
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 576921
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 577091
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 577291
+      },
+      {
+        "kind": "next",
+        "at": 577291
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 577841
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "at": 577946
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "at": 578111
+      },
+      {
+        "kind": "say",
+        "option": "sit",
+        "at": 578201
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 578361
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 578531
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 578731
+      },
+      {
+        "kind": "next",
+        "at": 578731
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 579281
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "at": 579316
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 579641
+      },
+      {
+        "kind": "say",
+        "option": "no",
+        "at": 579891
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "at": 580066
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 580181
+      },
+      {
+        "kind": "next",
+        "at": 580181
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 580721
+      },
+      {
+        "kind": "say",
+        "option": "tell",
+        "at": 580891
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 581081
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 581241
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 581411
+      },
+      {
+        "kind": "say",
+        "option": "build",
+        "at": 581506
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 581611
+      },
+      {
+        "kind": "next",
+        "at": 581611
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 582161
+      },
+      {
+        "kind": "say",
+        "option": "cancel",
+        "at": 582196
+      },
+      {
+        "kind": "say",
+        "option": "busy",
+        "at": 582521
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 582681
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 582931
+      },
+      {
+        "kind": "next",
+        "at": 582931
+      },
+      {
+        "kind": "say",
+        "option": "send",
+        "at": 583801
+      }
+    ],
+    "minute": 583801,
+    "hash": "10f8cba6a43f3b60e756cfc528f110b47a1f931e9d90bac969a5a1458150b908",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "0822b9d2706e5db31ad2067e9811c3d2d88f8be0d885ddf8e551438a12d1f3e2",
+        "after37": "9642501ed8c75a554871d93d0af3f6e675ba09dc24b9d9077db27f81e2b741de"
+      },
+      {
+        "minute": 577291,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "truth",
+            "at": 576506
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          }
+        ],
+        "hash": "fca0bb3e0a20b052a59afaec3dd4f04a547278af6ac3494addb9a55012c91006",
+        "after37": "405c24296d68e8e4f989500f399e2b78cd3399a5a68d15e2fa59f4797ee97ffb"
+      },
+      {
+        "minute": 579641,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "truth",
+            "at": 576506
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 577841
+          },
+          {
+            "kind": "say",
+            "option": "truth",
+            "at": 577946
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "at": 578111
+          },
+          {
+            "kind": "say",
+            "option": "sit",
+            "at": 578201
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 578361
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 578531
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 578731
+          },
+          {
+            "kind": "next",
+            "at": 578731
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 579281
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "at": 579316
+          }
+        ],
+        "hash": "a968e6395fdbd46c3f0e5a77d30b68c68a4a350cc13a79f7e40ca4a6f3f6a7b6",
+        "after37": "3f307920824d825179f97b8adb1e0979c81b3d79867cf5a12bdc7ebb8c73cd66"
+      }
+    ]
+  },
+  {
+    "seed": 7,
+    "policy": "insist",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 576401
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 576436
+      },
+      {
+        "kind": "say",
+        "option": "talk",
+        "insist": true,
+        "at": 576641
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 576761
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 576921
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 577091
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 577291
+      },
+      {
+        "kind": "next",
+        "at": 577291
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 577841
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "insist": true,
+        "at": 577946
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "insist": true,
+        "at": 578111
+      },
+      {
+        "kind": "say",
+        "option": "sit",
+        "insist": true,
+        "at": 578201
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 578361
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 578531
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 578731
+      },
+      {
+        "kind": "next",
+        "at": 578731
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 579281
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 579316
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 579641
+      },
+      {
+        "kind": "say",
+        "option": "no",
+        "insist": true,
+        "at": 579891
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "insist": true,
+        "at": 580066
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 580181
+      },
+      {
+        "kind": "next",
+        "at": 580181
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 580721
+      },
+      {
+        "kind": "say",
+        "option": "yes",
+        "insist": true,
+        "at": 580891
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 581081
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 581241
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 581411
+      },
+      {
+        "kind": "say",
+        "option": "build",
+        "insist": true,
+        "at": 581506
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 581611
+      },
+      {
+        "kind": "next",
+        "at": 581611
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 582161
+      },
+      {
+        "kind": "say",
+        "option": "cancel",
+        "insist": true,
+        "at": 582196
+      },
+      {
+        "kind": "say",
+        "option": "busy",
+        "insist": true,
+        "at": 582521
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 582681
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 582931
+      },
+      {
+        "kind": "next",
+        "at": 582931
+      },
+      {
+        "kind": "say",
+        "option": "send",
+        "insist": true,
+        "at": 583801
+      }
+    ],
+    "minute": 583801,
+    "hash": "5eb0c007c1b66895b1c0d515bef85a7341c3039dea203474196fe71bae505b88",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "0822b9d2706e5db31ad2067e9811c3d2d88f8be0d885ddf8e551438a12d1f3e2",
+        "after37": "9642501ed8c75a554871d93d0af3f6e675ba09dc24b9d9077db27f81e2b741de"
+      },
+      {
+        "minute": 577841,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "insist": true,
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          }
+        ],
+        "hash": "226db403f310964ee66fe09c4bff233bd170d2e6b25f665147f25ce46aeaa793",
+        "after37": "e0f20b85d423e16524e6592e2dd5015500b0db25498fd620f0042d78cdb24b5d"
+      },
+      {
+        "minute": 579891,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "insist": true,
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 577841
+          },
+          {
+            "kind": "say",
+            "option": "truth",
+            "insist": true,
+            "at": 577946
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "insist": true,
+            "at": 578111
+          },
+          {
+            "kind": "say",
+            "option": "sit",
+            "insist": true,
+            "at": 578201
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 578361
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 578531
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 578731
+          },
+          {
+            "kind": "next",
+            "at": 578731
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 579281
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 579316
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 579641
+          }
+        ],
+        "hash": "deabd15c938ace0214e25ef2f8b81913a77faadac3daa632717272ddf5a7566a",
+        "after37": "6537af117ca20aabef8bb449f757b3b95e8759020a86cfe7ea16d4b69f47b4e7"
+      }
+    ]
+  },
+  {
+    "seed": 7,
+    "policy": "mixed",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 576401
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 576436
+      },
+      {
+        "kind": "say",
+        "option": "talk",
+        "at": 576641
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 576761
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 577091
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 577291
+      },
+      {
+        "kind": "next",
+        "at": 577291
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "at": 577931
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "insist": true,
+        "at": 578111
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 578361
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 578531
+      },
+      {
+        "kind": "next",
+        "at": 578736
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 579281
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 579316
+      },
+      {
+        "kind": "say",
+        "option": "no",
+        "at": 579891
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "insist": true,
+        "at": 580066
+      },
+      {
+        "kind": "next",
+        "at": 580186
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 580721
+      },
+      {
+        "kind": "say",
+        "option": "yes",
+        "insist": true,
+        "at": 580891
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 581241
+      },
+      {
+        "kind": "say",
+        "option": "stay",
+        "insist": true,
+        "at": 581386
+      },
+      {
+        "kind": "say",
+        "option": "build",
+        "at": 581506
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 581611
+      },
+      {
+        "kind": "next",
+        "at": 581611
+      },
+      {
+        "kind": "say",
+        "option": "cancel",
+        "at": 582196
+      },
+      {
+        "kind": "say",
+        "option": "busy",
+        "insist": true,
+        "at": 582521
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 582851
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 583081
+      },
+      {
+        "kind": "next",
+        "at": 583081
+      }
+    ],
+    "minute": 583809,
+    "hash": "b0a26e8fdc88b3a9dcc8e4403a6c3f0ac6563573dbbadc1050c2ad0ae2f224e8",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "0822b9d2706e5db31ad2067e9811c3d2d88f8be0d885ddf8e551438a12d1f3e2",
+        "after37": "9642501ed8c75a554871d93d0af3f6e675ba09dc24b9d9077db27f81e2b741de"
+      },
+      {
+        "minute": 577291,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          }
+        ],
+        "hash": "bb6cccfce6720f8139b5f67e65a86d651277158089b968484b3434cd98962dc4",
+        "after37": "538e1e375e5a0738e86fa1f35c688a4ef9347c777f822ac05a9d4ae683d88959"
+      },
+      {
+        "minute": 579641,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "at": 577931
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "insist": true,
+            "at": 578111
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 578361
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 578531
+          },
+          {
+            "kind": "next",
+            "at": 578736
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 579281
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 579316
+          }
+        ],
+        "hash": "5e7e5b2763f6666fe4b75fe4198c1b1a1ee98b42d8c23cecdb4da9a0253f2274",
+        "after37": "f9c13acb7192521e8b1d5a8a5209224263cf9bd01640c9f64f68386544e5fdea"
+      }
+    ]
+  },
+  {
+    "seed": 42,
+    "policy": "silent",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "next",
+        "at": 577296
+      },
+      {
+        "kind": "next",
+        "at": 578736
+      },
+      {
+        "kind": "next",
+        "at": 580186
+      },
+      {
+        "kind": "next",
+        "at": 581616
+      },
+      {
+        "kind": "next",
+        "at": 583086
+      }
+    ],
+    "minute": 583809,
+    "hash": "9888f976a63b2fd11a1f23d7baa0a3cf3216c3a9777124fd1590d96968be008b",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "557f1e712be1b5b8f92c911d974ec3b01c7cc8463f9955d130d0fc693d506a86",
+        "after37": "e31b6b689d381cd0b89008c8749f6d8ac4896bde72775c9c1af582ff9982895b"
+      },
+      {
+        "minute": 577291,
+        "inputs": [],
+        "hash": "772c31ada92f1507b6aac4ed2b15ffa02b38f6d825b3f97e4331a65856051a1c",
+        "after37": "eda28e211f50fc25aa33f2f9abca46f6335f3fda2d5aa64696d309ca30027571"
+      },
+      {
+        "minute": 579386,
+        "inputs": [
+          {
+            "kind": "next",
+            "at": 577296
+          },
+          {
+            "kind": "next",
+            "at": 578736
+          }
+        ],
+        "hash": "e5249a797e18d7864c51a99313efd806193a9a48935f360be1d8c8ab58973ab2",
+        "after37": "d9e3813e2e26d2b4eeeafec97b46951cdbe8741fb35682555590bbcaa2869646"
+      }
+    ]
+  },
+  {
+    "seed": 42,
+    "policy": "oppose",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 576401
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "at": 576436
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "at": 576506
+      },
+      {
+        "kind": "say",
+        "option": "talk",
+        "at": 576641
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 576761
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 576921
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 577091
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 577291
+      },
+      {
+        "kind": "next",
+        "at": 577291
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 577841
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "at": 577931
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "at": 578111
+      },
+      {
+        "kind": "say",
+        "option": "sit",
+        "at": 578201
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 578361
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 578531
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 578731
+      },
+      {
+        "kind": "next",
+        "at": 578731
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 579281
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "at": 579316
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 579641
+      },
+      {
+        "kind": "say",
+        "option": "no",
+        "at": 579891
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "at": 580066
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 580181
+      },
+      {
+        "kind": "next",
+        "at": 580181
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 580721
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "at": 580826
+      },
+      {
+        "kind": "say",
+        "option": "yes",
+        "at": 580891
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 581081
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 581241
+      },
+      {
+        "kind": "say",
+        "option": "stay",
+        "at": 581386
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 581427
+      },
+      {
+        "kind": "say",
+        "option": "build",
+        "at": 581506
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 581611
+      },
+      {
+        "kind": "next",
+        "at": 581611
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 582161
+      },
+      {
+        "kind": "say",
+        "option": "cancel",
+        "at": 582196
+      },
+      {
+        "kind": "say",
+        "option": "busy",
+        "at": 582521
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 582681
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 582931
+      },
+      {
+        "kind": "next",
+        "at": 582931
+      },
+      {
+        "kind": "say",
+        "option": "send",
+        "at": 583801
+      }
+    ],
+    "minute": 583801,
+    "hash": "be3df95deed3dc9d420d99be4b41c908bd24475bbe4b17e316303c04ba3962c4",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "557f1e712be1b5b8f92c911d974ec3b01c7cc8463f9955d130d0fc693d506a86",
+        "after37": "e31b6b689d381cd0b89008c8749f6d8ac4896bde72775c9c1af582ff9982895b"
+      },
+      {
+        "minute": 577291,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "truth",
+            "at": 576506
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          }
+        ],
+        "hash": "f4d6522d60aec25aa013e5c20db95028de8b032e9a13563fd571e840183b468c",
+        "after37": "bc105783d2878ad98efc85a957c5b924236a4dc753e7717a7e8d363553d5dc1a"
+      },
+      {
+        "minute": 579641,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "truth",
+            "at": 576506
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 577841
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "at": 577931
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "at": 578111
+          },
+          {
+            "kind": "say",
+            "option": "sit",
+            "at": 578201
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 578361
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 578531
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 578731
+          },
+          {
+            "kind": "next",
+            "at": 578731
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 579281
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "at": 579316
+          }
+        ],
+        "hash": "045098c9e3b400f022f97e2027f14aa5b0959689132598d1d73a49dec006147c",
+        "after37": "8e88d7b8111f3a8bfb2751104b532518244cee10fdf5aa543b7594054e1ee964"
+      }
+    ]
+  },
+  {
+    "seed": 42,
+    "policy": "insist",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 576401
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 576436
+      },
+      {
+        "kind": "say",
+        "option": "talk",
+        "insist": true,
+        "at": 576641
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 576761
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 576921
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 577091
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 577291
+      },
+      {
+        "kind": "next",
+        "at": 577291
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 577841
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "insist": true,
+        "at": 577946
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "insist": true,
+        "at": 578111
+      },
+      {
+        "kind": "say",
+        "option": "sit",
+        "insist": true,
+        "at": 578201
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 578361
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 578531
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 578731
+      },
+      {
+        "kind": "next",
+        "at": 578731
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 579281
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 579316
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 579641
+      },
+      {
+        "kind": "say",
+        "option": "no",
+        "insist": true,
+        "at": 579891
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "insist": true,
+        "at": 580066
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 580181
+      },
+      {
+        "kind": "next",
+        "at": 580181
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 580721
+      },
+      {
+        "kind": "say",
+        "option": "yes",
+        "insist": true,
+        "at": 580891
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 581081
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 581241
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 581411
+      },
+      {
+        "kind": "say",
+        "option": "build",
+        "insist": true,
+        "at": 581506
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 581611
+      },
+      {
+        "kind": "next",
+        "at": 581611
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 582161
+      },
+      {
+        "kind": "say",
+        "option": "cancel",
+        "insist": true,
+        "at": 582196
+      },
+      {
+        "kind": "say",
+        "option": "busy",
+        "insist": true,
+        "at": 582521
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 582681
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 582931
+      },
+      {
+        "kind": "next",
+        "at": 582931
+      },
+      {
+        "kind": "say",
+        "option": "send",
+        "insist": true,
+        "at": 583801
+      }
+    ],
+    "minute": 583801,
+    "hash": "820ebce59d25d49332900b5c867717c669578a448d46a3629c2455fa119490b3",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "557f1e712be1b5b8f92c911d974ec3b01c7cc8463f9955d130d0fc693d506a86",
+        "after37": "e31b6b689d381cd0b89008c8749f6d8ac4896bde72775c9c1af582ff9982895b"
+      },
+      {
+        "minute": 577841,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "insist": true,
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          }
+        ],
+        "hash": "e3090182963e7001ee873cde966990f54ec7afdedd6dccc383626a8160711aa4",
+        "after37": "65ff6ccc44114305fe24600d363ed1ffff267b0af2e19e1b125277affd1107cb"
+      },
+      {
+        "minute": 579891,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "insist": true,
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 577841
+          },
+          {
+            "kind": "say",
+            "option": "truth",
+            "insist": true,
+            "at": 577946
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "insist": true,
+            "at": 578111
+          },
+          {
+            "kind": "say",
+            "option": "sit",
+            "insist": true,
+            "at": 578201
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 578361
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 578531
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 578731
+          },
+          {
+            "kind": "next",
+            "at": 578731
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 579281
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 579316
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 579641
+          }
+        ],
+        "hash": "f26bafff8fec1f69eeef0f617d91290764e149f61d39649afd91fec565b6599b",
+        "after37": "690c494bf4ffd2b7b151be6281ec1e75d53db49272fe984ca2f7d358e6a413f9"
+      }
+    ]
+  },
+  {
+    "seed": 42,
+    "policy": "mixed",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 576401
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 576436
+      },
+      {
+        "kind": "say",
+        "option": "talk",
+        "at": 576641
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 576761
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 577091
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 577291
+      },
+      {
+        "kind": "next",
+        "at": 577291
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "at": 577931
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "insist": true,
+        "at": 578111
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 578361
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 578531
+      },
+      {
+        "kind": "next",
+        "at": 578736
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 579281
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 579316
+      },
+      {
+        "kind": "say",
+        "option": "no",
+        "at": 579891
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "insist": true,
+        "at": 580066
+      },
+      {
+        "kind": "next",
+        "at": 580186
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 580721
+      },
+      {
+        "kind": "say",
+        "option": "yes",
+        "insist": true,
+        "at": 580891
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 581241
+      },
+      {
+        "kind": "say",
+        "option": "stay",
+        "insist": true,
+        "at": 581386
+      },
+      {
+        "kind": "say",
+        "option": "build",
+        "at": 581506
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 581611
+      },
+      {
+        "kind": "next",
+        "at": 581611
+      },
+      {
+        "kind": "say",
+        "option": "cancel",
+        "at": 582196
+      },
+      {
+        "kind": "say",
+        "option": "busy",
+        "insist": true,
+        "at": 582521
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 582851
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 583081
+      },
+      {
+        "kind": "next",
+        "at": 583081
+      }
+    ],
+    "minute": 583809,
+    "hash": "d035de3b3d0ad890fc7c4ec42ad934b5d8fb2f04bfba1ef3fcdf70fee0008b87",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "557f1e712be1b5b8f92c911d974ec3b01c7cc8463f9955d130d0fc693d506a86",
+        "after37": "e31b6b689d381cd0b89008c8749f6d8ac4896bde72775c9c1af582ff9982895b"
+      },
+      {
+        "minute": 577291,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          }
+        ],
+        "hash": "aa7b11265627e2f94dcd7be0e0a6678f05d235c4593b2d58ea021cc454c8ed82",
+        "after37": "c43021d58e89a6294dde6caa2bb92f67507dddb48263c64db49cde516ad59c6b"
+      },
+      {
+        "minute": 579641,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "at": 577931
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "insist": true,
+            "at": 578111
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 578361
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 578531
+          },
+          {
+            "kind": "next",
+            "at": 578736
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 579281
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 579316
+          }
+        ],
+        "hash": "2d6f95134a5c92491b4ca4774b43f52f20f55bc479197f77381e8c07458b9cfa",
+        "after37": "41258fe8d802a44948c792743e8361afce0e3ae97071857504f7ba645250efa0"
+      }
+    ]
+  },
+  {
+    "seed": 1003,
+    "policy": "silent",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "next",
+        "at": 577296
+      },
+      {
+        "kind": "next",
+        "at": 578736
+      },
+      {
+        "kind": "next",
+        "at": 580186
+      },
+      {
+        "kind": "next",
+        "at": 581616
+      },
+      {
+        "kind": "next",
+        "at": 582936
+      }
+    ],
+    "minute": 583809,
+    "hash": "c53740b8c9f8471d11b4216168b474b2015d9386f1a495aa3d03547f5b084925",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "78ffbfb3f65c668c448e0c1db50e2951d3453b194bd52f65a7acb8118f6535e8",
+        "after37": "8df91de84963937ee78b28de3181b354ac4175bbc7840f360079c6ae9113f2e3"
+      },
+      {
+        "minute": 577841,
+        "inputs": [
+          {
+            "kind": "next",
+            "at": 577296
+          }
+        ],
+        "hash": "b85ab2a6ee4be6e5d15ecdf27e1ce0cfbc83d1dbbf10ff593689d45a2c3a03ea",
+        "after37": "1db4479778c7e49f0fbbc29dc6997783e34f827affec497d77e7b238190bbb2a"
+      },
+      {
+        "minute": 579641,
+        "inputs": [
+          {
+            "kind": "next",
+            "at": 577296
+          },
+          {
+            "kind": "next",
+            "at": 578736
+          }
+        ],
+        "hash": "b344815ab77658edcd791a632dd595189d7a62f8a7fb932425ecdc8b5e59b511",
+        "after37": "4216659ef8a2bf9f959668e949dd6717f20daf7bc64d3ae51bf504442450f279"
+      }
+    ]
+  },
+  {
+    "seed": 1003,
+    "policy": "oppose",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 576401
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "at": 576436
+      },
+      {
+        "kind": "say",
+        "option": "talk",
+        "at": 576641
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 576761
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 576921
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 577091
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 577291
+      },
+      {
+        "kind": "next",
+        "at": 577291
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 577841
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "at": 578111
+      },
+      {
+        "kind": "say",
+        "option": "sit",
+        "at": 578201
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 578361
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 578531
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 578731
+      },
+      {
+        "kind": "next",
+        "at": 578731
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 579281
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "at": 579316
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 579641
+      },
+      {
+        "kind": "say",
+        "option": "no",
+        "at": 579891
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "at": 580066
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 580181
+      },
+      {
+        "kind": "next",
+        "at": 580181
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 580721
+      },
+      {
+        "kind": "say",
+        "option": "tell",
+        "at": 580891
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 581081
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 581241
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 581411
+      },
+      {
+        "kind": "say",
+        "option": "build",
+        "at": 581506
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 581611
+      },
+      {
+        "kind": "next",
+        "at": 581611
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 582161
+      },
+      {
+        "kind": "say",
+        "option": "cancel",
+        "at": 582196
+      },
+      {
+        "kind": "say",
+        "option": "busy",
+        "at": 582521
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "at": 582681
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 582851
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 583081
+      },
+      {
+        "kind": "next",
+        "at": 583081
+      },
+      {
+        "kind": "say",
+        "option": "send",
+        "at": 583801
+      }
+    ],
+    "minute": 583801,
+    "hash": "02e03919f8c9279aca31bc83cfc232b2c66bc15de152617e118886171f56b840",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "78ffbfb3f65c668c448e0c1db50e2951d3453b194bd52f65a7acb8118f6535e8",
+        "after37": "8df91de84963937ee78b28de3181b354ac4175bbc7840f360079c6ae9113f2e3"
+      },
+      {
+        "minute": 577841,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          }
+        ],
+        "hash": "1bf236e077a2c5942758d747c24e4a4f355d938ed0672fa944fae1878bfd4ae6",
+        "after37": "9840cd9adb1028879b16214a03758ddd3b832ce4dbf37ffbed19f7a947b517d6"
+      },
+      {
+        "minute": 580066,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 577841
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "at": 578111
+          },
+          {
+            "kind": "say",
+            "option": "sit",
+            "at": 578201
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "at": 578361
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "at": 578531
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 578731
+          },
+          {
+            "kind": "next",
+            "at": 578731
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 579281
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "at": 579316
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 579641
+          },
+          {
+            "kind": "say",
+            "option": "no",
+            "at": 579891
+          }
+        ],
+        "hash": "ba40abf1fe842c0eda60e86f04613a9beacddcd02ef49ed545c334514688a22c",
+        "after37": "f373e825a7b63819f310ef8da7428b14bb01d1afa0ccc0d1f4d9382ed97c8a80"
+      }
+    ]
+  },
+  {
+    "seed": 1003,
+    "policy": "insist",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 576401
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 576436
+      },
+      {
+        "kind": "say",
+        "option": "talk",
+        "insist": true,
+        "at": 576641
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 576761
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 576921
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 577091
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 577291
+      },
+      {
+        "kind": "next",
+        "at": 577291
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 577841
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "insist": true,
+        "at": 577946
+      },
+      {
+        "kind": "say",
+        "option": "own",
+        "insist": true,
+        "at": 578111
+      },
+      {
+        "kind": "say",
+        "option": "sit",
+        "insist": true,
+        "at": 578201
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 578361
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 578531
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 578731
+      },
+      {
+        "kind": "next",
+        "at": 578731
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 579281
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 579316
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 579641
+      },
+      {
+        "kind": "say",
+        "option": "no",
+        "insist": true,
+        "at": 579891
+      },
+      {
+        "kind": "say",
+        "option": "truth",
+        "insist": true,
+        "at": 580066
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 580181
+      },
+      {
+        "kind": "next",
+        "at": 580181
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 580721
+      },
+      {
+        "kind": "say",
+        "option": "yes",
+        "insist": true,
+        "at": 580891
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "insist": true,
+        "at": 581081
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 581241
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 581411
+      },
+      {
+        "kind": "say",
+        "option": "build",
+        "insist": true,
+        "at": 581506
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 581611
+      },
+      {
+        "kind": "next",
+        "at": 581611
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 582161
+      },
+      {
+        "kind": "say",
+        "option": "cancel",
+        "insist": true,
+        "at": 582196
+      },
+      {
+        "kind": "say",
+        "option": "busy",
+        "insist": true,
+        "at": 582521
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 582681
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "insist": true,
+        "at": 582931
+      },
+      {
+        "kind": "next",
+        "at": 582931
+      },
+      {
+        "kind": "say",
+        "option": "send",
+        "insist": true,
+        "at": 583801
+      }
+    ],
+    "minute": 583801,
+    "hash": "afc5e10087e38421f9734bf1b200f6c4379247b3e895847cdd53512b9a82a5b2",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "78ffbfb3f65c668c448e0c1db50e2951d3453b194bd52f65a7acb8118f6535e8",
+        "after37": "8df91de84963937ee78b28de3181b354ac4175bbc7840f360079c6ae9113f2e3"
+      },
+      {
+        "minute": 577841,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "insist": true,
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          }
+        ],
+        "hash": "46f5b79540d28fab324d37dc0adab3876ee118338486463e13f96106b8e340f6",
+        "after37": "69e11d82632c278c4dc32b42c2714a1e69493ead93fd2759490b495f7de1fdb4"
+      },
+      {
+        "minute": 579891,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "talk",
+            "insist": true,
+            "at": 576641
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 577091
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 577841
+          },
+          {
+            "kind": "say",
+            "option": "truth",
+            "insist": true,
+            "at": 577946
+          },
+          {
+            "kind": "say",
+            "option": "own",
+            "insist": true,
+            "at": 578111
+          },
+          {
+            "kind": "say",
+            "option": "sit",
+            "insist": true,
+            "at": 578201
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 578361
+          },
+          {
+            "kind": "say",
+            "option": "call",
+            "insist": true,
+            "at": 578531
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "insist": true,
+            "at": 578731
+          },
+          {
+            "kind": "next",
+            "at": 578731
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 579281
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 579316
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "insist": true,
+            "at": 579641
+          }
+        ],
+        "hash": "021f7217796f359a9620ac67f4c3b22e231dc01861c23e687a65cdef3f5755ec",
+        "after37": "5e1764edbba0cadf550e8fa6b6c8bd8788c1405ec889faf00e5a8d2612a6d988"
+      }
+    ]
+  },
+  {
+    "seed": 1003,
+    "policy": "mixed",
+    "version": "0.3.0",
+    "inputs": [
+      {
+        "kind": "say",
+        "option": "up",
+        "at": 576401
+      },
+      {
+        "kind": "say",
+        "option": "reply",
+        "insist": true,
+        "at": 576436
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 576761
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 576921
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 577291
+      },
+      {
+        "kind": "next",
+        "at": 577291
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 577841
+      },
+      {
+        "kind": "say",
+        "option": "sit",
+        "at": 578201
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 578361
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 578731
+      },
+      {
+        "kind": "next",
+        "at": 578731
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 579281
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 579641
+      },
+      {
+        "kind": "say",
+        "option": "no",
+        "insist": true,
+        "at": 579891
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "at": 580181
+      },
+      {
+        "kind": "next",
+        "at": 580181
+      },
+      {
+        "kind": "say",
+        "option": "up",
+        "insist": true,
+        "at": 580721
+      },
+      {
+        "kind": "say",
+        "option": "outside",
+        "at": 581081
+      },
+      {
+        "kind": "say",
+        "option": "walk",
+        "insist": true,
+        "at": 581241
+      },
+      {
+        "kind": "say",
+        "option": "build",
+        "at": 581506
+      },
+      {
+        "kind": "say",
+        "option": "write",
+        "insist": true,
+        "at": 581611
+      },
+      {
+        "kind": "next",
+        "at": 581611
+      },
+      {
+        "kind": "say",
+        "option": "cancel",
+        "at": 582196
+      },
+      {
+        "kind": "say",
+        "option": "busy",
+        "insist": true,
+        "at": 582521
+      },
+      {
+        "kind": "say",
+        "option": "call",
+        "at": 582931
+      },
+      {
+        "kind": "next",
+        "at": 582931
+      },
+      {
+        "kind": "say",
+        "option": "send",
+        "insist": true,
+        "at": 583801
+      }
+    ],
+    "minute": 583801,
+    "hash": "54793855e06a1866e81279177c376ba096d83043f2bfa5f1581d30c494d6fa30",
+    "checkpoints": [
+      {
+        "minute": 576401,
+        "inputs": [],
+        "hash": "78ffbfb3f65c668c448e0c1db50e2951d3453b194bd52f65a7acb8118f6535e8",
+        "after37": "8df91de84963937ee78b28de3181b354ac4175bbc7840f360079c6ae9113f2e3"
+      },
+      {
+        "minute": 577841,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          }
+        ],
+        "hash": "c3627443cba479fa7c628251ffa68135c7b13578c755912f543ccc4e18f22973",
+        "after37": "65b74353028439a9a3908e1c754b1d2e23e065dee461d49ae8f9c29d05728e9d"
+      },
+      {
+        "minute": 580066,
+        "inputs": [
+          {
+            "kind": "say",
+            "option": "up",
+            "at": 576401
+          },
+          {
+            "kind": "say",
+            "option": "reply",
+            "insist": true,
+            "at": 576436
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 576761
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 576921
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 577291
+          },
+          {
+            "kind": "next",
+            "at": 577291
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 577841
+          },
+          {
+            "kind": "say",
+            "option": "sit",
+            "at": 578201
+          },
+          {
+            "kind": "say",
+            "option": "walk",
+            "insist": true,
+            "at": 578361
+          },
+          {
+            "kind": "say",
+            "option": "write",
+            "at": 578731
+          },
+          {
+            "kind": "next",
+            "at": 578731
+          },
+          {
+            "kind": "say",
+            "option": "up",
+            "insist": true,
+            "at": 579281
+          },
+          {
+            "kind": "say",
+            "option": "outside",
+            "at": 579641
+          },
+          {
+            "kind": "say",
+            "option": "no",
+            "insist": true,
+            "at": 579891
+          }
+        ],
+        "hash": "77bcb71b0d7fecd8329702ef25c23c0e3dd8de353a81e8b4b2c0a5dfa4c8d9bd",
+        "after37": "219c1708472db3644d9bbb0334675f612b2116bee465f5bf74b96d31551d4a3c"
+      }
+    ]
+  }
+]

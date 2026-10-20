@@ -33,9 +33,7 @@ interface Checkpoint {
   hash: string;
   after37: string;
 }
-const rows = JSON.parse(
-  readFileSync(new URL('./fixtures/edition021-hashes.json', import.meta.url), 'utf8'),
-) as {
+interface EditionFixture {
   seed: number;
   policy: string;
   version: string;
@@ -43,13 +41,18 @@ const rows = JSON.parse(
   inputs: Input[];
   hash: string;
   checkpoints: Checkpoint[];
-}[];
+}
+// 0.3.0 hashes captured before simulation changes at 052ad26f47e9e90685deb53d9998821af85e1473.
+const fixtures = ['edition021-hashes.json', 'edition030-hashes.json'].flatMap(
+  (file) =>
+    JSON.parse(readFileSync(new URL(`./fixtures/${file}`, import.meta.url), 'utf8')) as EditionFixture[],
+);
 describe('edition boundaries', () => {
   it('starts new weeks on the listening edition', () => {
     expect(newGame(7).version).toBe('0.3.0');
   });
-  for (const row of rows)
-    it(`preserves full legacy ${row.seed}/${row.policy} and restored continuations`, () => {
+  for (const row of fixtures)
+    it(`preserves full ${row.version} ${row.seed}/${row.policy} and restored continuations`, () => {
       const final = replay(row.seed, row.inputs, row.minute, row.version);
       while (final.phase === 'day') step(final);
       expect(hash(final)).toBe(row.hash);

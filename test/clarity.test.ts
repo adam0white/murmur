@@ -61,6 +61,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     const page = await browser.newPage();
     try {
       await page.goto(origin);
+      await page.locator('.title > p').first().waitFor();
       const purpose = await page.locator('.title > p').allTextContents();
       expect(purpose.join(' ')).toMatch(/through her week/);
       expect(purpose.join(' ')).toMatch(/words can change her choices/);
@@ -513,6 +514,66 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
 });
 
 describe('design round card safety and time', { timeout: 30_000 }, () => {
+  it.each([
+    { width: 360, height: 690 },
+    { width: 1280, height: 800 },
+  ])('replaces an unread reply with the next live card at $width×$height', async (viewport) => {
+    const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.stack ?? error.message));
+    try {
+      await page.clock.install();
+      await page.goto(`${origin}?seed=1`);
+      await page.locator('#new').click();
+      await page.clock.runFor(1000);
+      await page.locator('[data-o="up"]').click();
+      expect(await page.locator('.gap .her').count()).toBe(1);
+      expect(await page.locator('.gap-actions').innerText()).toContain('The clock keeps running.');
+      expect(await page.getByRole('button', { name: 'Let time pass faster ▸', exact: true }).count()).toBe(1);
+      // Leave the reply open: normal playback must open the next moment without an acceleration click.
+      await page.clock.runFor(20_000);
+      expect(errors).toEqual([]);
+      const live = await page.evaluate(() => {
+        const game = (
+          window as unknown as {
+            __murmur: {
+              fast: boolean;
+              state: { card: { moment: string }; minute: number; inputs: Input[] };
+            };
+          }
+        ).__murmur;
+        return { fast: game.fast, ...game.state };
+      });
+      expect(live.fast).toBe(false);
+      expect(live.card?.moment).toBe('note-1');
+      expect(await page.locator('.gap').count()).toBe(0);
+      expect(await page.locator('.sheet.open .card').count()).toBe(1);
+      expect(await page.locator('#pace').innerText()).toMatch(/^Slow .*choice waiting$/);
+      expect(await page.locator('#hurry').count()).toBe(0);
+      const reply = page.locator('[data-o="reply"]');
+      const box = await reply.boundingBox();
+      expect(box?.y).toBeGreaterThanOrEqual(0);
+      expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
+      const clock = await page.locator('#clock').innerText();
+      await page.clock.runFor(13_000);
+      expect(await page.locator('#clock').innerText()).not.toBe(clock);
+      const minute = await page.evaluate(
+        () => (window as unknown as { __murmur: { state: { minute: number } } }).__murmur.state.minute,
+      );
+      expect(minute - live.minute).toBeGreaterThanOrEqual(1);
+      expect(minute - live.minute).toBeLessThanOrEqual(3);
+      await reply.tap();
+      const input = await page.evaluate(() =>
+        (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs.at(-1),
+      );
+      expect(input).toMatchObject({ kind: 'say', option: 'reply' });
+      expect(await page.locator('.gap').count()).toBe(1);
+      expect(errors).toEqual([]);
+    } finally {
+      await page.close();
+    }
+  });
+
   it('states the real response time as part of her moment', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
@@ -657,7 +718,7 @@ describe('design round remembered words', { timeout: 30_000 }, () => {
         while (game.state.day === 1 && game.state.phase === 'day' && game.state.card) game.quiet();
       });
       await page.locator('#next').waitFor();
-      expect(await page.locator('.notebook .stayed').count()).toBeGreaterThan(0);
+      expect(await page.locator('.notebook .stayed').count()).toBe(0);
       await page.locator('#next').click();
       await page.locator('#hush').waitFor();
       expect(await page.locator('.card .stayed').innerText()).toMatch(/get up|feet|alarm/i);

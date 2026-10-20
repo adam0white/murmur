@@ -113,7 +113,22 @@ Cost and risk: more uncertainty makes her less predictable. Retained words add r
 **Replay and revert:** 0.2.1 saves and exports stay on 0.2.1, including unversioned historical saves. Creation and replay take an explicit edition; stored metadata and journal reconstruction preserve it. Canonical full-state hashes were captured from commit `a9447c2` before simulation edits: 12 complete runs across three seeds and four policies, plus 36 checkpoint replays/restored continuations. New runs use `GAME_VERSION` in `src/sim/game.ts`. To revert the default, set it to `'0.2.1'` and deploy. Keep `LISTENING_EDITION` and both supported branches so existing 0.3.0 runs still replay.
 
 ## Deferred (target: 2026-11-03)
+- Replace Friday’s repeated coffee card (fun review 2; target 2026-11-03): a new competing obligation changes the decisions and needs its own authored situation, edition boundary and playtest; this round preserves live 0.3.0 runs.
 - More campaigns, including a second week.
 - Other people as HF persons (Ece, Mum).
 - DL-27 exact resume and saved-location sentence (review finding 1; target 2026-11-03): versioned snapshots, legacy migration and reload tests need a separate persistence change; current seed/input-only Continue can skip an unanswered interval.
 - DL-28 replay-preserving send compaction (review finding 4; target 2026-11-03): both send paths need a compact export contract with exact in-progress replay boundaries and representative upload-bound tests.
+
+### Follow-up b (2026-10-20; owner may veto)
+
+What remains: lead designer acceptance and a fresh source-unread check of feel. The delivery artifact is the `Follow-up b` section of `human-framework/scratch/design-round/murmur-report.md`; the lead designer accepts the round and the owner accepts feel.
+
+Priya's fresh retest: “I thought on with the day meant the day was waiting for me” and “Still thinking about it is now the same reassurance twice.” Her result was a keep: “I would return voluntarily for a short session.” These fresh reports have no new ledger IDs; the earlier request remains F-245/F-253. The fun review also saw the same alarm recall on Tuesday and Wednesday and a final hold that the ending did not acknowledge.
+
+The existing live-card replacement and slowdown are now covered by normal-playback browser tests at both fixture sizes. We could not reproduce a hidden next card on 052ad26: twelve seed/answer probes, including assent and refusal, all showed it. The reply control now says “Let time pass faster”; beside it, “The clock keeps running.” It describes acceleration rather than a waiting transition.
+
+Retained words use action-specific acknowledgments. Their first related card can recall them once; that answer reports the new result rather than repeating the recall. A completed action gets past-tense acknowledgment only when its narration is due. Later related cards and bedtime leave that thought alone. The journal preserves the exchange. One actual learned phrase appears quietly beneath the clock during the day. Saturday distinguishes a suggestion, an insistence she followed, an insistence she refused, explicit silence and timeout using the final moment's own record.
+
+All changes are presentation-only. Edition **0.3.0** and the HF **2.8.0** pin stay exact. Before editing, we captured 12 final canonical full-state hashes plus 36 checkpoints and restored continuations from 052ad26, alongside the existing 0.2.1 fixtures. Retiring a displayed thought does not discharge or change HF advice. It can still influence later choices while HF retains it; the UI stops repeating it.
+
+Cost: a single quiet phrase does not show every word she has learned. The player's earlier exchange remains in the journal, so a sentence can persist as history after leaving the reply; it is not announced again as a new recall. Reversal: revert this follow-up's UI changes and tests; keep both replay fixtures. No new-run edition switch is needed.

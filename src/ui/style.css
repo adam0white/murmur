@@ -267,6 +267,16 @@ button:focus-visible {
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
+.kept-words {
+  flex: 0 0 auto;
+  padding: 0 16px 4px;
+  font-size: 18px;
+  line-height: 1.15;
+  color: var(--ink-soft);
+}
+.kept-words[hidden] {
+  display: none;
+}
 .clock {
   font-variant-numeric: tabular-nums;
   font-size: 17px;
