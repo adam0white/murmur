@@ -105,7 +105,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         const canon = structuredClone(state.final);
         await importRun(page, state);
         expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(1);
-        expect(await page.getByRole('button', { name: 'Start a new week', exact: true }).count()).toBe(1);
+        expect(await page.getByRole('button', { name: 'Start over', exact: true }).count()).toBe(1);
         await snapshot(page, `week-one-ending-${size}`);
         await page.getByRole('button', { name: 'Another week', exact: true }).click();
         await page.locator('#hush').waitFor();
@@ -142,14 +142,10 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       try {
         await page.goto(`${origin}?seed=1003`);
         await page.getByRole('button', { name: 'Begin at the second week', exact: true }).click();
-        expect(await page.locator('.notebook').innerText()).toContain('Saturday');
-        expect(await page.evaluate(() => window.__murmur.state?.seed)).toBe(1003);
-        expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(6);
-        await page.evaluate(() => {
-          window.__murmur.fast = true;
-        });
-        await page.getByRole('button', { name: 'Another week', exact: true }).click();
+        // Straight to Monday of the second week: no recap page of answers the player never gave.
         await page.locator('#hush').waitFor();
+        expect(await page.evaluate(() => window.__murmur.state?.seed)).toBe(1003);
+        expect(await page.evaluate(() => window.__murmur.state?.past?.length)).toBe(1);
         expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(8);
         expect(await page.locator('body').innerText()).toContain('second week');
       } finally {
@@ -167,7 +163,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         expect(await page.locator('.voicenote').count()).toBe(0);
         expect(await page.locator('.final-input').count()).toBe(0);
         expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(0);
-        expect(await page.getByRole('button', { name: 'Start a new week', exact: true }).count()).toBe(1);
+        expect(await page.getByRole('button', { name: 'Start over', exact: true }).count()).toBe(1);
         expect(await page.locator('.first-week').innerText()).toContain(state.past?.[0]?.line);
         expect(await page.locator('.current-week .sday > .hand').allTextContents()).toEqual([
           'Mon',

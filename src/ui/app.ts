@@ -201,7 +201,7 @@ function title() {
   });
   document.getElementById('new')?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed()));
   document.getElementById('second')?.addEventListener('click', () => {
-    s = playedFirstWeek(urlSeed() ?? randomSeed());
+    s = anotherWeek(playedFirstWeek(urlSeed() ?? randomSeed()));
     writeSave();
     enter();
   });
@@ -748,7 +748,7 @@ function ending() {
     <div class="grow"></div>
     ${canAnotherWeek(s) ? '<div class="continuation"><p class="hand soft">Monday will come round again.</p><button class="primary" id="another">Another week</button></div>' : ''}
     <div class="actions">
-      <button class="quiet" id="again">Start a new week</button>
+      <button class="quiet" id="again">Start over</button>
       <button class="quiet" id="export">Download this run</button>
       <button class="quiet" id="send">Send this run to the notebook</button>
     </div>

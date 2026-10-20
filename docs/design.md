@@ -141,7 +141,7 @@ Owner, 2026-10-20: "We both need more of the same as well as other campaigns." "
 
 **Theme: getting better causes trouble.** Last week Dilan got a little more dependable. This week somebody starts depending on her. Ece's title for it: "Leave it with me."
 
-- **The same person goes on.** After Saturday's last page, "Another week" (now the main button; "Start a new week" is the quiet one) continues the same run: her trust in both voices, her phrases and their practice, habits, tiredness, and every open thread. Finished 0.3.0 runs can continue too: week one under 0.4.0 is rule-for-rule and line-for-line 0.3.0, so the old inputs replay as 0.4.0 and go on. The 0.3.0 export itself still replays as 0.3.0.
+- **The same person goes on.** After Saturday's last page, "Another week" (now the main button; "Start over", a new run, is the quiet one) continues the same run: her trust in both voices, her phrases and their practice, habits, tiredness, and every open thread. Finished 0.3.0 runs can continue too: week one under 0.4.0 is rule-for-rule and line-for-line 0.3.0, so the old inputs replay as 0.4.0 and go on. The 0.3.0 export itself still replays as 0.3.0.
 - **Week one's last page is canon.** Its thread lines and closing line ("On Sunday she rang anyway", "Ece has her own columns now", "Aylin came round on Saturday for the shelf", the lock screen) are true in week two. Nothing in week two contradicts them.
 - **More of the same, at the same density.** Five or six cards a day: the alarm, the bus home (the call to Mum), bed, and three new situations. Habits she built show as lines she does unasked. While "Feet on the floor" is strong she gets up alone and the journal says so.
 - **One new kind of choice a day:**
@@ -163,7 +163,7 @@ Deferred (target 2026-11-03): another person's week (Aylin); replay-variety Tues
 ### What is new in 0.4.0, as built (2026-10-20)
 
 - **Another week** on Saturday continues the same Dilan into Monday (day 8). Sunday passes offstage: two nights of fading phrases, and her daily promises (alarm, call to Mum) renew.
-- **Begin at the second week**, on the cover, for players who already know week one: a quiet voice plays week one for you (her likeliest answer each time, never the pull), then you start Monday.
+- **Begin at the second week**, on the cover, for players who already know week one: a quiet voice plays week one for you (her likeliest answer each time, never the pull), and you start on Monday of the second week. (The first build showed week one's Saturday page first, with "You suggested" lines the player never said; the first retest caught it, fixed the same day.)
 - **Getting up alone.** When "Feet on the floor" has enough practice (0.45), she skips the alarm card and gets up by herself, and the journal says so. Measured over 8 seeds: about 4 of 5 mornings for players who argued for it, none for players who stayed silent.
 - **Your advice travels.** What you told Dilan in week one comes back in Ece's mouth. "Walk away from it" and "Feet on the floor" fit Dilan and fit Ece badly; Thursday shows the result.
 - **The pull has listened too.** In week two it is a little louder (+0.1) and quotes her own phrases back bent.

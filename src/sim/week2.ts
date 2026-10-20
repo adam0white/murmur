@@ -449,7 +449,7 @@ const monday: Moment[] = [
       {
         id: 'rest',
         ink: 'Have your tea.',
-        label: 'sit with her tea',
+        label: 'sit with my tea',
         action: 'rest',
         duration: 30,
         advertises: { rest: 0.25 },
@@ -496,7 +496,7 @@ const tuesday: Moment[] = [
       {
         id: 'stand',
         ink: 'Let it stand.',
-        label: 'let her advice stand',
+        label: 'let my advice stand',
         action: 'advise-ece',
         duration: 3,
         advertises: { competence: 0.2 },
@@ -509,7 +509,7 @@ const tuesday: Moment[] = [
       {
         id: 'soften',
         ink: 'Soften it.',
-        label: 'soften her advice',
+        label: 'soften my advice',
         action: 'soften-advice',
         duration: 5,
         advertises: { belonging: 0.2 },
@@ -850,7 +850,7 @@ const thursday: Moment[] = [
       {
         id: 'restore',
         ink: 'Put it back your way.',
-        label: 'restore her board layout',
+        label: 'restore my board layout',
         action: 'restore-board',
         duration: 15,
         effort: 0.1,
@@ -1014,7 +1014,7 @@ const friday: Moment[] = [
       {
         id: 'ready',
         ink: 'Take the bag.',
-        label: 'take her bag',
+        label: 'take my bag',
         action: 'take-bag',
         duration: 2,
         advertises: { autonomy: 0.2 },
@@ -1024,7 +1024,7 @@ const friday: Moment[] = [
       {
         id: 'home',
         ink: 'Leave it by the door.',
-        label: 'leave her bag at home',
+        label: 'leave my bag at home',
         action: 'leave-bag',
         duration: 2,
         advertises: { safety: 0.15 },
