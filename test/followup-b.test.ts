@@ -63,6 +63,8 @@ async function load(s: GameState, viewport = { width: 360, height: 690 }, base =
   });
   await page.locator('.toast').waitFor();
   expect(await page.locator('.toast').textContent()).toContain('matches the file');
+  // Layout assertions must use the shipped fonts, as Playwright screenshots already do.
+  await page.evaluate(() => document.fonts.ready);
   return page;
 }
 async function visibleText(page: BrowserPage, selector: string) {

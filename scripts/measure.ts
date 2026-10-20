@@ -1,5 +1,5 @@
 // Headless measure: policy bots x seeds -> who won the moments, what she kept, how the two voices' trust moved.
-// Run: npm run measure -- seeds=8 [p=silent,oppose] [v=0.2.1,0.3.0] [json=/absolute/path.json]
+// Run: npm run measure -- seeds=8 [p=silent,oppose] [v=0.2.1,0.3.0,0.4.0] [json=/absolute/path.json]
 
 import { writeFileSync } from 'node:fs';
 import { tick } from '@adam0white/human-framework';
@@ -13,6 +13,7 @@ import {
   runToCard,
   step,
   trustOf,
+  WEEK_TWO_EDITION,
 } from '../src/sim/game.ts';
 import { momentById } from '../src/sim/moments.ts';
 import type { GameState } from '../src/sim/types.ts';
@@ -85,13 +86,28 @@ function run(seed: number, policy: Policy, version: string) {
   let pullWonTempting = 0;
   let cards = 0;
   let borrowed = 0;
+  let weekTwoPrompts = 0;
+  let weekTwoPullWon = 0;
+  const mornings = new Map<number, { day: number; feetPractice: number; alone: boolean }>();
   const t0 = performance.now();
-  for (let guard = 0; s.phase !== 'end' && guard < 2000; guard++) {
+  for (let guard = 0; guard < 2000; guard++) {
+    if (s.phase === 'end') {
+      if (version === WEEK_TWO_EDITION && s.day === 6) queueInput(s, { kind: 'next' });
+      else break;
+    }
     if (s.phase === 'evening') {
       queueInput(s, { kind: 'next' });
       continue;
     }
+    if (s.day >= 8 && s.day <= 12 && !mornings.has(s.day))
+      mornings.set(s.day, {
+        day: s.day,
+        feetPractice: ctxOf(s).phrases.find((ph) => ph.id === 'feet')?.practice ?? 0,
+        alone: false,
+      });
     runToCard(s);
+    const morning = mornings.get(s.day);
+    if (morning && s.stats.gotUpAlone) morning.alone = true;
     // resolve() ticks to the input minute before deciding. Forecast that exact state,
     // without changing the live person or consuming its RNG.
     const decisionState = structuredClone(s);
@@ -125,6 +141,10 @@ function run(seed: number, policy: Policy, version: string) {
     if (tempt) {
       tempting += 1;
       if (a?.pullWon) pullWonTempting += 1;
+      if (s.day >= 8) {
+        weekTwoPrompts += 1;
+        if (a?.pullWon) weekTwoPullWon += 1;
+      }
     }
   }
   const pages = s.pages;
@@ -153,6 +173,19 @@ function run(seed: number, policy: Policy, version: string) {
     pull: trustOf(s.person, 'pull').toFixed(2),
     sent: s.final?.sent,
     about: pages.map((p) => p.aboutYou.slice(0, 18)).join(' / '),
+    ...(version === WEEK_TWO_EDITION
+      ? {
+          weekTwo: {
+            prompts: weekTwoPrompts,
+            pullWonPrompts: weekTwoPullWon,
+            kept: pages.filter((p) => p.day >= 8).reduce((n, p) => n + p.kept.length, 0),
+            missed: pages.filter((p) => p.day >= 8).reduce((n, p) => n + p.missed.length, 0),
+            morningsAlone: pages.filter((p) => p.day >= 8 && p.gotUpAlone).length,
+            mornings: [...mornings.values()],
+            flags: { ...s.flags.w2 },
+          },
+        }
+      : {}),
   };
 }
 
@@ -175,7 +208,7 @@ const policies = (process.argv
 const versions = process.argv
   .find((a) => a.startsWith('v='))
   ?.slice(2)
-  .split(',') ?? ['0.2.1', '0.3.0'];
+  .split(',') ?? ['0.2.1', '0.3.0', WEEK_TWO_EDITION];
 const rows = versions.flatMap((version) =>
   policies.flatMap((policy) => Array.from({ length: seeds }, (_, i) => run(1000 + i, policy, version))),
 );
@@ -276,6 +309,27 @@ const summaries = versions.flatMap((version) =>
         ),
       })),
       moods,
+      ...(version === WEEK_TWO_EDITION
+        ? {
+            weekTwo: {
+              prompts: rs.reduce((n, r) => n + (r.weekTwo?.prompts ?? 0), 0) / rs.length,
+              pullWonPrompts: rs.reduce((n, r) => n + (r.weekTwo?.pullWonPrompts ?? 0), 0) / rs.length,
+              kept: rs.reduce((n, r) => n + (r.weekTwo?.kept ?? 0), 0) / rs.length,
+              missed: rs.reduce((n, r) => n + (r.weekTwo?.missed ?? 0), 0) / rs.length,
+              morningsAlone: rs.reduce((n, r) => n + (r.weekTwo?.morningsAlone ?? 0), 0) / rs.length,
+              flags: Object.fromEntries(
+                [...new Set(rs.flatMap((r) => Object.keys(r.weekTwo?.flags ?? {})))].sort().map((key) => {
+                  const counts: Record<string, number> = {};
+                  for (const r of rs) {
+                    const value = JSON.stringify(r.weekTwo?.flags[key]) ?? '(absent)';
+                    counts[value] = (counts[value] ?? 0) + 1;
+                  }
+                  return [key, counts];
+                }),
+              ),
+            },
+          }
+        : {}),
     };
   }),
 );
@@ -284,6 +338,16 @@ for (const s of summaries)
   console.log(
     `${s.version} ${s.policy.padEnd(7)} ${s.kept.toFixed(1)} ${s.missed.toFixed(1)} ${s.prompts.toFixed(1)} ${s.pullWonPrompts.toFixed(1)} ${s.holds.toFixed(1)} ${s.taps} ${s.against} ${s.againstLandingShare === null ? '-' : (100 * s.againstLandingShare).toFixed(1)} ${s.retained} ${s.surfaced}`,
   );
+if (versions.includes(WEEK_TWO_EDITION)) {
+  console.log('week two: edition policy prompts pullWon kept missed morningsAlone flags(value:count)');
+  for (const s of summaries) {
+    const w = s.weekTwo;
+    if (!w) continue;
+    console.log(
+      `${s.version} ${s.policy.padEnd(7)} ${w.prompts.toFixed(1)} ${w.pullWonPrompts.toFixed(1)} ${w.kept.toFixed(1)} ${w.missed.toFixed(1)} ${w.morningsAlone.toFixed(1)} ${JSON.stringify(w.flags)}`,
+    );
+  }
+}
 if (process.argv.includes('rows')) for (const r of rows) console.log(JSON.stringify(r));
 const jsonPath = process.argv.find((a) => a.startsWith('json='))?.slice(5);
 if (jsonPath)

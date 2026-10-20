@@ -49,7 +49,8 @@ const fixtures = ['edition021-hashes.json', 'edition030-hashes.json'].flatMap(
 );
 describe('edition boundaries', () => {
   it('starts new weeks on the listening edition', () => {
-    expect(newGame(7).version).toBe('0.3.0');
+    expect(newGame(7).version).toBe('0.4.0');
+    expect(newGame(7, '0.3.0').version).toBe('0.3.0');
   });
   for (const row of fixtures)
     it(`preserves full ${row.version} ${row.seed}/${row.policy} and restored continuations`, () => {

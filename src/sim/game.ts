@@ -2,10 +2,11 @@
  * The Two Voices: the day host. Pure and deterministic: state is plain JSON, and every player input is stamped
  * with the sim minute it applies at, so replaying the same seed and input log rebuilds the same state (`replay`).
  *
- * Covers: Dilan's week as authored moments; at each moment one HF decision with two voices (`you` and `pull`, each
- * with its own trust), her answer in HF's words, prompts and turning away (HF promptings), the evening review (HF
+ * Covers: two authored weeks, the offstage weekend between them, edition-preserving replay, and one HF decision
+ * per moment with two voices (`you` and `pull`, each with its own trust), her answer in HF's words, prompts and turning away (HF promptings), the evening review (HF
  * review: `ruminating` by default, `accounting` on nights she writes the day down), the hours between moments lived
- * through HF (commute, work, meals, sleep). Does not cover: other people as HF persons, money, spatial movement.
+ * through HF (commute, work, meals, sleep), and learned mornings without an alarm card.
+ * Does not cover: a third week, other people as HF persons, money, spatial movement.
  */
 import {
   type Activity,
@@ -27,18 +28,22 @@ import {
   snapshot,
   tick,
 } from '@adam0white/human-framework';
-import { DAY0, dayStart, LABEL, makeDilan, PULL, REVIEW_AT, WAKE, YOU } from './dilan.ts';
+import { DAY0, dayStart, LABEL, makeDilan, PULL, REVIEW_AT, renewDailyPromises, WAKE, YOU } from './dilan.ts';
 import {
   configureListening,
   keepSuggestion,
-  LISTENING_EDITION,
   LISTENING_TEMPERATURE,
   landingChance,
   listeningForecast,
+  listens,
   moodOf,
   recalledThought,
 } from './listening.ts';
-import { LAST_DAY, momentById, momentsOf } from './moments.ts';
+import { LAST_DAY, momentById, momentsOf, WEEK_TWO_LAST_DAY } from './moments.ts';
+import * as weekTwo from './week2.ts';
+
+export { listens } from './listening.ts';
+
 import type {
   Answer,
   Ctx,
@@ -53,9 +58,9 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = '0.3.0';
+export const GAME_VERSION = '0.4.0';
 export const LEGACY_VERSION = '0.2.1';
-export const isEdition = (version: string) => version === LISTENING_EDITION || version === LEGACY_VERSION;
+export const isEdition = (version: string) => listens({ version }) || version === LEGACY_VERSION;
 export const DAY_NAMES = [
   '',
   'Monday',
@@ -85,6 +90,9 @@ const TIRED_PULL = 0.2;
 /** The pull borrows your ink only once she trusts you this much. */
 const BORROW_FROM = 0.55;
 const PSYCH = ['safety', 'belonging', 'esteem', 'autonomy', 'competence', 'leisure', 'meaning'];
+// TODO: use week2.ts's FEET_ALONE_FROM and upAloneLine directly once its content lands.
+const { FEET_ALONE_FROM = 0.35, upAloneLine = 'Feet on the floor. She said it herself.' } =
+  weekTwo as typeof weekTwo & { FEET_ALONE_FROM?: number; upAloneLine?: string };
 
 export const trustOf = (p: Person, id: string) => p.will.voices.find((v) => v.voiceId === id)?.trust ?? 0.5;
 export const minuteOfDay = (m: number) => (((m - DAY0) % 1440) + 1440) % 1440;
@@ -116,7 +124,7 @@ function blankStats(p: Person): DayStats {
 export function newGame(seed: number, version = GAME_VERSION): GameState {
   if (!isEdition(version)) throw new Error(`Unknown Murmur edition: ${version}`);
   const person = makeDilan(seed);
-  if (version === LISTENING_EDITION) configureListening(person);
+  if (listens({ version })) configureListening(person);
   const s: GameState = {
     version,
     seed,
@@ -145,7 +153,9 @@ export function newGame(seed: number, version = GAME_VERSION): GameState {
 
 export function ctxOf(s: GameState): Ctx {
   const p = s.person;
-  const missedMum = s.pages.filter((pg) => pg.missed.includes(LABEL.mum)).length;
+  const missedMum = s.pages.filter(
+    (pg) => weekOf(pg.day) === weekOf(s.day) && pg.missed.includes(LABEL.mum),
+  ).length;
   const bedLate = s.flags.bedAt !== undefined && minuteOfDay(s.flags.bedAt) > 23 * 60 + 15;
   const bedSmall = s.flags.bedAt !== undefined && minuteOfDay(s.flags.bedAt) < 4 * 60;
   return {
@@ -241,7 +251,8 @@ function yourSuggestion(p: Person, option: string, insist?: boolean): Suggestion
  */
 function borrows(s: GameState, m: Moment): boolean {
   const you = trustOf(s.person, YOU);
-  if (s.day < 4 || !m.pull.borrow || you <= BORROW_FROM || you <= trustOf(s.person, PULL)) return false;
+  if (weekdayOf(s.day) < 4 || !m.pull.borrow || you <= BORROW_FROM || you <= trustOf(s.person, PULL))
+    return false;
   const st = s.stats;
   const pick = ((s.seed * 31 + s.day * 7) >>> 0) % 3;
   const n = st.borrowable;
@@ -298,7 +309,7 @@ const marksOf = (strength: number) => (strength < 0.3 ? 1 : strength < 0.6 ? 2 :
 /** The open card as the player sees it. Pure: no state change, no randomness. */
 export function cardView(s: GameState): CardView | null {
   // A card opens before step increments the clock. Forecast the exact input minute on a copy.
-  if (s.version === LISTENING_EDITION && s.person.now < s.minute) {
+  if (listens(s) && s.person.now < s.minute) {
     s = { ...s, person: restore(snapshot(s.person)) };
     tick(s.person, s.minute);
   }
@@ -320,21 +331,20 @@ export function cardView(s: GameState): CardView | null {
     borrowed: card.borrowed,
     closesAt: card.closesAt,
     options: opts.map((o) => {
-      const tap =
-        s.version === LISTENING_EDITION
-          ? listeningForecast(p, offers, yourSuggestion(p, o.id), others)
-          : predict(p, offers, yourSuggestion(p, o.id), { others });
+      const tap = listens(s)
+        ? listeningForecast(p, offers, yourSuggestion(p, o.id), others)
+        : predict(p, offers, yourSuggestion(p, o.id), { others });
       return {
         id: o.id,
         ink: text(o.ink, c),
         lean: leanOf(tap.verdict),
         pushed: leanOf(predict(p, offers, yourSuggestion(p, o.id, true), { others }).verdict),
         isPull: o.id === m.pull.to,
-        ...(s.version === LISTENING_EDITION ? { mood: moodOf(tap), likelihood: landingChance(tap) } : {}),
+        ...(listens(s) ? { mood: moodOf(tap), likelihood: landingChance(tap) } : {}),
       };
     }),
   };
-  if (s.version === LISTENING_EDITION) {
+  if (listens(s)) {
     const recalled = recalledThought(s, offers);
     if (recalled) view.recalled = recalled;
   }
@@ -382,8 +392,11 @@ function apply(s: GameState, inp: Input) {
     return;
   }
   if (inp.kind === 'next') {
-    if (s.phase !== 'evening') return;
-    nextDay(s);
+    if (s.phase === 'end' && s.day === LAST_DAY && s.version === WEEK_TWO_EDITION) {
+      startWeekTwo(s);
+      return;
+    }
+    if (s.phase === 'evening') nextDay(s);
   }
 }
 
@@ -400,7 +413,15 @@ export function step(s: GameState): void {
     const c = ctxOf(s);
     while (s.queue.length > 0) {
       const m = momentById(s.queue[0] as string);
-      if (m.when && !m.when(c)) {
+      if (m.when && !m.when(ctxOf(s))) {
+        if (getsUpAlone(s, m)) {
+          const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(ctxOf(s)) : m.at);
+          if (s.minute < at) {
+            s.minute += 1;
+            return;
+          }
+          getUpAlone(s, m);
+        }
         s.queue.shift();
         continue;
       }
@@ -408,6 +429,11 @@ export function step(s: GameState): void {
     }
     const id = s.queue[0];
     if (id === undefined) {
+      // Even an unauthored second-week day starts at wake time before it can finish.
+      if (weekOf(s.day) === 2 && s.minute < dayStart(s.day) + WAKE) {
+        s.minute += 1;
+        return;
+      }
       endDay(s);
       return;
     }
@@ -445,6 +471,31 @@ function open(s: GameState, m: Moment) {
   }
 }
 
+/** The authored alarm is absent because her learned phrase is strong enough this morning. */
+function getsUpAlone(s: GameState, m: Moment): boolean {
+  return (
+    weekOf(s.day) === 2 &&
+    m.id.startsWith('alarm-') &&
+    (ctxOf(s).phrases.find((ph) => ph.id === 'feet')?.practice ?? 0) >= FEET_ALONE_FROM
+  );
+}
+
+function getUpAlone(s: GameState, m: Moment) {
+  liveUntil(s, s.minute);
+  const up = optionsOf(s, m).find((o) => o.action === 'get-up');
+  if (!up) throw new Error(`Alarm ${m.id} has no get-up action.`);
+  const p = s.person;
+  hostAct(p, affordanceOf(s, up, m), p.now, { competence: 0.15, autonomy: 0.1 });
+  s.flags.late = false;
+  s.chosen[m.id] = up.id;
+  s.stats.gotUpAlone = true;
+  s.stats.turnedAlone.push(s.phrases.find((ph) => ph.id === 'feet')?.text ?? 'Feet on the floor');
+  say(s, 'narrator', upAloneLine);
+  m.after?.(s, up.id);
+  // Do not mark the phrase reinforced: no player said it again today.
+  // The ordinary HF action above keeps her alarm promise and practises the get-up habit.
+}
+
 /** Her reason when she turns your word down and HF gave her no words: tiredness, the easier way, or plain no. */
 function reasonOf(c: Ctx, v: Verdict, pullWay: boolean): string {
   if (v === 'deferred') return c.tired ? 'Later. I’m too tired now.' : 'Later. Not now.';
@@ -470,15 +521,15 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
     : [pull];
   const carried = said?.insist ? insistCarries(p) : true;
   const forecast =
-    s.version === LISTENING_EDITION && said
+    listens(s) && said
       ? listeningForecast(p, offers, suggestions[0] as Suggestion, suggestions.slice(1))
       : undefined;
-  const recalled = s.version === LISTENING_EDITION ? recalledThought(s, offers) : undefined;
+  const recalled = listens(s) ? recalledThought(s, offers) : undefined;
   // Only ordinary moment decisions draw. Insistence and the routine keep their established rules.
-  p.will.temperature = s.version === LISTENING_EDITION && !said?.insist ? LISTENING_TEMPERATURE : 0;
+  p.will.temperature = listens(s) && !said?.insist ? LISTENING_TEMPERATURE : 0;
   const rec: DecisionRecord = decide(p, offers, { suggestions });
   p.will.temperature = 0;
-  if (s.version === LISTENING_EDITION && rec.chosenAffordanceId === null) {
+  if (listens(s) && rec.chosenAffordanceId === null) {
     const yours = rec.suggestions?.find((r) => r.voiceId === YOU);
     s.answer = {
       moment: m.id,
@@ -569,7 +620,7 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
     st.learned.push(chosen.phrase.text);
   }
   if (
-    s.version === LISTENING_EDITION &&
+    listens(s) &&
     said &&
     !said.insist &&
     said.option !== chosen.id &&
@@ -664,7 +715,24 @@ function routine(s: GameState): Block[] {
     aff: offer('meal', { advertises: { food: 0.6, water: 0.5 }, placeId: 'home' }),
     needs: { food: 0.6, water: 0.5 },
   });
-  if (s.day === LAST_DAY)
+  if (s.past?.length && (s.day === LAST_DAY || weekdayOf(s.day) === 7)) {
+    const home = (from: number, to: number): Block => ({
+      from,
+      to,
+      aff: offer('home', { advertises: { rest: 0.2, leisure: 0.1 }, placeId: 'home' }),
+      needs: { rest: 0.2, leisure: 0.1, water: 0.3 },
+    });
+    return [
+      home(t(6, 40), t(8, 30)),
+      meal(t(8, 30), t(9)),
+      home(t(9), t(12, 30)),
+      meal(t(12, 30), t(13)),
+      home(t(13), t(18, 40)),
+      meal(t(18, 40), t(19, 10)),
+      home(t(19, 10), t(23)),
+    ];
+  }
+  if (weekdayOf(s.day) === 6)
     return [
       meal(t(8, 30), t(9, 0)),
       { from: t(9, 0), to: t(12, 0), aff: offer('home', { advertises: { rest: 0.2 } }) },
@@ -681,9 +749,21 @@ function routine(s: GameState): Block[] {
   if (!s.flags.late) blocks.push(meal(t(7, 20), t(7, 32)));
   blocks.push({ from: leave, to: leave + 22, aff: offer('commute', { placeId: 'bus' }) });
   blocks.push(work(leave + 22, t(12, 40)));
-  blocks.push(work(t(13, 5), s.day === 3 ? t(16, 50) : t(17, 40)));
+  const earlyBus = s.day === 12 && s.flags.w2?.earlyBus === true;
+  blocks.push(work(t(13, 5), s.day === 3 ? t(16, 50) : earlyBus ? t(16, 30) : t(17, 40)));
   if (s.day !== 3 && !(s.day === 5 && s.flags.bowling)) {
-    blocks.push({ from: t(17, 45), to: t(18, 10), aff: offer('commute', { placeId: 'bus' }) });
+    blocks.push({
+      from: earlyBus ? t(16, 30) : t(17, 45),
+      to: earlyBus ? t(17, 10) : t(18, 10),
+      aff: offer('commute', { placeId: 'bus' }),
+    });
+    if (earlyBus)
+      blocks.push({
+        from: t(17, 10),
+        to: t(18, 40),
+        aff: offer('home', { advertises: { rest: 0.2, leisure: 0.1 }, placeId: 'home' }),
+        needs: { water: 0.3 },
+      });
     blocks.push(meal(t(18, 40), t(19, 10)));
     blocks.push({
       from: t(19, 10),
@@ -741,7 +821,7 @@ function hostAct(p: Person, aff: Affordance, at: number, needs?: Record<string, 
 function endDay(s: GameState) {
   const p = s.person;
   s.card = null;
-  if (s.day === LAST_DAY) {
+  if (s.day === LAST_DAY || s.day === WEEK_TWO_LAST_DAY) {
     s.final = finalPage(s);
     s.phase = 'end';
     return;
@@ -818,7 +898,8 @@ function pageOf(s: GameState): Page {
     learned: [...st.learned],
     hands: { you: trustOf(p, YOU), pull: trustOf(p, PULL) },
   };
-  if (s.version === LISTENING_EDITION) {
+  if (st.gotUpAlone) page.gotUpAlone = true;
+  if (listens(s)) {
     const thoughts = (s.thoughts ?? []).filter((t) => t.at >= dayStart(s.day));
     if (thoughts.length)
       page.stayed = thoughts.slice(-2).map((t) => `When you said “${t.ink}”, I didn’t. It stayed with me.`);
@@ -858,6 +939,7 @@ function aboutYou(s: GameState): string {
 }
 
 function herLine(s: GameState): string {
+  if (weekOf(s.day) === 2) return weekTwo.weekTwoHerLine(s) || `${DAY_NAMES[s.day]}, done.`;
   const f = s.flags;
   const ch = s.chosen;
   switch (s.day) {
@@ -930,8 +1012,9 @@ function threadsOf(s: GameState): string[] {
 
 function finalPage(s: GameState): Final {
   const p = s.person;
-  const first = s.pages[0]?.hands ?? { you: 0.45, pull: 0.62 };
-  const unasked = [...new Set(s.pages.flatMap((pg) => pg.turnedAlone))];
+  const pages = s.pages.filter((pg) => weekOf(pg.day) === weekOf(s.day));
+  const first = pages[0]?.hands ?? { you: 0.45, pull: 0.62 };
+  const unasked = [...new Set(pages.flatMap((pg) => pg.turnedAlone))];
   const sent = s.flags.sent ?? 'delete';
   const line =
     sent === 'send'
@@ -940,27 +1023,53 @@ function finalPage(s: GameState): Final {
         ? 'They talked until the kettle went cold.'
         : 'She deleted it. On Sunday she rang anyway.';
   return {
-    note: voiceNote(s),
-    threads: threadsOf(s),
+    note: weekOf(s.day) === 2 ? String(s.flags.w2?.note ?? '') : voiceNote(s),
+    threads: weekOf(s.day) === 2 ? weekTwo.weekTwoThreads(s) : threadsOf(s),
     sent,
     phrases: phrasesOf(s),
     unasked,
-    strip: s.pages.map((pg) => ({ day: pg.day, kept: pg.kept, missed: pg.missed })),
+    strip: pages.map((pg) => ({ day: pg.day, kept: pg.kept, missed: pg.missed })),
     hands: { start: first, end: { you: trustOf(p, YOU), pull: trustOf(p, PULL) } },
-    line,
+    line: weekOf(s.day) === 2 ? weekTwo.weekTwoLine(s) : line,
   };
 }
 
 // ---------- another week ----------
 
 /** Whether this finished run can go on to a second week (0.4.0 runs, and finished 0.3.0 runs replayed as 0.4.0). */
-export function canAnotherWeek(_s: GameState): boolean {
-  return false;
+export function canAnotherWeek(s: GameState): boolean {
+  return s.phase === 'end' && s.day === LAST_DAY && listens(s);
 }
 
 /** The same run, going on into week two. Returns the state to continue with (a new object for a 0.3.0 run). */
-export function anotherWeek(_s: GameState): GameState {
-  throw new Error('not yet');
+export function anotherWeek(s: GameState): GameState {
+  if (!canAnotherWeek(s)) throw new Error('This run cannot continue into another week.');
+  if (s.version !== WEEK_TWO_EDITION) {
+    const rebuilt = replay(s.seed, s.inputs, s.minute, WEEK_TWO_EDITION);
+    // The last answer may end the day without advancing the host clock.
+    while (rebuilt.phase === 'day') step(rebuilt);
+    if (fingerprint(rebuilt) !== fingerprint(s)) throw new Error('Week-one replay does not match this run.');
+    s = rebuilt;
+  }
+  queueInput(s, { kind: 'next' });
+  step(s);
+  return s;
+}
+
+/** Saturday afternoon and Sunday pass without choices or evening pages. */
+function startWeekTwo(s: GameState) {
+  if (!s.final) throw new Error('The first week has no last page.');
+  s.past ??= [];
+  s.past.push(s.final);
+  s.final = null;
+  for (let day = LAST_DAY; day <= 7; day++) {
+    const bed = dayStart(day) + 23 * 60;
+    liveUntil(s, bed);
+    s.flags.bedAt = bed;
+    nextDay(s);
+  }
+  delete s.flags.bedAt;
+  renewDailyPromises(s.person, 8);
 }
 
 // ---------- saves and replays ----------
@@ -1003,6 +1112,7 @@ export function fingerprint(s: GameState): string {
     chosen: s.chosen,
     pages: s.pages,
     final: s.final,
+    ...(s.past ? { past: s.past } : {}),
     now: s.person.now,
     trace: s.person.trace.length,
     rng: s.person.rng,

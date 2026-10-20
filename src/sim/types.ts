@@ -139,6 +139,8 @@ export interface DayStats {
   silent: number;
   pullWon: number;
   turnedAlone: string[];
+  /** A week-two morning whose alarm she handled without a card. */
+  gotUpAlone?: boolean;
   borrowedHeard: number;
   /** Cards today where the pull could have borrowed your ink, and where it did. */
   /** Phrases you said again today (they keep); the rest fade overnight. */
@@ -162,6 +164,8 @@ export interface Page {
   herLine: string;
   phrases: { text: string; weight: number }[];
   turnedAlone: string[];
+  /** A week-two morning whose alarm she handled without a card. */
+  gotUpAlone?: boolean;
   learned: string[];
   hands: { you: number; pull: number };
 }

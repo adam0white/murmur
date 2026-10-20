@@ -90,30 +90,7 @@ export function makeDilan(seed: number): Person {
       lastAt: y,
     },
   );
-  const until = dayStart(5) + 1439;
-  promise(p, {
-    kind: 'promise',
-    toId: 'self',
-    label: LABEL.alarm,
-    actions: ['get-up'],
-    from: dayStart(1) + WAKE - 5,
-    until: dayStart(1) + WAKE + 20,
-    importance: 0.5,
-    recurEvery: 1440,
-    recurUntil: until,
-  });
-  // Sunday night Aylin made her promise: one call a day this week.
-  promise(p, {
-    kind: 'promise',
-    toId: 'mum',
-    label: LABEL.mum,
-    actions: ['call-mum'],
-    from: dayStart(1) + 17 * 60 + 30,
-    until: dayStart(1) + 21 * 60 + 30,
-    importance: 0.55,
-    recurEvery: 1440,
-    recurUntil: until,
-  });
+  renewDailyPromises(p, 1);
   promise(p, {
     kind: 'promise',
     toId: 'aylin',
@@ -136,4 +113,32 @@ export function makeDilan(seed: number): Person {
     lastAdvancedAt: now - 200 * 1440,
   });
   return p;
+}
+
+/** The same alarm and Mum windows for each five-day working week; Aylin is a one-off. */
+export function renewDailyPromises(p: Person, firstDay: number): void {
+  const until = dayStart(firstDay + 4) + 1439;
+  promise(p, {
+    kind: 'promise',
+    toId: 'self',
+    label: LABEL.alarm,
+    actions: ['get-up'],
+    from: dayStart(firstDay) + WAKE - 5,
+    until: dayStart(firstDay) + WAKE + 20,
+    importance: 0.5,
+    recurEvery: 1440,
+    recurUntil: until,
+  });
+  // Sunday night Aylin made her promise: one call a day this week.
+  promise(p, {
+    kind: 'promise',
+    toId: 'mum',
+    label: LABEL.mum,
+    actions: ['call-mum'],
+    from: dayStart(firstDay) + 17 * 60 + 30,
+    until: dayStart(firstDay) + 21 * 60 + 30,
+    importance: 0.55,
+    recurEvery: 1440,
+    recurUntil: until,
+  });
 }

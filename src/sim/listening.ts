@@ -11,6 +11,9 @@ import {
 import type { GameState, Opt } from './types.ts';
 
 export const LISTENING_EDITION = '0.3.0';
+/** Editions with gentle suggestions and retained HF advice. */
+export const listens = (s: GameState | { version: string }) =>
+  s.version === LISTENING_EDITION || s.version === '0.4.0';
 /** Utility units. HF draws against its own scores, after all hard vetoes. */
 export const LISTENING_TEMPERATURE = 0.14;
 export function configureListening(p: Person) {
@@ -75,7 +78,7 @@ export function keepSuggestion(s: GameState, o: Opt, ink: string): string {
   return `I didn’t ${o.label}. But I’m still thinking about it.`;
 }
 export function recalledThought(s: GameState, offers: Affordance[]): string | undefined {
-  if (s.version !== LISTENING_EDITION) return;
+  if (!listens(s)) return;
   const thought = s.thoughts?.findLast(
     (t) =>
       t.moment !== s.card?.moment &&
