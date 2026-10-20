@@ -178,7 +178,7 @@ function contexts(): Ctx[] {
                     adviceText: 'Feet on the floor',
                     practised: practice !== 'no',
                     earlyBus: close !== 'stay',
-                    bag: close === 'stay' ? 'shelf' : 'ready',
+                    bag: close === 'stay' ? 'home' : 'ready',
                     ...(practice === 'no' ? {} : { closePromise: 'test-promise' }),
                   },
                 },
@@ -341,7 +341,7 @@ describe('week-two content contract', () => {
         { id: 'plain', text: 'Just say it plainly', practice: 0.3 },
       ],
     });
-    expect(text(moment('words-9').scene, c)).toContain('“Walk away from it.”');
+    expect(text(moment('words-9').scene, c)).toContain('“Walk away from it. Let it ring out.”');
     const stand = options(moment('words-9'), c).find((o) => o.id === 'stand');
     const gives = stand?.gives;
     expect(typeof gives === 'function' ? gives(c).competence : undefined).toBeLessThan(0);

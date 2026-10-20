@@ -1,6 +1,6 @@
 /** Week two: what being depended on does to an ordinary week. Week one's last page is fact. */
 import { promise, releaseCommitment as release } from '@adam0white/human-framework';
-import { DAY0 } from './dilan.ts';
+import { DAY0, LABEL } from './dilan.ts';
 import type { Ctx, GameState, Moment, Opt } from './types.ts';
 
 const at = (h: number, m = 0) => h * 60 + m;
@@ -21,7 +21,7 @@ const changedScreen = (c: Ctx) =>
   c.weekOne?.sent === 'call';
 const feetStrong = (c: Ctx) => (c.phrases.find((p) => p.id === 'feet')?.practice ?? 0) >= FEET_ALONE_FROM;
 
-export const FEET_ALONE_FROM = 0.35;
+export const FEET_ALONE_FROM = 0.45;
 export const upAloneLine = 'Feet on the floor. She said it to herself, and got up.';
 
 function mumOpening(c: Ctx): string {
@@ -465,8 +465,20 @@ const monday: Moment[] = [
   bed(8),
 ];
 
+/** What her strongest phrase becomes when she hands it to Ece. Some of your words do not travel. */
+const ADVICE: Record<string, string> = {
+  plain: 'Just say it plainly. It’s late, and it’ll be there by four.',
+  ten: 'It’s ten minutes. Ring him back before he rings you.',
+  walk: 'Walk away from it. Let it ring out.',
+  feet: 'Feet on the floor. Drive it round yourself.',
+};
+const OWN_ADVICE = 'Tell him when it will arrive.';
+/** Whether the advice suits Ece's problem (a customer who keeps ringing). */
+const fitsEce = (id: unknown) => id === 'plain' || id === 'ten' || id === 'own' || id === undefined;
 function advice(c: Ctx): { id: string; text: string } {
-  return c.phrases[0] ?? { id: 'own', text: 'Tell him when it will arrive' };
+  const top = c.phrases[0];
+  const says = top ? ADVICE[top.id] : undefined;
+  return top && says ? { id: top.id, text: says } : { id: 'own', text: OWN_ADVICE };
 }
 
 const tuesday: Moment[] = [
@@ -478,7 +490,7 @@ const tuesday: Moment[] = [
     at: at(10, 10),
     place: 'depot',
     scene: (c) =>
-      `A customer keeps ringing Ece about a late parcel. “What do I say?”\nDilan hears herself answer: “${advice(c).text}.”`,
+      `A customer keeps ringing Ece about a late parcel. “What do I say?”\nDilan hears herself answer: “${advice(c).text}”`,
     pull: { to: 'stand', line: 'That worked for you. Let her try it.' },
     options: [
       {
@@ -489,7 +501,7 @@ const tuesday: Moment[] = [
         duration: 3,
         advertises: { competence: 0.2 },
         gives: (c) =>
-          ['plain', 'own'].includes(advice(c).id)
+          fitsEce(advice(c).id)
             ? { competence: 0.25, belonging: 0.15 }
             : { competence: -0.15, belonging: -0.1 },
         done: 'Ece repeated the words under her breath, then picked up the phone.',
@@ -643,7 +655,7 @@ const tuesday: Moment[] = [
 
 function bentWords(c: Ctx): string {
   const a = c.phrases[0];
-  const words = a?.text ?? String(c.flags.w2?.adviceText ?? 'Tell him when it will arrive');
+  const words = a?.text ?? 'Tell her what she did wrong';
   if (a?.id === 'walk') return `${words}. Before she can ask you for anything else.`;
   if (a?.id === 'feet') return `${words}. She needs a shove too.`;
   return `${words}. In front of everyone. Then she’ll remember.`;
@@ -789,9 +801,11 @@ function adviceResult(c: Ctx): string {
     return 'Ece’s customer stopped ringing. “I told him I couldn’t drive while answering him. He said fair enough.”';
   if (c.flags.w2?.advice === 'soften')
     return 'The customer came to the depot before his parcel did. “You said might,” Ece tells Dilan.';
-  if (['plain', 'own'].includes(String(c.flags.w2?.adviceId ?? 'own')))
-    return 'Ece gave the customer a delivery time. He stopped ringing. “Your words,” she says.';
-  return `“${c.flags.w2?.adviceText ?? 'Tell him when it will arrive'},” Ece repeats. “He asked to speak to someone else.”`;
+  if (fitsEce(c.flags.w2?.adviceId))
+    return 'Ece gave the customer a time. He stopped ringing. “Your words,” she says, pleased.';
+  if (c.flags.w2?.adviceId === 'feet')
+    return 'Ece drove the parcel round herself, in her lunch. Her own drops ran late. “Your words,” she says.';
+  return 'Ece let it ring out. He rang Murat instead. “Your words,” she says, not pleased.';
 }
 
 const thursday: Moment[] = [
@@ -1008,7 +1022,7 @@ const friday: Moment[] = [
         done: 'She put the bag over her shoulder and checked the fastening again.',
       },
       {
-        id: 'shelf',
+        id: 'home',
         ink: 'Leave it by the door.',
         label: 'leave her bag at home',
         action: 'leave-bag',
@@ -1066,7 +1080,7 @@ const friday: Moment[] = [
     at: at(17, 10),
     place: 'depot',
     scene: (c) =>
-      `Ece asks her to stay for the close. ${!c.flags.w2?.closePromise ? '“I know you didn’t promise.”' : '“You said Friday.”'}\n${c.flags.w2?.bag === 'shelf' ? 'Her bag is at home. The early bus is still possible.' : 'Her bag is under the desk. The early bus is still possible.'}`,
+      `Ece asks her to stay for the close. ${!c.flags.w2?.closePromise ? '“I know you didn’t promise.”' : '“You said Friday.”'}\n${c.flags.w2?.bag === 'home' ? 'Her bag is at home. The early bus is still possible.' : 'Her bag is under the desk. The early bus is still possible.'}`,
     pull: {
       to: 'slip',
       line: 'She can do it. You don’t need a conversation about leaving.',
@@ -1263,8 +1277,7 @@ export function weekTwoThreads(s: GameState): string[] {
   );
   if (f.advice === 'soften') lines.push('Ece crossed out “might” on her slip.');
   else if (f.advice === 'ask') lines.push('Ece kept her own answer for the next customer.');
-  else if (f.adviceId && !['plain', 'own'].includes(String(f.adviceId)))
-    lines.push('Ece did not use that sentence on the next customer.');
+  else if (!fitsEce(f.adviceId)) lines.push('Ece did not use that sentence on the next customer.');
   else lines.push('Ece used Dilan’s words once. The next call was her own.');
   if (
     (s.flags.shelf ?? 0) >= 2 ||
@@ -1273,6 +1286,14 @@ export function weekTwoThreads(s: GameState): string[] {
   )
     lines.push('The shelf stands in the room. It has kept its place.');
   else lines.push('The shelf parts still have their patch of floor.');
+  const rang = s.pages.filter((pg) => pg.day >= 8 && pg.kept.includes(LABEL.mum)).length;
+  lines.push(
+    rang >= 4
+      ? 'Mum has stopped saying “no need to call”. She just says “there you are”.'
+      : rang >= 2
+        ? 'Mum got some evenings and not others. She is keeping a list, kindly.'
+        : 'Mum sent a photo of the tomato plant, without a message. It was doing well.',
+  );
   lines.push(
     f.letter === 'sign'
       ? 'The tenancy letter is back in its envelope.'
@@ -1285,7 +1306,9 @@ export function weekTwoThreads(s: GameState): string[] {
 
 export function weekTwoLine(s: GameState): string {
   const chosen = s.chosen['ece-13'] ?? s.flags.w2?.saturday;
-  if (chosen === 'offer') return '“Let me try Monday first.” Dilan put the phone down.';
-  if (chosen === 'answer') return 'She left the phone on the table and took her tea to the chair.';
-  return 'The kettle boiled. She got up before it clicked off.';
+  if (chosen === 'offer')
+    return '“Let me try Monday first.” Dilan read it twice. She was glad, and a little put out, and glad.';
+  if (chosen === 'answer')
+    return 'She sent it, and took her tea to the window, and nobody needed her for an hour.';
+  return 'She left the phone face down. Whatever it was could be Ece’s for the weekend.';
 }

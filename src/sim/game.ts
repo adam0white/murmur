@@ -87,12 +87,12 @@ const INSIST = 0.85;
 const PULL_STRENGTH = 0.7;
 /** A tired Dilan hears the pull louder. */
 const TIRED_PULL = 0.2;
+/** How much louder the pull is in the second week. */
+const WEEK_TWO_PULL = 0.1;
 /** The pull borrows your ink only once she trusts you this much. */
 const BORROW_FROM = 0.55;
 const PSYCH = ['safety', 'belonging', 'esteem', 'autonomy', 'competence', 'leisure', 'meaning'];
-// TODO: use week2.ts's FEET_ALONE_FROM and upAloneLine directly once its content lands.
-const { FEET_ALONE_FROM = 0.35, upAloneLine = 'Feet on the floor. She said it herself.' } =
-  weekTwo as typeof weekTwo & { FEET_ALONE_FROM?: number; upAloneLine?: string };
+const { FEET_ALONE_FROM, upAloneLine } = weekTwo;
 
 export const trustOf = (p: Person, id: string) => p.will.voices.find((v) => v.voiceId === id)?.trust ?? 0.5;
 export const minuteOfDay = (m: number) => (((m - DAY0) % 1440) + 1440) % 1440;
@@ -221,10 +221,12 @@ function offersOf(s: GameState, m: Moment): Affordance[] {
 
 function pullSuggestion(s: GameState, m: Moment, borrowed: boolean): Suggestion {
   const tired = ctxOf(s).tired ? TIRED_PULL : 0;
+  // The pull has been listening too: in the second week it speaks a little louder.
+  const listened = weekOf(s.day) === 2 ? WEEK_TWO_PULL : 0;
   return {
     voiceId: borrowed ? YOU : PULL,
     affordanceId: m.pull.to,
-    strength: Math.min(1, (m.pull.strength ?? PULL_STRENGTH) + tired),
+    strength: Math.min(1, (m.pull.strength ?? PULL_STRENGTH) + tired + listened),
   };
 }
 
@@ -749,17 +751,18 @@ function routine(s: GameState): Block[] {
   if (!s.flags.late) blocks.push(meal(t(7, 20), t(7, 32)));
   blocks.push({ from: leave, to: leave + 22, aff: offer('commute', { placeId: 'bus' }) });
   blocks.push(work(leave + 22, t(12, 40)));
+  // Friday of week two: leaving at the close card (17:10) catches the 17:15 bus, home by 17:40.
   const earlyBus = s.day === 12 && s.flags.w2?.earlyBus === true;
-  blocks.push(work(t(13, 5), s.day === 3 ? t(16, 50) : earlyBus ? t(16, 30) : t(17, 40)));
+  blocks.push(work(t(13, 5), s.day === 3 ? t(16, 50) : earlyBus ? t(17, 10) : t(17, 40)));
   if (s.day !== 3 && !(s.day === 5 && s.flags.bowling)) {
     blocks.push({
-      from: earlyBus ? t(16, 30) : t(17, 45),
-      to: earlyBus ? t(17, 10) : t(18, 10),
+      from: earlyBus ? t(17, 15) : t(17, 45),
+      to: earlyBus ? t(17, 40) : t(18, 10),
       aff: offer('commute', { placeId: 'bus' }),
     });
     if (earlyBus)
       blocks.push({
-        from: t(17, 10),
+        from: t(17, 40),
         to: t(18, 40),
         aff: offer('home', { advertises: { rest: 0.2, leisure: 0.1 }, placeId: 'home' }),
         needs: { water: 0.3 },
