@@ -13,7 +13,8 @@ declare global {
   }
 }
 
-const shots = '/Users/abdul/code/.lab-scratch/murmur-more/ui-shots';
+/** Set MURMUR_SHOTS to a directory to keep screenshots; otherwise none are written. */
+const shots = process.env.MURMUR_SHOTS;
 let server: ViteDevServer;
 let browser: Browser;
 let origin: string;
@@ -35,7 +36,7 @@ beforeAll(async () => {
   await server.listen();
   origin = server.resolvedUrls?.local[0] ?? '';
   browser = await chromium.launch({ headless: true });
-  await mkdir(shots, { recursive: true });
+  if (shots) await mkdir(shots, { recursive: true });
 }, 30_000);
 
 afterAll(async () => {
@@ -66,7 +67,7 @@ async function importRun(page: Page, state: GameState) {
 
 async function snapshot(page: Page, name: string) {
   await page.evaluate(() => document.fonts.ready);
-  await page.screenshot({ path: `${shots}/${name}.png`, fullPage: true });
+  if (shots) await page.screenshot({ path: `${shots}/${name}.png`, fullPage: true });
 }
 
 describe('a played first week', () => {
