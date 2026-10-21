@@ -181,3 +181,74 @@ Deferred from the retest (target 2026-11-03): week-two routine cards offer a dif
 Owner direction resolves the routine-card deferral above: vary two routines and keep one steady. The bus call and bedtime now offer different wording on each weekday, tied to that day's photograph, missed call, family evening, board, or Friday bag. The alarm keeps “Feet on the floor” and “Five more” as the steady habit; learned independent waking still applies. Actions, consequences, timing, HF 2.8.0, and background faith stay as before.
 
 New runs, including the second-week shortcut, use 0.4.1. Existing 0.4.0 exports replay and continue with their original words; 0.2.1 and 0.3.0 replay unchanged. Finished 0.3.0 runs can continue into 0.4.1. Delivery ends with a signed commit on main, green CI, a deployment whose release metadata matches that clean commit, and the requested scratch report. Owner acceptance of feel remains outstanding.
+
+## Other-voice typography audit — F-404 (2026-10-21)
+
+Owner direction, verbatim and in order:
+
+1. 'I think it would be clearer if the handwritten font in the two voices is only for the other voice, or descriptions about it. We can be consistent about this and that would reduce the cognitive load'
+2. 'Or the slightly diagonal style of handwritten font. We just need to adapt a consistency'
+3. SOFTENED: 'I must say that handwritten is growing on me and the color and slanted style is almost consistent, so I'm softening my direction. We still need to check and stay consistent to make things easier though, so the investigation is afoot'
+
+The resulting rule keeps Caveat, the existing blue-grey pencil colours, and the slight rotation together on the other voice and text about it. `.other-voice` owns all three. Its default angle is −2°; trust-dependent pull and comparison angles remain −1.2° to −2.8° through `--other-voice-angle`. Dilan, the player, narration, headings and controls use Literata upright. Spacing, practice opacity, trust-dependent player ink, and existing type sizes remain except for the fit corrections below. The other-voice caption uses 17px so the handwritten face remains legible.
+
+This supersedes the older “three hands” presentation and the visual disguise in “borrowed ink” above. Borrowed lines still use their authored words and the same HF voice attribution, trust, decisions and replay edition; they now identify their source visually. This is the owner's explicit consistent-marker rule, not a change to the simulation.
+
+The audit covers all renderer branches in `src/ui/app.ts`, every font, colour and slant rule in `src/ui/style.css`, and text/font references in `src`, `index.html`, and `public`. Repeated runtime instances count once per renderer place below; the two pencil refusal descriptions share one place. **40 live style inconsistencies found; 40 fixed.** Dormant declarations and shared infrastructure are listed separately and excluded from that count.
+
+| Place | Current style before audit | Verdict | Change |
+| --- | --- | --- | --- |
+| Cover, “The other got there first.” (`title`) | Caveat, ink-soft override, −2° | Fix | Keep face/slant; restore pencil colour. |
+| Ordinary pull card (`cardHtml`) | Caveat, pencil, trust-sized/rotated | Keep | Route unchanged values through `.other-voice`. |
+| Borrowed pull card (`cardHtml`) | Literata, your ink, skew −9° / rotation +0.4° | Fix | Use the same other-voice marker and trust sizing as other pull lines. |
+| Journal pull (`drawJournal`, who=pull) | Caveat, pencil, upright | Fix | Add shared slant. |
+| First-card explanation, “the pencil is the other voice” | Literata italic, ink-soft | Fix | Add shared marker; 17px keeps Caveat legible. |
+| Refusal/defer descriptions naming the pencil (`recordHtml`) | Literata italic, pencil | Fix | Add handwritten face and shared slant. |
+| “She didn’t. She did something else.” (`recordHtml`) | Literata italic, pencil | Fix | Plain ink and upright; it does not identify the pull. |
+| Saturday “the pencil” comparisons (`handsHtml`) | Caveat, ink-soft override, trust-sized/rotated | Fix | Restore pencil colour; preserve size and angle. |
+| Evening “Some of what I heard today wasn’t you.” (`pageHtml`) | Caveat, ink, upright | Fix | Apply complete marker to this borrowed-voice description only. |
+| Header weekday (`header`) | Caveat, ink-soft | Fix | Literata; preserve size/line height. |
+| Kept words beneath clock (`header`) | Caveat, ink-soft | Fix | Literata; these are her learned words. |
+| Journal heading (`drawJournal`) | Caveat, ink-soft | Fix | Literata; preserve size. |
+| Journal Dilan speech (`drawJournal`, who=dilan) | Caveat, ink | Fix | Literata; preserve size. |
+| Recorded reply and “she says” (`recordHtml`) | Caveat reply, Literata attribution | Fix | Literata reply; keep attribution. |
+| Recorded learned phrase (`recordHtml`, margin) | Caveat, ink | Fix | Literata; preserve size. |
+| Card resolve (`cardHtml`) | Caveat, ink | Fix | Literata; preserve size and tally. |
+| Card bodily forecast (`cardHtml`) | Caveat, ink-soft | Fix | Literata; preserve size. |
+| Option mood (`cardHtml`, lean) | Caveat, ink-soft | Fix | Literata at 14px so the wider serif mood labels retain the phone-card fit. |
+| Card recalled thought (`cardHtml`, stayed) | Caveat, ink | Fix | Literata at 17px to preserve phone-card fit. |
+| Reported retained/completed thought (`thoughtHtml`) | Caveat, ink | Fix | Literata at the same 17px as card thoughts. |
+| “say nothing” control (`.hush`) | Caveat, ink-soft | Fix | Inherit Literata; preserve control dimensions. |
+| Evening resolve (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size and tally. |
+| Evening learned phrases (`pageHtml`) | Caveat, ink, −1.5° | Fix | Literata upright; preserve practice opacity and size. |
+| Evening independent-action speech (`pageHtml`, alone) | Caveat, ink | Fix | Literata; preserve size. |
+| Evening heading (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size. |
+| Evening review (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size. |
+| Evening herLine (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size. |
+| Evening aboutYou, all other branches (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size. These describe you, not the pull. |
+| Continuation notice (`ending`) | Caveat, ink-soft | Fix | Literata; preserve size. |
+| Week-strip weekday labels (`stripHtml`, both weeks) | Caveat, ink | Fix | Literata; preserve size. |
+| Final learned phrases (`finalHtml`) | Caveat, ink, −1.5° | Fix | Literata upright; preserve practice opacity and size. |
+| Final independent actions (`finalHtml`) | Caveat, ink | Fix | Literata; preserve size. |
+| Saturday heading (`finalHtml`) | Caveat, ink | Fix | Literata; preserve size. |
+| Final input reflection (`finalHtml`) | Caveat, ink | Fix | Literata; preserve size. |
+| Toast (`.toast`) | Literata italic, sky | Fix | Upright; preserve sky status colour. |
+| Journal scene (`.jscene`) | Literata italic, ink-soft | Fix | Upright; preserve colour. |
+| Other captions: timer, mood explanation, running clock (`.caption`) | Literata italic, ink-soft | Fix | Upright; preserve size and colour. |
+| Gameplay hints (`.hint`) | Literata italic, ink-soft | Fix | Upright; preserve size and colour. |
+| Your recorded input/silence (`.record-yours`) | Literata italic, ink | Fix | Upright. |
+| Chosen action (`.record-chosen`) | Literata, pencil | Fix | Normal ink; a chosen action is not a pull utterance. |
+| Voice note to Mum (`.voicenote .note`) | Literata italic, ink | Fix | Upright; Dilan is speaking. |
+| Dormant `.herchoice` and `.yousaid .ink` rules | Pencil colour / italic; no rendered uses | Remove dormant rules | Remove marker declarations; not counted as live inconsistencies. |
+| Shared typography infrastructure | `.hand` applies Caveat plus size/line-height | Consolidate | Rename size/line-height helper `.notebook-text`; only `.other-voice` owns face, colour, rotation. |
+| Theme tokens / Google font loading | Caveat plus light #5f6b78 / dark #9fb0c2 | Keep | Keep original assets and theme colours. No other text rule consumes hand or pencil. |
+| SVG tick rotation / wobbled rules and tally strokes | Rotated tick geometry; ink-soft/moss strokes | Keep | Non-text geometry does not mark a voice. |
+| Other-voice metadata in index.html description | Nonvisual plain metadata | Keep | No rendered text to mark. |
+
+### Screenshot comparison and acceptance evidence
+
+Playwright comparisons use the same seed (42), fonts loaded, light theme and reduced motion, at **1280×900** and **360×690**. Before is clean `origin/main` at `b038891`; after is this audit. Both an insisting run and a plain-speaking run cover the open cover, first card, journal, evening, resolve, forecast and ending; the plain-speaking run also reaches a borrowed card. Screenshots and computed-style inventories stay outside the repository at `/Users/abdul/code/.lab-scratch/codex/murmur-font/` (`before-*` / `after-*`, and `before-reader-*` / `after-reader-*`).
+
+Comparison: the ordinary pull preserves its face, colour, size and trust rotation. The cover and Saturday pencil labels regain the pencil colour. Journal pull and descriptions gain the missing marker components. Dilan's pages and the controls change only the leaked face/slant/colour; Literata wraps differently, so evening and ending pages can grow vertically. The first repo check caught the wider serif labels pushing the three-option fixture below 690px. Mood labels now use 14px and retained thoughts 17px to restore that fit. At 360×690 the card retains its internal scroll and journal space; all fixture options and the silence control fit without scrolling. No new layout or palette is introduced. Computed-style checks cover 320 states across both weeks, two themes and both viewports (including 16 borrowed cards); the dark screenshot run also checks the borrowed evening description (`after-dark-*-borrowed-evening.png`). The original light/dark pencil colours remain. Before/after contact sheets are `comparison-phone.jpg` and `comparison-desktop.jpg`.
+
+Done for this audit: this table, desktop and phone screenshot comparison, repo checks, signed commit on main, green CI, deployment with matching `/release.json` and `dirty:false`, and the five-line scratch report requested by the owner. Owner acceptance of feel remains separate.

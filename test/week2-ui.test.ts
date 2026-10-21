@@ -165,7 +165,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(0);
         expect(await page.getByRole('button', { name: 'Start over', exact: true }).count()).toBe(1);
         expect(await page.locator('.first-week').innerText()).toContain(state.past?.[0]?.line);
-        expect(await page.locator('.current-week .sday > .hand').allTextContents()).toEqual([
+        expect(await page.locator('.current-week .sday > .notebook-text').allTextContents()).toEqual([
           'Mon',
           'Tue',
           'Wed',

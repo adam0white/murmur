@@ -111,7 +111,7 @@ const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
 const pos = (t: number) => clamp((t - 0.25) / 0.5, 0, 1);
 /** The pull's pencil: its hand grows with her trust in it. */
 const pencilStyle = (t: number, growth = 16) =>
-  `font-size:${(18 + pos(t) * growth).toFixed(1)}px;transform:rotate(${(-1.2 - pos(t) * 1.6).toFixed(2)}deg)`;
+  `font-size:${(18 + pos(t) * growth).toFixed(1)}px;--other-voice-angle:${(-1.2 - pos(t) * 1.6).toFixed(2)}deg`;
 /** Your ink: heavier and darker as she trusts you. */
 const inkStyle = (t: number) =>
   `font-weight:${Math.round(330 + pos(t) * 330)};color:color-mix(in srgb, var(--ink) ${Math.round(48 + pos(t) * 52)}%, var(--ink-soft))`;
@@ -143,7 +143,7 @@ const rule = (key: number) =>
 const markLink = '<a class="mark" href="https://human.adamwhite.work/">◇ human framework</a>';
 /** The same header on every screen: mark, the day and clock (on the day screen), the back-page button. */
 const header = (menu = true, when = false) =>
-  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname hand"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="week-label" id="week-label" hidden>second week</span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="Game menu">≡</button>' : '<span></span>'}</header>${when ? '<p class="pace" id="pace"></p><p class="kept-words hand" id="kept-words" hidden></p>' : ''}`;
+  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname notebook-text"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="week-label" id="week-label" hidden>second week</span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="Game menu">≡</button>' : '<span></span>'}</header>${when ? '<p class="pace" id="pace"></p><p class="kept-words notebook-text" id="kept-words" hidden></p>' : ''}`;
 const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 };
 const footer = () =>
   '<div class="footer"><a href="https://human.adamwhite.work/games/">◇ All games</a></div>';
@@ -183,7 +183,7 @@ function title() {
       <summary>More about Dilan</summary>
       <p class="soft">an ordinary week, from the inside</p>
       <p>Dilan is thirty-three. She dispatches vans at a courier depot in the town she came back to.</p>
-      <p>There are two voices in her head. One is yours. <span class="hand pencil-inline">The other got there first.</span></p>
+      <p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>
     </details>
     <div class="grow"></div>
     <div class="actions">
@@ -451,7 +451,7 @@ function recordHtml(record: MomentRecord): string {
           ? 'She didn’t. She went the pencil’s way.'
           : 'She didn’t. She did something else.'
       : '';
-  return `<p class="record-yours">${yours}</p><p class="record-chosen">She chose: “${esc(record.chosen.ink)}”</p>${reply ? `<p class="record-reply her hand">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${how ? `<p class="turn small">${how}</p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin hand">She took it as “${esc(a.learned)}.” She kept that one.</p>` : ''}`;
+  return `<p class="record-yours">${yours}</p><p class="record-chosen">She chose: “${esc(record.chosen.ink)}”</p>${reply ? `<p class="record-reply her notebook-text">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${how ? `<p class="turn small${how.includes('pencil') ? ' notebook-text other-voice' : ''}">${how}</p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She took it as “${esc(a.learned)}.” She kept that one.</p>` : ''}`;
 }
 
 function drawJournal(lines: LogLine[]) {
@@ -462,7 +462,7 @@ function drawJournal(lines: LogLine[]) {
   const past = new Map(records().map((record) => [record.sceneAt, record]));
   const head =
     lines.length === 0
-      ? `<p class="jhead hand">${esc(DAY_NAMES[s.day] ?? '')}${weekOf(s.day) === 2 ? ' <span class="week-label">second week</span>' : ''}</p>`
+      ? `<p class="jhead notebook-text">${esc(DAY_NAMES[s.day] ?? '')}${weekOf(s.day) === 2 ? ' <span class="week-label">second week</span>' : ''}</p>`
       : '';
   const entries: { key: string; html: string }[] = [];
   if (head) entries.push({ key: 'head', html: head });
@@ -491,9 +491,9 @@ function drawJournal(lines: LogLine[]) {
     } else {
       const html =
         l.who === 'pull'
-          ? `<p class="jl pencil">${esc(l.text)}</p>`
+          ? `<p class="jl pencil other-voice">${esc(l.text)}</p>`
           : l.who === 'dilan'
-            ? `<p class="jl hand her">“${esc(l.text.replace(/\.$/, ''))}.”</p>`
+            ? `<p class="jl notebook-text her">“${esc(l.text.replace(/\.$/, ''))}.”</p>`
             : `<p class="jl ${l.who === 'you' ? 'yours' : 'n'}"><span class="jt">${clock(l.at)}</span> ${esc(l.text)}</p>`;
       entries.push({ key, html });
     }
@@ -566,25 +566,23 @@ function cardHtml(v: CardView): string {
   const hint = pushSore
     ? 'She’s had enough of being pushed. A hold now lands worse than a word.'
     : (v.hint ?? (first ? 'Tap one to say it.' : undefined));
-  const pull = v.borrowed
-    ? `<p class="pull borrowed" style="${inkStyle(tYou)}">${esc(v.pullLine)}</p>`
-    : `<p class="pull hand" style="${pencilStyle(tPull, 6)}">${esc(v.pullLine)}</p>`;
+  const pull = `<p class="pull notebook-text other-voice${v.borrowed ? ' borrowed' : ''}" style="${pencilStyle(tPull, 6)}">${esc(v.pullLine)}</p>`;
   const resolve = v.resolve
-    ? `<p class="resolve">${tally(v.resolve.marks, v.id.length)}<span class="hand">${esc(v.resolve.line)}</span></p>`
+    ? `<p class="resolve">${tally(v.resolve.marks, v.id.length)}<span class="notebook-text">${esc(v.resolve.line)}</span></p>`
     : '';
-  const forecast = v.forecast ? `<p class="thought hand">${esc(v.forecast)}</p>` : '';
+  const forecast = v.forecast ? `<p class="thought notebook-text">${esc(v.forecast)}</p>` : '';
   const opts = v.options
     .map(
       (o) =>
-        `<button class="opt" data-o="${esc(o.id)}" aria-keyshortcuts="Shift+Enter" title="Tap to suggest; hold or Shift+Enter to insist."><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean hand">${esc(o.mood ?? cue(o.lean, o.pushed))}</span>${first && RANK[o.pushed] > RANK[o.lean] ? '<span class="gesture">hold to insist · costs trust</span>' : ''}</button>`,
+        `<button class="opt" data-o="${esc(o.id)}" aria-keyshortcuts="Shift+Enter" title="Tap to suggest; hold or Shift+Enter to insist."><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean notebook-text">${esc(o.mood ?? cue(o.lean, o.pushed))}</span>${first && RANK[o.pushed] > RANK[o.lean] ? '<span class="gesture">hold to insist · costs trust</span>' : ''}</button>`,
     )
     .join('');
   return `<div class="card ink-in">
     <div class="timerrow"><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, v.id.length, 1)}"/></svg><span class="caption time-left" id="time-left"></span></div>
     <div class="card-text">
       <p class="scene">${esc(v.scene)}</p>
-      ${resolve}${forecast}${pull}${recalled ? `<p class="stayed hand">“${esc(recalled)}” <span class="who">she thinks</span></p>` : ''}
-      ${first && !v.borrowed ? '<p class="caption">the pencil is the other voice</p>' : ''}
+      ${resolve}${forecast}${pull}${recalled ? `<p class="stayed notebook-text">“${esc(recalled)}” <span class="who">she thinks</span></p>` : ''}
+      ${first && !v.borrowed ? '<p class="caption notebook-text other-voice">the pencil is the other voice</p>' : ''}
       ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
     </div>
     <div class="opts">${first ? '<p class="caption right">the small words are her mood about each</p>' : ''}${opts}
@@ -619,7 +617,7 @@ function gapHtml(a: Answer | null): string {
 /** These are her reported thoughts, not a promise to agree next time. */
 function thoughtHtml(answer: Answer): string {
   return (s ? answerThoughts(s, answer, records()) : [])
-    .map((line) => `<p class="stayed hand">“${esc(line)}” <span class="who">she thinks</span></p>`)
+    .map((line) => `<p class="stayed notebook-text">“${esc(line)}” <span class="who">she thinks</span></p>`)
     .join('');
 }
 
@@ -741,25 +739,25 @@ function pageHtml(pg: Page): string {
   const kept = pg.kept.map((x, i) => `<li class="kept">${tick(k + i)} ${esc(x)}</li>`).join('');
   const missed = pg.missed.map((x) => `<li class="missed"><s>${esc(x)}</s></li>`).join('');
   const resolves = pg.resolves
-    .map((r, i) => `<li>${tally(r.marks, k + 3 + i)}<span class="hand">${esc(r.label)}</span></li>`)
+    .map((r, i) => `<li>${tally(r.marks, k + 3 + i)}<span class="notebook-text">${esc(r.label)}</span></li>`)
     .join('');
   const phrases = pg.phrases
     .map(
       (ph) =>
-        `<span class="phrase hand" style="opacity:${(0.45 + clamp(ph.weight, 0, 1) * 0.55).toFixed(2)};font-size:${(19 + clamp(ph.weight, 0, 1) * 8).toFixed(0)}px">${esc(ph.text)}</span>`,
+        `<span class="phrase notebook-text" style="opacity:${(0.45 + clamp(ph.weight, 0, 1) * 0.55).toFixed(2)};font-size:${(19 + clamp(ph.weight, 0, 1) * 8).toFixed(0)}px">${esc(ph.text)}</span>`,
     )
     .join('');
   const alone = [...new Set(pg.turnedAlone)]
-    .map((x) => `<p class="hand her">I did that one myself. “${esc(x)}.”</p>`)
+    .map((x) => `<p class="notebook-text her">I did that one myself. “${esc(x)}.”</p>`)
     .join('');
-  return `<h2 class="hand dayhead">${esc(DAY_NAMES[pg.day] ?? '')}, in bed</h2>
+  return `<h2 class="notebook-text dayhead">${esc(DAY_NAMES[pg.day] ?? '')}, in bed</h2>
     ${rule(k)}
-    ${pg.review ? `<p class="review hand">${esc(pg.review)}</p>` : ''}
-    <p class="hand her">${esc(pg.herLine)}</p>
+    ${pg.review ? `<p class="review notebook-text">${esc(pg.review)}</p>` : ''}
+    <p class="notebook-text her">${esc(pg.herLine)}</p>
     ${alone}
     ${kept || missed ? `<ul class="km">${kept}${missed}</ul>` : ''}
     ${resolves ? `<div class="block"><p class="label">she means to keep</p><ul class="resolves">${resolves}</ul></div>` : ''}
-    <div class="block"><p class="label">about you</p><p class="hand to-you">${esc(pg.aboutYou)}</p></div>
+    <div class="block"><p class="label">about you</p><p class="notebook-text to-you${pg.aboutYou === 'Some of what I heard today wasn’t you.' ? ' other-voice' : ''}">${esc(pg.aboutYou)}</p></div>
     ${phrases ? `<div class="block margin-list"><p class="label">in the margin</p><div class="phrases">${phrases}</div></div>` : ''}`;
 }
 
@@ -784,7 +782,7 @@ function ending() {
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     ${finalHtml(f)}
     <div class="grow"></div>
-    ${canAnotherWeek(s) ? '<div class="continuation"><p class="hand soft">Monday will come round again.</p><button class="primary" id="another">Another week</button></div>' : ''}
+    ${canAnotherWeek(s) ? '<div class="continuation"><p class="notebook-text soft">Monday will come round again.</p><button class="primary" id="another">Another week</button></div>' : ''}
     <div class="actions">
       <button class="quiet" id="again">Start over</button>
       <button class="quiet" id="export">Download this run</button>
@@ -812,7 +810,7 @@ function stripHtml(f: Final): string {
   const strip = f.strip
     .map(
       (d, i) =>
-        `<div class="sday"><span class="hand">${short[weekdayOf(d.day)] ?? ''}</span>${d.kept.map((x, j) => `<span class="kept">${tick(i * 5 + j)}${esc(x.replace(/^my /, ''))}</span>`).join('')}${d.missed.map((x) => `<span class="missed"><s>${esc(x.replace(/^my /, ''))}</s></span>`).join('')}</div>`,
+        `<div class="sday"><span class="notebook-text">${short[weekdayOf(d.day)] ?? ''}</span>${d.kept.map((x, j) => `<span class="kept">${tick(i * 5 + j)}${esc(x.replace(/^my /, ''))}</span>`).join('')}${d.missed.map((x) => `<span class="missed"><s>${esc(x.replace(/^my /, ''))}</s></span>`).join('')}</div>`,
     )
     .join('');
   return `<div class="strip">${strip}</div>`;
@@ -824,16 +822,16 @@ function finalHtml(f: Final): string {
   const phrases = f.phrases
     .map(
       (ph) =>
-        `<span class="phrase hand" style="opacity:${(0.45 + clamp(ph.weight, 0, 1) * 0.55).toFixed(2)};font-size:${(19 + clamp(ph.weight, 0, 1) * 8).toFixed(0)}px">${esc(ph.text)}</span>`,
+        `<span class="phrase notebook-text" style="opacity:${(0.45 + clamp(ph.weight, 0, 1) * 0.55).toFixed(2)};font-size:${(19 + clamp(ph.weight, 0, 1) * 8).toFixed(0)}px">${esc(ph.text)}</span>`,
     )
     .join('');
-  const unasked = f.unasked.map((x) => `<p class="hand her">${esc(x)}.</p>`).join('');
+  const unasked = f.unasked.map((x) => `<p class="notebook-text her">${esc(x)}.</p>`).join('');
   const finalInput = s && !secondWeek ? finalInputWords(s, records()) : undefined;
   const sentWord = f.sent === 'send' ? 'sent' : f.sent === 'call' ? 'rang instead' : 'deleted';
-  return `<h2 class="hand dayhead">Saturday</h2>
+  return `<h2 class="notebook-text dayhead">Saturday</h2>
     ${rule(61)}
     ${f.note ? `<div class="voicenote"><p class="label">voice note to Mum, ${sentWord}</p><p class="note">“${esc(f.note)}”</p></div>` : ''}
-    ${finalInput ? `<p class="final-input hand">${esc(finalInput)}</p>` : ''}
+    ${finalInput ? `<p class="final-input notebook-text">${esc(finalInput)}</p>` : ''}
     <p class="n">${esc(f.line)}</p>
     ${(f.threads ?? []).length > 0 ? `<div class="block threads"><p class="label">and</p>${(f.threads ?? []).map((x) => `<p class="n">${esc(x)}</p>`).join('')}</div>` : ''}
     ${
@@ -846,14 +844,14 @@ function finalHtml(f: Final): string {
     <div class="block hands"><p class="label">two hands</p>${handsHtml(f)}</div>`;
 }
 
-/** Two handwritten lines whose size shows how the two hands changed over the week. Never a number. */
+/** Two lines whose size shows how the two voices changed over the week. Never a number. */
 function handsHtml(f: Final): string {
   const side = (h: { you: number; pull: number }) => {
     const d = pos(h.pull) - pos(h.you);
     return d > 0.08 ? 'pencil' : d < -0.08 ? 'you' : 'even';
   };
   const line = (when: string, h: { you: number; pull: number }, then?: { you: number; pull: number }) => {
-    const pencil = `<span class="hand pencil-inline" style="${pencilStyle(h.pull)}">the pencil</span>`;
+    const pencil = `<span class="notebook-text other-voice pencil-inline" style="${pencilStyle(h.pull)}">the pencil</span>`;
     const you = `<span class="ink" style="${inkStyle(h.you)}">you</span>`;
     const now = side(h);
     const still = then && side(then) === now ? ' still' : '';
