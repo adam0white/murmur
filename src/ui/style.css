@@ -240,7 +240,7 @@ button:focus-visible {
   display: none;
 }
 /* Narrow phones: "Wed" keeps the mark whole. */
-@media (max-width: 389px) {
+@media (max-width: 480px) {
   .dayname .long {
     display: none;
   }
@@ -761,10 +761,42 @@ button:focus-visible {
   grid-template-columns: 1fr;
   gap: 8px;
 }
-/* On a phone the day's own heading says "second week"; the header keeps its one line. */
-@media (max-width: 389px) {
+/* Put the week below the date and clock so each label keeps enough room. */
+@media (max-width: 480px) {
+  .day .top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 44px;
+  }
+  .day .top .mark {
+    min-width: 0;
+  }
+  .when {
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 8px;
+    row-gap: 0;
+  }
+  .when .dayname {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .when .clock {
+    grid-column: 2;
+    grid-row: 1;
+  }
   .top .week-label {
-    display: none;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: end;
+    max-width: none;
+    white-space: nowrap;
+  }
+}
+
+/* At the smallest widths, enlarged type can give each header group its own row. */
+@media (max-width: 349px) {
+  .day .top {
+    display: flex;
   }
 }
 

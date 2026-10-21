@@ -8,7 +8,7 @@ const absolute = (day: number, minute: number) => DAY0 + (day - 1) * 1440 + minu
 const dayLine = (c: Ctx, lines: string[]) => lines[c.weekday - 1] ?? lines[0] ?? '';
 // Copy-only variation belongs to the new edition; exported older runs keep their words.
 const routineWords = (legacy: string, nights: string[]) => (c: Ctx) =>
-  c.version === '0.4.1' ? dayLine(c, nights) : legacy;
+  c.version === '0.4.1' || c.version === '0.4.2' ? dayLine(c, nights) : legacy;
 const w2 = (s: GameState) => (s.flags.w2 ??= {});
 const had = (c: Ctx, line: string) => c.weekOne?.threads.includes(line) ?? false;
 const ownColumns = (c: Ctx) =>

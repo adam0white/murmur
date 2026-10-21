@@ -58,7 +58,7 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = '0.4.1';
+export const GAME_VERSION = '0.4.2';
 export const LEGACY_VERSION = '0.2.1';
 export const isEdition = (version: string) => listens({ version }) || version === LEGACY_VERSION;
 export const DAY_NAMES = [
@@ -79,7 +79,8 @@ export const DAY_NAMES = [
 ];
 /** Edition 0.4.0 adds a second week after Saturday's last page. */
 export const WEEK_TWO_EDITION = '0.4.0';
-const hasWeekTwo = (s: GameState) => s.version === WEEK_TWO_EDITION || s.version === GAME_VERSION;
+const hasWeekTwo = (s: GameState) =>
+  s.version === WEEK_TWO_EDITION || s.version === '0.4.1' || s.version === GAME_VERSION;
 export const weekOf = (day: number) => (day <= 7 ? 1 : 2);
 export const weekdayOf = (day: number) => ((day - 1) % 7) + 1;
 const WINDOW = 5;
@@ -604,7 +605,7 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
   const turned = prompts.find((r) => r.outcome === 'turned');
   if (turned && !said) {
     const phrase = s.phrases.find((x) => x.id === turned.responseId);
-    if (phrase) {
+    if (phrase && (s.version !== '0.4.2' || chosen.phrase?.id === phrase.id)) {
       answer.turnedAlone = phrase.text;
       st.turnedAlone.push(phrase.text);
     }
@@ -1050,7 +1051,7 @@ export function canAnotherWeek(s: GameState): boolean {
 export function anotherWeek(s: GameState): GameState {
   if (!canAnotherWeek(s)) throw new Error('This run cannot continue into another week.');
   if (!hasWeekTwo(s)) {
-    const rebuilt = replay(s.seed, s.inputs, s.minute, GAME_VERSION);
+    const rebuilt = replay(s.seed, s.inputs, s.minute, '0.4.1');
     // The last answer may end the day without advancing the host clock.
     while (rebuilt.phase === 'day') step(rebuilt);
     if (fingerprint(rebuilt) !== fingerprint(s)) throw new Error('Week-one replay does not match this run.');

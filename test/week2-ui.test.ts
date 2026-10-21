@@ -75,11 +75,11 @@ describe('a played first week', () => {
     'plays and replays seed %i through the normal inputs',
     (seed) => {
       const s = playedFirstWeek(seed);
-      expect(s.version).toBe('0.4.1');
+      expect(s.version).toBe('0.4.2');
       expect(s.phase).toBe('end');
       expect(s.day).toBe(6);
       expect(s.inputs.some((i) => i.kind === 'say' && i.insist)).toBe(false);
-      const again = replay(seed, s.inputs, s.minute, '0.4.1');
+      const again = replay(seed, s.inputs, s.minute, '0.4.2');
       // The last answer can end the day on its own minute; finish that day as anotherWeek does.
       while (again.phase === 'day') step(again);
       expect(cloneState(again)).toEqual(cloneState(s));
@@ -95,9 +95,10 @@ describe('a played first week', () => {
 describe('second week browser flow', { timeout: 60_000 }, () => {
   for (const viewport of [
     { width: 360, height: 690 },
+    { width: 412, height: 891 },
     { width: 1280, height: 800 },
   ]) {
-    const size = viewport.width === 360 ? 'phone' : 'desktop';
+    const size = viewport.width < 500 ? `phone-${viewport.width}` : 'desktop';
     it(`continues the same Dilan and shows a readable Monday on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
       try {
@@ -111,6 +112,23 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         await page.locator('#hush').waitFor();
         expect(await page.locator('body').innerText()).toContain('second week');
         expect(await page.locator('.top').innerText()).toMatch(/Mon/);
+        await page.evaluate(() => document.fonts.ready);
+        expect(await page.locator('.top .week-label').isVisible()).toBe(true);
+        expect(
+          await page.locator('.top .mark').evaluate((el) => {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            return range.getClientRects().length;
+          }),
+        ).toBe(1);
+        for (const selector of ['.top .mark', '.top .week-label']) {
+          const label = page.locator(selector);
+          if (!(await label.isVisible())) continue;
+          expect(await label.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), selector).toBe(true);
+          const bounds = await label.boundingBox();
+          expect(bounds?.x).toBeGreaterThanOrEqual(0);
+          expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(viewport.width);
+        }
         expect(await page.evaluate(() => window.__murmur.state?.past?.[0])).toEqual(canon);
         const card = await page.locator('.card').boundingBox();
         expect(card?.y).toBeGreaterThanOrEqual(0);
@@ -203,7 +221,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       }
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       await page.locator('#bp-new').click();
-      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.1');
+      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.2');
       expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(1);
     } finally {
       await page.close();

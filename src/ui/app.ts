@@ -446,7 +446,9 @@ function recordHtml(record: MomentRecord): string {
   const how =
     a.said && a.said !== a.chosen
       ? a.verdict === 'deferred'
-        ? 'She put yours off, so the pencil’s way, for now.'
+        ? s?.version === '0.4.2'
+          ? 'She chose this instead.'
+          : 'She put yours off, so the pencil’s way, for now.'
         : a.pullWon
           ? 'She didn’t. She went the pencil’s way.'
           : 'She didn’t. She did something else.'

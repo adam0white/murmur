@@ -212,7 +212,15 @@ const callMum: Opt = {
   done: (c) =>
     c.missedMum >= 2
       ? 'Mum picked up on the first ring. Neither of them mentioned the voice note.'
-      : 'Twenty minutes. Mum talked about the neighbour’s roof. Dilan laughed twice.',
+      : c.version === '0.4.2'
+        ? byDay(c, [
+            'Twenty minutes. Mum talked about the neighbour’s roof. Dilan laughed twice.',
+            'Mum had bought too many tomatoes. Dilan was given instructions for three dinners.',
+            'Mum wanted to know whether she needed to bring anything tonight. The cake was already in its box.',
+            'Mum put the phone down to find her glasses. Dilan could hear her asking the empty room.',
+            'Mum asked about the bowling. Dilan promised to report anything worth reporting.',
+          ])
+        : 'Twenty minutes. Mum talked about the neighbour’s roof. Dilan laughed twice.',
 };
 const scrollBus: Opt = {
   id: 'scroll',
@@ -809,7 +817,10 @@ const wednesday: Moment[] = [
     day: 3,
     at: at(19, 45),
     place: 'aylin',
-    scene: 'Aylin’s kitchen. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”',
+    scene: (c) =>
+      c.version === '0.4.2' && c.flags.route
+        ? 'Aylin’s kitchen. She is fifteen minutes late after finishing the extra route. Aylin has saved her a plate. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”'
+        : 'Aylin’s kitchen. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”',
     pull: {
       to: 'yes',
       line: (c) =>

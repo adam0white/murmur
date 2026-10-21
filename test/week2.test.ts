@@ -151,7 +151,7 @@ describe('the second week edition', () => {
   it.each(['silent', 'tap', 'insist', 'edge'] as const)(
     'replays and restores the 0.4.1 second week: %s',
     (policy) => {
-      const s = play(newGame(1000), policy);
+      const s = play(newGame(1000, '0.4.1'), policy);
       expect(s.version).toBe('0.4.1');
       anotherWeek(s);
       play(s, policy, 10);

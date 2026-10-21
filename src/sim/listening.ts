@@ -13,7 +13,7 @@ import type { GameState, Opt } from './types.ts';
 export const LISTENING_EDITION = '0.3.0';
 /** Editions with gentle suggestions and retained HF advice. */
 export const listens = (s: GameState | { version: string }) =>
-  s.version === LISTENING_EDITION || s.version === '0.4.0' || s.version === '0.4.1';
+  s.version === LISTENING_EDITION || s.version === '0.4.0' || s.version === '0.4.1' || s.version === '0.4.2';
 /** Utility units. HF draws against its own scores, after all hard vetoes. */
 export const LISTENING_TEMPERATURE = 0.14;
 export function configureListening(p: Person) {
