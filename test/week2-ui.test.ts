@@ -229,24 +229,23 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
   });
 });
 
-it('keeps the optional notebook count off until chosen and updates the ending immediately', async () => {
+it('offers the notebook tally only at the ending, closed until requested', async () => {
   const page = await browser.newPage();
   await importRun(page, playedFirstWeek(42));
   const before = await page.evaluate(() => ({
     state: window.__murmur.state,
     save: localStorage.getItem('murmur-save-v1'),
   }));
-  expect(await page.locator('#notebook-tally').innerText()).toBe('');
+  const tally = page.locator('#notebook-tally');
+  expect(await tally.isVisible()).toBe(false);
   await page.locator('#menu').click();
-  expect(await page.locator('#bp-tally').isChecked()).toBe(false);
-  await page.locator('#bp-tally').check();
-  expect(await page.locator('#notebook-tally').innerText()).toContain('Total:');
+  expect(await page.locator('#bp-tally').count()).toBe(0);
   await page.locator('#bp-close').click();
-  await page.locator('#menu').click();
-  expect(await page.locator('#bp-tally').isChecked()).toBe(true);
-  await page.locator('#bp-tally').uncheck();
-  expect(await page.locator('#notebook-tally').innerText()).toBe('');
-  await page.locator('#bp-close').click();
+  await page.getByText('See the tally', { exact: true }).click();
+  expect(await tally.innerText()).toContain('Total:');
+  expect(await tally.isVisible()).toBe(true);
+  await page.getByText('See the tally', { exact: true }).click();
+  expect(await tally.isVisible()).toBe(false);
   expect(
     await page.evaluate(() => ({
       state: window.__murmur.state,

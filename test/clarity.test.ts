@@ -65,11 +65,13 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       const purpose = await page.locator('.title > p').allTextContents();
       expect(purpose.join(' ')).toMatch(/through her week/);
       expect(purpose.join(' ')).toMatch(/words can change her choices/);
-      const more = page.locator('.title details');
-      expect(await more.getAttribute('open')).toBeNull();
-      await more.locator('summary').click();
+      const more = page.locator('#dilan-about');
+      expect(await more.isVisible()).toBe(false);
+      await page.getByRole('button', { name: 'More about Dilan', exact: true }).focus();
+      await page.keyboard.press('Space');
       expect(await more.innerText()).toContain('She dispatches vans');
-      await more.locator('summary').click();
+      await page.keyboard.press('Escape');
+      expect(await more.isVisible()).toBe(false);
       await page.goto(`${origin}?seed=1`);
       await page.locator('#new').click();
       const gap = await page.locator('.gap').innerText();
@@ -652,7 +654,9 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
       expect(await page.locator('.journal .record-reply').count()).toBe(1);
       expect(await page.locator('.gap').count()).toBe(0);
       expect(await page.locator('.gap-actions').innerText()).toContain('The clock keeps running.');
-      expect(await page.getByRole('button', { name: 'Let time pass faster ▸', exact: true }).count()).toBe(1);
+      expect(await page.getByRole('button', { name: 'Until something happens', exact: true }).count()).toBe(
+        1,
+      );
       // Leave the reply open: normal playback must open the next moment without an acceleration click.
       await page.clock.runFor(20_000);
       expect(errors).toEqual([]);

@@ -842,3 +842,44 @@ button:focus-visible {
   transform: rotate(var(--other-voice-angle, -2deg));
   transform-origin: left center;
 }
+
+/* Native explanation popover adds no expanded text to the cover's layout. */
+button.about-info {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font:
+    italic bold 16px Georgia,
+    serif;
+}
+button.about-info::before {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.about-popover[popover] {
+  box-sizing: border-box;
+  width: min(32rem, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  padding: 20px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid currentColor;
+  border-radius: 6px;
+}
+.about-popover::backdrop {
+  background: rgb(0 0 0 / 0.2);
+}
+.final-tally {
+  margin: 16px 0;
+}

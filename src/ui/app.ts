@@ -59,7 +59,6 @@ const app = document.getElementById('app') as HTMLElement;
 let s: GameState | null = null;
 let fast = false;
 // Presentation preference only; never saved or passed to the simulation.
-let showNotebookTally = false;
 let raf = 0;
 let last = 0;
 let carry = 0;
@@ -182,12 +181,11 @@ function title() {
   app.innerHTML = `${header(false)}<div class="page title">
     <h1>The Two Voices</h1>
     <p>Accompany Dilan through her week. Your words can change her choices and become her own.</p>
-    <details class="about">
-      <summary>More about Dilan</summary>
+    <button type="button" class="about-info" popovertarget="dilan-about" aria-label="More about Dilan">i</button><div class="about about-popover" id="dilan-about" popover="auto"><h2>More about Dilan</h2>
       <p class="soft">an ordinary week, from the inside</p>
       <p>Dilan is thirty-three. She dispatches vans at a courier depot in the town she came back to.</p>
       <p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>
-    </details>
+    </div>
     <div class="grow"></div>
     <div class="actions">
       ${save ? '<button class="primary" id="cont">Continue the week</button>' : ''}
@@ -616,7 +614,7 @@ function gapHtml(a: Answer | null): string {
   if (!a) {
     return `<div class="gap"><p class="soft">${s.day === 1 ? 'Her alarm is about to go.' : 'The day starts.'}</p></div>`;
   }
-  return '<div class="gap-actions"><p class="caption">The clock keeps running.</p><button class="quiet" id="hurry">Let time pass faster ▸</button></div>';
+  return '<div class="gap-actions"><p class="caption">The clock keeps running.</p><button class="quiet" id="hurry">Until something happens</button></div>';
 }
 
 /** These are her reported thoughts, not a promise to agree next time. */
@@ -786,7 +784,7 @@ function ending() {
   app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     ${finalHtml(f)}
-    <div id="notebook-tally">${notebookTally(s, showNotebookTally)}</div>
+    <details class="final-tally"><summary>See the tally</summary><div id="notebook-tally">${notebookTally(s, true)}</div></details>
     <div class="grow"></div>
     ${canAnotherWeek(s) ? '<div class="continuation"><p class="notebook-text soft">Monday will come round again.</p><button class="primary" id="another">Another week</button></div>' : ''}
     <div class="actions">
@@ -892,7 +890,6 @@ function backPage() {
     <button class="row" id="bp-send">Send this run to the notebook</button>
     <button class="row" id="bp-load">Replay a run file</button>
     <input type="file" id="bp-file" accept="application/json,.json" hidden />
-    <label class="row"><input type="checkbox" id="bp-tally" ${showNotebookTally ? 'checked' : ''} /> Count my choices at the last page</label>
     <button class="row" id="bp-new">Start a new week</button>
     <button class="row" id="bp-title">Back to the cover</button>
     <p class="soft small">Week ${s.seed}. Edition ${s.version}. Dilan is a person from the Human Framework ${FRAMEWORK_VERSION}; what she says comes from it.</p>
@@ -920,11 +917,6 @@ function backPage() {
   });
   el.addEventListener('click', (e) => {
     if (e.target === el) close();
-  });
-  document.getElementById('bp-tally')?.addEventListener('change', (event) => {
-    showNotebookTally = (event.target as HTMLInputElement).checked;
-    const tally = document.getElementById('notebook-tally');
-    if (tally && s) tally.innerHTML = notebookTally(s, showNotebookTally);
   });
   document.getElementById('bp-close')?.addEventListener('click', close);
   document.getElementById('bp-export')?.addEventListener('click', download);
