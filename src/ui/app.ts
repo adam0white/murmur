@@ -35,6 +35,7 @@ import { doneLine, journalLines, type MomentRecord, momentRecords } from './jour
 import { lab } from './lab.ts';
 import { answerThoughts, cardThought, finalInputWords, keptWords } from './presentation.ts';
 import { replyWords } from './reply.ts';
+import { notebookTally } from './tally.ts';
 
 const SAVE = 'murmur-save-v1';
 /** Real seconds an open card lasts (its whole window). */
@@ -57,6 +58,8 @@ interface Save {
 const app = document.getElementById('app') as HTMLElement;
 let s: GameState | null = null;
 let fast = false;
+// Presentation preference only; never saved or passed to the simulation.
+let showNotebookTally = false;
 let raf = 0;
 let last = 0;
 let carry = 0;
@@ -783,6 +786,7 @@ function ending() {
   app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     ${finalHtml(f)}
+    <div id="notebook-tally">${notebookTally(s, showNotebookTally)}</div>
     <div class="grow"></div>
     ${canAnotherWeek(s) ? '<div class="continuation"><p class="notebook-text soft">Monday will come round again.</p><button class="primary" id="another">Another week</button></div>' : ''}
     <div class="actions">
@@ -888,6 +892,7 @@ function backPage() {
     <button class="row" id="bp-send">Send this run to the notebook</button>
     <button class="row" id="bp-load">Replay a run file</button>
     <input type="file" id="bp-file" accept="application/json,.json" hidden />
+    <label class="row"><input type="checkbox" id="bp-tally" ${showNotebookTally ? 'checked' : ''} /> Count my choices at the last page</label>
     <button class="row" id="bp-new">Start a new week</button>
     <button class="row" id="bp-title">Back to the cover</button>
     <p class="soft small">Week ${s.seed}. Edition ${s.version}. Dilan is a person from the Human Framework ${FRAMEWORK_VERSION}; what she says comes from it.</p>
@@ -915,6 +920,11 @@ function backPage() {
   });
   el.addEventListener('click', (e) => {
     if (e.target === el) close();
+  });
+  document.getElementById('bp-tally')?.addEventListener('change', (event) => {
+    showNotebookTally = (event.target as HTMLInputElement).checked;
+    const tally = document.getElementById('notebook-tally');
+    if (tally && s) tally.innerHTML = notebookTally(s, showNotebookTally);
   });
   document.getElementById('bp-close')?.addEventListener('click', close);
   document.getElementById('bp-export')?.addEventListener('click', download);

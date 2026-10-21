@@ -228,3 +228,30 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
     }
   });
 });
+
+it('keeps the optional notebook count off until chosen and updates the ending immediately', async () => {
+  const page = await browser.newPage();
+  await importRun(page, playedFirstWeek(42));
+  const before = await page.evaluate(() => ({
+    state: window.__murmur.state,
+    save: localStorage.getItem('murmur-save-v1'),
+  }));
+  expect(await page.locator('#notebook-tally').innerText()).toBe('');
+  await page.locator('#menu').click();
+  expect(await page.locator('#bp-tally').isChecked()).toBe(false);
+  await page.locator('#bp-tally').check();
+  expect(await page.locator('#notebook-tally').innerText()).toContain('Total:');
+  await page.locator('#bp-close').click();
+  await page.locator('#menu').click();
+  expect(await page.locator('#bp-tally').isChecked()).toBe(true);
+  await page.locator('#bp-tally').uncheck();
+  expect(await page.locator('#notebook-tally').innerText()).toBe('');
+  await page.locator('#bp-close').click();
+  expect(
+    await page.evaluate(() => ({
+      state: window.__murmur.state,
+      save: localStorage.getItem('murmur-save-v1'),
+    })),
+  ).toEqual(before);
+  await page.close();
+}, 60_000);
