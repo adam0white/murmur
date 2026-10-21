@@ -75,11 +75,11 @@ describe('a played first week', () => {
     'plays and replays seed %i through the normal inputs',
     (seed) => {
       const s = playedFirstWeek(seed);
-      expect(s.version).toBe('0.4.0');
+      expect(s.version).toBe('0.4.1');
       expect(s.phase).toBe('end');
       expect(s.day).toBe(6);
       expect(s.inputs.some((i) => i.kind === 'say' && i.insist)).toBe(false);
-      const again = replay(seed, s.inputs, s.minute, '0.4.0');
+      const again = replay(seed, s.inputs, s.minute, '0.4.1');
       // The last answer can end the day on its own minute; finish that day as anotherWeek does.
       while (again.phase === 'day') step(again);
       expect(cloneState(again)).toEqual(cloneState(s));
@@ -198,12 +198,12 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       expect(await page.locator('.voicenote').count()).toBe(1);
       if (version === '0.3.0') {
         await page.getByRole('button', { name: 'Another week', exact: true }).click();
-        expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.0');
+        expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.1');
         expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(8);
       }
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       await page.locator('#bp-new').click();
-      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.0');
+      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.1');
       expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(1);
     } finally {
       await page.close();

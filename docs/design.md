@@ -175,3 +175,9 @@ Deferred (target 2026-11-03): another person's week (Aylin); replay-variety Tues
 **Retest, 2026-10-20 (Protocol 2, phone).** Every valid tester's best moment was the same: Dilan handing Ece the advice the player gave her ("Feet on the floor. Drive it round yourself."). The worst was the routine cards (alarm, bus call, bedtime), which repeat each day with the same answers; two of three first wishes to leave came there (4:09 free, 10:55 floor; a third tester stopped satisfied at 3:03 and would return). Fixed the same day: the cover shortcut now opens Monday of the second week, and week-two labels speak in Dilan's first person.
 
 Deferred from the retest (target 2026-11-03): week-two routine cards offer a different answer or turn on most nights; "say nothing" stays above 690 px on three-answer cards; plain words for "the pencil's way" after a refusal. The routines are "more of the same" by design, so whether to vary them is the owner's call.
+
+### Week-two routine variation (0.4.1, 2026-10-21)
+
+Owner direction resolves the routine-card deferral above: vary two routines and keep one steady. The bus call and bedtime now offer different wording on each weekday, tied to that day's photograph, missed call, family evening, board, or Friday bag. The alarm keeps “Feet on the floor” and “Five more” as the steady habit; learned independent waking still applies. Actions, consequences, timing, HF 2.8.0, and background faith stay as before.
+
+New runs, including the second-week shortcut, use 0.4.1. Existing 0.4.0 exports replay and continue with their original words; 0.2.1 and 0.3.0 replay unchanged. Finished 0.3.0 runs can continue into 0.4.1. Delivery ends with a signed commit on main, green CI, a deployment whose release metadata matches that clean commit, and the requested scratch report. Owner acceptance of feel remains outstanding.

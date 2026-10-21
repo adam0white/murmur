@@ -58,7 +58,7 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = '0.4.0';
+export const GAME_VERSION = '0.4.1';
 export const LEGACY_VERSION = '0.2.1';
 export const isEdition = (version: string) => listens({ version }) || version === LEGACY_VERSION;
 export const DAY_NAMES = [
@@ -79,6 +79,7 @@ export const DAY_NAMES = [
 ];
 /** Edition 0.4.0 adds a second week after Saturday's last page. */
 export const WEEK_TWO_EDITION = '0.4.0';
+const hasWeekTwo = (s: GameState) => s.version === WEEK_TWO_EDITION || s.version === GAME_VERSION;
 export const weekOf = (day: number) => (day <= 7 ? 1 : 2);
 export const weekdayOf = (day: number) => ((day - 1) % 7) + 1;
 const WINDOW = 5;
@@ -159,6 +160,7 @@ export function ctxOf(s: GameState): Ctx {
   const bedLate = s.flags.bedAt !== undefined && minuteOfDay(s.flags.bedAt) > 23 * 60 + 15;
   const bedSmall = s.flags.bedAt !== undefined && minuteOfDay(s.flags.bedAt) < 4 * 60;
   return {
+    version: s.version,
     day: s.day,
     flags: s.flags,
     missedMum,
@@ -394,7 +396,7 @@ function apply(s: GameState, inp: Input) {
     return;
   }
   if (inp.kind === 'next') {
-    if (s.phase === 'end' && s.day === LAST_DAY && s.version === WEEK_TWO_EDITION) {
+    if (s.phase === 'end' && s.day === LAST_DAY && hasWeekTwo(s)) {
       startWeekTwo(s);
       return;
     }
@@ -1039,7 +1041,7 @@ function finalPage(s: GameState): Final {
 
 // ---------- another week ----------
 
-/** Whether this finished run can go on to a second week (0.4.0 runs, and finished 0.3.0 runs replayed as 0.4.0). */
+/** Whether this finished listening-edition run can go on to a second week. */
 export function canAnotherWeek(s: GameState): boolean {
   return s.phase === 'end' && s.day === LAST_DAY && listens(s);
 }
@@ -1047,8 +1049,8 @@ export function canAnotherWeek(s: GameState): boolean {
 /** The same run, going on into week two. Returns the state to continue with (a new object for a 0.3.0 run). */
 export function anotherWeek(s: GameState): GameState {
   if (!canAnotherWeek(s)) throw new Error('This run cannot continue into another week.');
-  if (s.version !== WEEK_TWO_EDITION) {
-    const rebuilt = replay(s.seed, s.inputs, s.minute, WEEK_TWO_EDITION);
+  if (!hasWeekTwo(s)) {
+    const rebuilt = replay(s.seed, s.inputs, s.minute, GAME_VERSION);
     // The last answer may end the day without advancing the host clock.
     while (rebuilt.phase === 'day') step(rebuilt);
     if (fingerprint(rebuilt) !== fingerprint(s)) throw new Error('Week-one replay does not match this run.');

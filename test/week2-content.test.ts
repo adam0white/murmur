@@ -466,3 +466,35 @@ describe('Ece’s actual promises', () => {
     }
   });
 });
+
+describe('week-two routine variety', () => {
+  it.each(['bus', 'bed'])('%s offers different words each weekday in 0.4.1', (routine) => {
+    const nights = [8, 9, 10, 11, 12].map((day) => {
+      const c = context({ day, weekday: day - 7, version: '0.4.1' });
+      return options(moment(`${routine}-${day}`), c).map((o) => text(o.ink, c));
+    });
+    for (let answer = 0; answer < 3; answer++)
+      expect(new Set(nights.map((inks) => inks[answer])).size).toBe(5);
+  });
+
+  it('keeps alarm answers steady and old routine wording intact', () => {
+    for (const day of [8, 9, 10, 11, 12]) {
+      const c = context({ day, weekday: day - 7, version: '0.4.1' });
+      expect(options(moment(`alarm-${day}`), c).map((o) => text(o.ink, c))).toEqual([
+        'Up. Feet on the floor.',
+        'Five more.',
+      ]);
+      const old = { ...c, version: '0.4.0' };
+      expect(options(moment(`bus-${day}`), old).map((o) => text(o.ink, old))).toEqual([
+        'Call Mum.',
+        'Scroll for a bit.',
+        'Text her: tomorrow, promise.',
+      ]);
+      expect(options(moment(`bed-${day}`), old).map((o) => text(o.ink, old))).toEqual([
+        'Write the day down.',
+        'One more video.',
+        'Phone on the floor. Sleep.',
+      ]);
+    }
+  });
+});

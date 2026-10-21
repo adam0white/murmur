@@ -1,9 +1,9 @@
-import { cardView, newGame, queueInput, runToCard, step, WEEK_TWO_EDITION } from './game.ts';
+import { cardView, GAME_VERSION, newGame, queueInput, runToCard, step } from './game.ts';
 import type { GameState } from './types.ts';
 
 /** A played first week, built through the same inputs as a player and ready for another week. */
 export function playedFirstWeek(seed: number): GameState {
-  const state = newGame(seed, WEEK_TWO_EDITION);
+  const state = newGame(seed, GAME_VERSION);
   while (state.phase !== 'end') {
     if (state.phase === 'evening') {
       queueInput(state, { kind: 'next' });

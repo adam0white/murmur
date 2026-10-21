@@ -6,6 +6,9 @@ import type { Ctx, GameState, Moment, Opt } from './types.ts';
 const at = (h: number, m = 0) => h * 60 + m;
 const absolute = (day: number, minute: number) => DAY0 + (day - 1) * 1440 + minute;
 const dayLine = (c: Ctx, lines: string[]) => lines[c.weekday - 1] ?? lines[0] ?? '';
+// Copy-only variation belongs to the new edition; exported older runs keep their words.
+const routineWords = (legacy: string, nights: string[]) => (c: Ctx) =>
+  c.version === '0.4.1' ? dayLine(c, nights) : legacy;
 const w2 = (s: GameState) => (s.flags.w2 ??= {});
 const had = (c: Ctx, line: string) => c.weekOne?.threads.includes(line) ?? false;
 const ownColumns = (c: Ctx) =>
@@ -174,7 +177,13 @@ function bus(day: number): Moment {
     options: [
       {
         id: 'call',
-        ink: 'Call Mum.',
+        ink: routineWords('Call Mum.', [
+          'Ring her. Ask what the photograph is.',
+          'Ring back. Nothing urgent is still something.',
+          'Call Mum before going to Aylin’s.',
+          'Ring her. Yes, you’re on the bus.',
+          'Call her. Work can stay at work.',
+        ]),
         label: 'call Mum',
         action: 'call-mum',
         duration: 20,
@@ -196,7 +205,13 @@ function bus(day: number): Moment {
       },
       {
         id: 'scroll',
-        ink: 'Scroll for a bit.',
+        ink: routineWords('Scroll for a bit.', [
+          'Look at something that isn’t Mum’s photograph.',
+          'Leave the missed call. Watch something.',
+          'Other people’s dinners for a bit.',
+          'Let the journey go by on the screen.',
+          'Keep Friday to yourself. Scroll.',
+        ]),
         label: 'scroll for a bit',
         action: 'scroll',
         duration: 30,
@@ -216,7 +231,13 @@ function bus(day: number): Moment {
       },
       {
         id: 'text',
-        ink: 'Text her: tomorrow, promise.',
+        ink: routineWords('Text her: tomorrow, promise.', [
+          'Text her: can’t make it out. Call tomorrow.',
+          'Text her: saw your call. Tomorrow, promise.',
+          'Text her: going to Aylin’s. Ring tomorrow.',
+          'Text her: on the bus. Call tomorrow.',
+          'Text her: tomorrow. A proper Saturday call.',
+        ]),
         label: 'text Mum instead',
         action: 'text-mum',
         duration: 3,
@@ -271,7 +292,13 @@ function bed(day: number): Moment {
     options: [
       {
         id: 'write',
-        ink: 'Write the day down.',
+        ink: routineWords('Write the day down.', [
+          'Open the notebook. Start with Monday.',
+          'Write down what you told Ece.',
+          'Half a page about dinner. It counts.',
+          'Put the board on paper. Leave it there.',
+          'Write a little before the week goes.',
+        ]),
         label: 'write the day down',
         action: 'write',
         duration: 15,
@@ -291,7 +318,13 @@ function bed(day: number): Moment {
       },
       {
         id: 'scroll',
-        ink: 'One more video.',
+        ink: routineWords('One more video.', [
+          'Watch somebody else tidy for a bit.',
+          'One short video. No more talking.',
+          'See what somebody else made for dinner.',
+          'Watch something. The pen can wait.',
+          'It’s Friday. One more before sleep.',
+        ]),
         label: 'watch one more video',
         action: 'scroll',
         duration: 75,
@@ -309,14 +342,26 @@ function bed(day: number): Moment {
       },
       {
         id: 'sleep',
-        ink: 'Phone on the floor. Sleep.',
+        ink: routineWords('Phone on the floor. Sleep.', [
+          'Put the phone down. Monday is enough.',
+          'Leave the sentence unwritten. Sleep.',
+          'Save the leftovers photo. Phone down.',
+          'Unclench your hand. Turn out the light.',
+          'Leave the bag till morning. Sleep.',
+        ]),
         label: 'put the phone away',
         action: 'lights-out',
         duration: 5,
         advertises: { rest: 0.1 },
         gives: (c) => (c.tired ? { rest: 0.2, autonomy: 0.15 } : { rest: 0.1 }),
         placeId: 'bed',
-        done: 'She put the phone face down on the floor, and slept.',
+        done: routineWords('She put the phone face down on the floor, and slept.', [
+          'She put the phone face down on the floor. Monday could stay unwritten.',
+          'The sentence went round once more. By morning she had lost it.',
+          'She saved Aylin’s photograph and put the phone down. There was lunch for tomorrow.',
+          'She set the pen down. The dent in her finger faded before she slept.',
+          'The bag stayed on the chair. She turned away from its outline and slept.',
+        ]),
       },
     ],
     after: (s, chosen) => {

@@ -55,6 +55,8 @@ export interface Moment {
 
 /** What content functions may read. */
 export interface Ctx {
+  /** Edition used for authored copy; omitted by legacy direct content callers. */
+  version?: string;
   day: number;
   flags: Flags;
   missedMum: number;
