@@ -21,6 +21,6 @@ Carry the actual HF person forward: voice trust and pressure, habits, learned ph
 
 ## Scope and acceptance
 
-Author one central situation per weekday with bounded outcome branches. Reuse morning and bedtime routines: keep one steady and vary two around the new events. Add no HF faculty, map, economy, playable person, or fourth-week hook. Keep faith in the background. Preserve replay editions; a third-week edition must be explicit.
+Author one central situation per weekday with bounded outcome branches. Reuse the alarm, bus, and bedtime routines: keep one steady and vary two around the new events. Add no HF faculty, map, economy, playable person, or fourth-week hook. Keep faith in the background. Preserve replay editions; a third-week edition must be explicit.
 
 Done would mean six playable days, a replayable export, focused continuity tests, checks at 360×690 and 412×891, and a clean live release. The owner accepts whether the week feels earned. Testers can find defects; they cannot overrule the owner's taste. Approval authorizes an implementation plan. Until then, the game ends after week two.
