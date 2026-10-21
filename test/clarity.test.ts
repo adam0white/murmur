@@ -120,7 +120,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     }
   });
 
-  it('shows the live rate, slows for a choice and reply, and keeps running under the menu', async () => {
+  it('shows the live rate, pauses under the menu, and resumes the reply slowdown after closing', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
       await firstChoice(page);
@@ -134,13 +134,20 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       const before = await page.locator('#clock').innerText();
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       await page.clock.runFor(8000);
-      expect(await page.locator('#clock').innerText()).not.toBe(before);
+      expect(await page.locator('#clock').innerText()).toBe(before);
       expect(await page.locator('#hush').count()).toBe(1);
       expect(await page.getByRole('dialog', { name: 'Game menu' }).isVisible()).toBe(true);
       await page.getByRole('button', { name: 'Close', exact: true }).click();
       await page.locator('.opt').first().click();
       expect(await page.locator('#pace').innerText()).toBe('Slow · 1 min/s · reading her reply');
-      await page.clock.runFor(3100);
+      await page.getByRole('button', { name: 'Game menu', exact: true }).click();
+      const answered = await page.locator('#clock').innerText();
+      await page.clock.runFor(8000);
+      expect(await page.locator('#clock').innerText()).toBe(answered);
+      await page.getByRole('button', { name: 'Close', exact: true }).click();
+      await page.clock.runFor(1000);
+      expect(await page.locator('#pace').innerText()).toBe('Slow · 1 min/s · reading her reply');
+      await page.clock.runFor(2100);
       expect(await page.locator('#pace').innerText()).toMatch(/^Fast · .* min\/s · between moments$/);
       await page.locator('#hurry').click();
       await page.clock.runFor(3000);
@@ -155,6 +162,95 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     }
   }, 30_000);
 
+  it.each(['no-preference', 'reduce'] as const)(
+    'highlights and announces each arrival once with %s motion',
+    async (reducedMotion) => {
+      const page = await browser.newPage({ reducedMotion });
+      try {
+        await firstChoice(page);
+        await page.evaluate(() => {
+          (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
+          window.requestAnimationFrame = () => 1;
+        });
+        await page.locator('[data-o="up"]').click();
+        const reply = page.locator('.journal .record-reply').first();
+        const words = await reply.textContent();
+        const arrival = reply.locator('..');
+        expect(await arrival.evaluate((el) => getComputedStyle(el).animationName)).toBe(
+          reducedMotion === 'reduce' ? 'none' : 'journal-highlight',
+        );
+        expect(await page.locator('#journal-live').getAttribute('aria-live')).toBe('polite');
+        expect(await page.locator('#journal-live').textContent()).toContain(words);
+        await reply.evaluate((el) => el.setAttribute('data-retained-node', 'true'));
+        if (reducedMotion === 'no-preference') {
+          await page.waitForFunction(
+            () => !document.querySelector('.record-reply')?.parentElement?.classList.contains('journal-new'),
+            undefined,
+            { polling: 50 },
+          );
+        }
+        await page.evaluate(() => {
+          (window as unknown as { __murmur: { skipToCard(): void } }).__murmur.skipToCard();
+        });
+        expect(await reply.getAttribute('data-retained-node')).toBe('true');
+        expect(await page.locator('#journal-live').textContent()).not.toContain(words);
+        expect(await page.locator('.journal .record-reply').count()).toBe(1);
+        expect(await arrival.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+      } finally {
+        await page.close();
+      }
+    },
+  );
+
+  it('pauses the evening transition while the menu is open and resumes it on close', async () => {
+    const state = newGame(1, '0.2.1');
+    runToCard(state);
+    let lastCard = cloneState(state);
+    while (state.phase === 'day') {
+      if (state.card) {
+        lastCard = cloneState(state);
+        queueInput(state, { kind: 'quiet' });
+      }
+      runToCard(state);
+    }
+    const page = await browser.newPage();
+    try {
+      await page.clock.install();
+      await page.goto(origin);
+      await page.locator('#file').setInputFiles({
+        name: 'last-card.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(
+          JSON.stringify({
+            version: lastCard.version,
+            seed: lastCard.seed,
+            inputs: lastCard.inputs,
+            state: lastCard,
+          }),
+        ),
+      });
+      await page.locator('#hush').waitFor();
+      await page.locator('#hush').click();
+      for (let i = 0; i < 200; i++) {
+        const phase = await page.evaluate(
+          () => (window as unknown as { __murmur: { state: { phase: string } } }).__murmur.state.phase,
+        );
+        if (phase === 'evening') break;
+        await page.clock.runFor(100);
+      }
+      expect(await page.locator('#pace').innerText()).toBe('Day ended · clock stopped');
+      await page.getByRole('button', { name: 'Game menu', exact: true }).click();
+      await page.clock.runFor(8000);
+      expect(await page.locator('#dayroot').count()).toBe(1);
+      expect(await page.locator('#next').count()).toBe(0);
+      await page.getByRole('button', { name: 'Close', exact: true }).click();
+      await page.clock.runFor(3100);
+      expect(await page.locator('#next').count()).toBe(1);
+    } finally {
+      await page.close();
+    }
+  });
+
   it.each([
     { width: 360, height: 690 },
     { width: 1280, height: 800 },
@@ -166,8 +262,16 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
       await page.locator('.opt[data-o="up"]').click();
-      expect(await page.locator('.gap .her').innerText()).toMatch(/next.*alarm.*press and hold/i);
-      for (const selector of ['#pace', '.yousaid', '.gap .her', '.turn', '#hurry']) {
+      expect(await page.locator('.journal .record-reply').innerText()).toMatch(
+        /next.*alarm.*press and hold/i,
+      );
+      for (const selector of [
+        '#pace',
+        '.record-yours',
+        '.journal .record-reply',
+        '.journal .turn',
+        '#hurry',
+      ]) {
         const box = await page.locator(selector).boundingBox();
         expect(box?.y).toBeGreaterThanOrEqual(0);
         expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
@@ -224,10 +328,26 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
           JSON.stringify({ seed: after.seed, inputs: after.inputs, state: cloneState(after) }),
         ),
       });
-      await page.locator('.gap .n').waitFor();
-      expect(await page.locator('.gap .her').innerText()).toContain(example.words);
+      const latest = page.locator('.journal');
+      const completion = after.log.find((line) => line.who === 'narrator' && line.at === example.completion);
+      expect(completion).toBeDefined();
+      await page.locator('.journal .n').filter({ hasText: completion?.text }).waitFor();
+      expect(await page.locator('.journal').innerText()).toContain(completion?.text);
+      expect(await latest.locator('.record-reply').last().innerText()).toContain(example.words);
+      expect(await page.locator('.gap').count()).toBe(0);
+      for (const el of [
+        latest.locator('.record-reply').last(),
+        latest.locator('.turn').last(),
+        page.locator('.journal .n').last(),
+      ]) {
+        await el.scrollIntoViewIfNeeded();
+        const box = await el.boundingBox();
+        expect(box?.y).toBeGreaterThanOrEqual(0);
+        expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(690);
+        expect(await el.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+      }
       expect((await page.locator('#hurry').boundingBox())?.y).toBe(position?.y);
-      for (const selector of ['#pace', '.gap .her', '.turn', '.gap .n', '#hurry']) {
+      for (const selector of ['#pace', '#hurry']) {
         const box = await page.locator(selector).boundingBox();
         expect(box?.y).toBeGreaterThanOrEqual(0);
         expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(690);
@@ -321,7 +441,8 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
       await page.locator('#hush').click();
-      expect(await page.locator('.gap').innerText()).toContain('You let her be.');
+      expect(await page.locator('.journal .record-yours').innerText()).toBe('You chose to say nothing.');
+      expect(await page.locator('.gap').count()).toBe(0);
     } finally {
       await page.close();
     }
@@ -370,7 +491,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       expect(run.inputs).toHaveLength(1);
       expect(run.inputs[0]).toMatchObject({ kind: 'say', option: 'up', insist: true });
       expect(run.answer.chosen).toBe('up');
-      expect(await page.locator('.yousaid').innerText()).toContain('you insisted');
+      expect(await page.locator('.record-yours').innerText()).toContain('you insisted');
       expect(cloneState(replay(run.seed, run.inputs, run.minute))).toEqual(run);
     } finally {
       await page.close();
@@ -471,10 +592,10 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
           (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
         });
         await page.locator('[data-o="up"]').click();
-        expect(await page.locator('.journal .moment-record').count()).toBe(0);
-        expect(await page.locator('.yousaid').innerText()).toContain('Up. Feet on the floor.');
-        expect(await page.locator('.herchoice').count()).toBe(1);
-        expect(await page.locator('.herchoice').innerText()).toContain('Five more.');
+        expect(await page.locator('.journal .record-yours').count()).toBe(1);
+        expect(await page.locator('.record-yours').innerText()).toContain('Up. Feet on the floor.');
+        expect(await page.locator('.record-chosen').count()).toBe(1);
+        expect(await page.locator('.record-chosen').innerText()).toContain('Five more.');
         const after = await page.evaluate(
           () => (window as unknown as { __murmur: { state: unknown } }).__murmur.state,
         );
@@ -490,17 +611,18 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
             }),
           ),
         });
-        expect(await page.locator('.journal .moment-record').count()).toBe(0);
-        expect(await page.locator('.yousaid').innerText()).toContain('Up. Feet on the floor.');
-        expect(await page.locator('.herchoice').count()).toBe(1);
-        expect(await page.locator('.herchoice').innerText()).toContain('Five more.');
+        expect(await page.locator('.journal .record-yours').count()).toBe(1);
+        expect(await page.locator('.record-yours').innerText()).toContain('Up. Feet on the floor.');
+        expect(await page.locator('.record-chosen').count()).toBe(1);
+        expect(await page.locator('.record-chosen').innerText()).toContain('Five more.');
         await page.locator('#hurry').click();
         await page.locator('#hush').waitFor();
-        const record = page.locator('.moment-record').first();
+        const record = page.locator('.journal .record-yours').first();
+        const journal = page.locator('.journal');
         expect(await record.innerText()).toContain('You suggested');
         expect(await record.innerText()).toContain('Up. Feet on the floor.');
-        expect(await record.innerText()).toContain('She chose');
-        expect(await record.innerText()).toContain('Five more.');
+        expect(await journal.innerText()).toContain('She chose');
+        expect(await journal.innerText()).toContain('Five more.');
         expect(await page.locator('.journal').innerText()).toContain('slept through');
         await record.scrollIntoViewIfNeeded();
         const box = await record.boundingBox();
@@ -527,7 +649,8 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
       await page.locator('#new').click();
       await page.clock.runFor(1000);
       await page.locator('[data-o="up"]').click();
-      expect(await page.locator('.gap .her').count()).toBe(1);
+      expect(await page.locator('.journal .record-reply').count()).toBe(1);
+      expect(await page.locator('.gap').count()).toBe(0);
       expect(await page.locator('.gap-actions').innerText()).toContain('The clock keeps running.');
       expect(await page.getByRole('button', { name: 'Let time pass faster ▸', exact: true }).count()).toBe(1);
       // Leave the reply open: normal playback must open the next moment without an acceleration click.
@@ -567,7 +690,7 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
         (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs.at(-1),
       );
       expect(input).toMatchObject({ kind: 'say', option: 'reply' });
-      expect(await page.locator('.gap').count()).toBe(1);
+      expect(await page.locator('.gap').count()).toBe(0);
       expect(errors).toEqual([]);
     } finally {
       await page.close();
@@ -698,7 +821,7 @@ describe('design round remembered words', { timeout: 30_000 }, () => {
         return null;
       });
       expect(stayed).toBeTruthy();
-      expect(await page.locator('.gap .stayed').innerText()).toContain(stayed);
+      expect(await page.locator('.journal .stayed').innerText()).toContain(stayed);
       await page.evaluate(() => {
         (window as unknown as { __murmur: { skipToCard(): void } }).__murmur.skipToCard();
       });

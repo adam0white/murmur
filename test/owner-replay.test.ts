@@ -62,7 +62,7 @@ describe('owner replay regressions', () => {
   });
 
   it.each(['say', 'quiet', 'expiry'] as const)(
-    'shows the %s outcome only below the card, then once in the log',
+    'shows the %s completion once in the journal when it becomes due',
     (mode) => {
       const s = replay(run1.seed, run1.inputs);
       if (mode === 'say') queueInput(s, { kind: 'say', option: 'walk', insist: true });
@@ -71,10 +71,11 @@ describe('owner replay regressions', () => {
       const completion = s.log.find((l) => l.who === 'narrator' && l.at >= (s.answer?.at ?? Infinity));
       expect(completion).toBeDefined();
       expect(doneLine(s)).toBeUndefined(); // The activity has not finished yet.
+      expect(journalLines(s)).not.toContain(completion);
       while (s.minute < (completion?.at ?? 0)) step(s);
       const before = fingerprint(s);
       expect(doneLine(s)).toBe(completion);
-      expect(journalLines(s)).not.toContain(completion);
+      expect(journalLines(s).filter((l) => l === completion)).toHaveLength(1);
       expect(fingerprint(s)).toBe(before); // Rendering never changes state or RNG.
       runToCard(s);
       expect(cardView(s)?.id).toBe('bus-2');

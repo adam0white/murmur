@@ -65,6 +65,8 @@ let hurry = false;
 let turnAt = 0;
 let view: { key: string; v: CardView } | null = null;
 let drawn = { log: '', sheet: '' };
+let menuPausedAt: number | null = null;
+const journalMarkup = new WeakMap<HTMLElement, string>();
 let history: { state: GameState; minute: number; applied: number; records: MomentRecord[] } | null = null;
 let toast = '';
 let wake: { release(): Promise<void> } | null = null;
@@ -266,6 +268,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
 function enter() {
   if (!s) return;
   view = null;
+  menuPausedAt = null;
   turnAt = 0;
   if (s.phase === 'day') day();
   else if (s.phase === 'evening') evening();
@@ -284,6 +287,7 @@ function day() {
     ${header(true, true)}
     ${toast ? `<div class="toast" id="toast">${esc(toast)}</div>` : ''}
     <div class="journal" id="journal"></div>
+    <div class="sr-only" id="journal-live" aria-live="polite" aria-atomic="true"></div>
     <div class="sheet" id="sheet"></div>
   </div>`;
   if (toast) {
@@ -319,6 +323,10 @@ function frame(t: number) {
   if (!s) return;
   const dt = Math.min(0.25, Math.max(0, (t - last) / 1000));
   last = t;
+  if (menuPausedAt !== null) {
+    raf = requestAnimationFrame(frame);
+    return;
+  }
   if (s.phase === 'day') {
     if (fast) {
       if (!s.card) runToCard(s);
@@ -383,7 +391,7 @@ function drawDay() {
     margin.textContent = words ? `She kept “${words}”` : '';
   }
   const shown = journalLines(s);
-  const logKey = `${shown.length}:${s.card?.openedAt ?? ''}`;
+  const logKey = `${shown.length}:${s.card?.openedAt ?? ''}:${s.applied}:${doneLine(s) ? 1 : 0}`;
   if (drawn.log !== logKey) {
     drawn.log = logKey;
     drawJournal(shown);
@@ -433,7 +441,17 @@ function recordHtml(record: MomentRecord): string {
     : record.quiet === 'explicit'
       ? 'You chose to say nothing.'
       : 'You said nothing · time ran out.';
-  return `<div class="moment-record"><p class="record-yours">${yours}</p><p class="record-chosen">She chose: “${esc(record.chosen.ink)}”</p>${thoughtHtml(record.answer)}</div>`;
+  const a = record.answer;
+  const reply = s ? replyWords(s, a) : undefined;
+  const how =
+    a.said && a.said !== a.chosen
+      ? a.verdict === 'deferred'
+        ? 'She put yours off, so the pencil’s way, for now.'
+        : a.pullWon
+          ? 'She didn’t. She went the pencil’s way.'
+          : 'She didn’t. She did something else.'
+      : '';
+  return `<p class="record-yours">${yours}</p><p class="record-chosen">She chose: “${esc(record.chosen.ink)}”</p>${reply ? `<p class="record-reply her hand">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${how ? `<p class="turn small">${how}</p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin hand">She took it as “${esc(a.learned)}.” She kept that one.</p>` : ''}`;
 }
 
 function drawJournal(lines: LogLine[]) {
@@ -446,22 +464,72 @@ function drawJournal(lines: LogLine[]) {
     lines.length === 0
       ? `<p class="jhead hand">${esc(DAY_NAMES[s.day] ?? '')}${weekOf(s.day) === 2 ? ' <span class="week-label">second week</span>' : ''}</p>`
       : '';
-  el.innerHTML = `${head}${lines
-    .map((l) => {
-      if (l.who === 'scene') {
-        const next = scenes.find((x) => x > l.at) ?? Number.POSITIVE_INFINITY;
-        const record = past.get(l.at);
-        const away = record ? record.quiet === 'timeout' : !actedOn(l.at, next);
-        // Most scenes start with their own time; don't stamp it twice.
-        const stamp = /^\d\d:\d\d/.test(l.text) ? '' : `<span class="jt">${clock(l.at)}</span> `;
-        return `${away ? '<p class="away">while you were away</p>' : ''}<p class="jl jscene">${stamp}${esc(l.text)}</p>${record && (s?.card || s?.answer?.moment !== record.moment) ? recordHtml(record) : ''}`;
+  const entries: { key: string; html: string }[] = [];
+  if (head) entries.push({ key: 'head', html: head });
+  for (const l of lines) {
+    const key = `line:${s.log.indexOf(l)}`;
+    if (l.who === 'scene') {
+      const next = scenes.find((x) => x > l.at) ?? Number.POSITIVE_INFINITY;
+      const record = past.get(l.at);
+      const away = record ? record.quiet === 'timeout' : !actedOn(l.at, next);
+      const stamp = /^\d\d:\d\d/.test(l.text) ? '' : `<span class="jt">${clock(l.at)}</span> `;
+      entries.push({
+        key,
+        html: `${away ? '<p class="away">while you were away</p>' : ''}<p class="jl jscene">${stamp}${esc(l.text)}</p>`,
+      });
+      if (record) {
+        const template = document.createElement('template');
+        template.innerHTML = recordHtml(record);
+        const counts = new Map<string, number>();
+        for (const paragraph of template.content.children) {
+          const role = paragraph.className;
+          const index = counts.get(role) ?? 0;
+          counts.set(role, index + 1);
+          entries.push({ key: `record:${record.sceneAt}:${role}:${index}`, html: paragraph.outerHTML });
+        }
       }
-      if (l.who === 'pull') return `<p class="jl pencil">${esc(l.text)}</p>`;
-      if (l.who === 'dilan') return `<p class="jl hand her">“${esc(l.text.replace(/\.$/, ''))}.”</p>`;
-      const cls = l.who === 'you' ? 'yours' : 'n';
-      return `<p class="jl ${cls}"><span class="jt">${clock(l.at)}</span> ${esc(l.text)}</p>`;
-    })
-    .join('')}`;
+    } else {
+      const html =
+        l.who === 'pull'
+          ? `<p class="jl pencil">${esc(l.text)}</p>`
+          : l.who === 'dilan'
+            ? `<p class="jl hand her">“${esc(l.text.replace(/\.$/, ''))}.”</p>`
+            : `<p class="jl ${l.who === 'you' ? 'yours' : 'n'}"><span class="jt">${clock(l.at)}</span> ${esc(l.text)}</p>`;
+      entries.push({ key, html });
+    }
+  }
+  // Keep existing nodes: a new arrival must not replay old highlights or announcements.
+  const initial = el.dataset.ready !== 'true';
+  const existing = new Map(
+    [...el.children].map((node) => [(node as HTMLElement).dataset.key, node as HTMLElement]),
+  );
+  const announcements: string[] = [];
+  for (const entry of entries) {
+    let node = existing.get(entry.key);
+    if (!node) {
+      node = document.createElement('div');
+      node.className = 'journal-entry';
+      node.dataset.key = entry.key;
+    }
+    existing.delete(entry.key);
+    if (journalMarkup.get(node) !== entry.html) {
+      node.innerHTML = entry.html;
+      journalMarkup.set(node, entry.html);
+      if (!initial) {
+        node.classList.add('journal-new');
+        node.addEventListener('animationend', () => node?.classList.remove('journal-new'), { once: true });
+        announcements.push(node.textContent ?? '');
+      }
+    }
+    const position = entries.indexOf(entry);
+    if (el.children[position] !== node) el.insertBefore(node, el.children[position] ?? null);
+  }
+  for (const node of existing.values()) node.remove();
+  el.dataset.ready = 'true';
+  if (announcements.length) {
+    const live = document.getElementById('journal-live');
+    if (live) live.textContent = announcements.join(' ');
+  }
   el.scrollTop = el.scrollHeight;
 }
 
@@ -539,43 +607,13 @@ function drawTimer() {
       : `She decides in ${Math.max(1, Math.ceil(left * CARD_SECONDS))}s`;
 }
 
-/** Her reply and outcome while the day moves toward the next card. */
+/** Only pacing controls remain below the journal after a decision. */
 function gapHtml(a: Answer | null): string {
   if (!s) return '';
   if (!a) {
     return `<div class="gap"><p class="soft">${s.day === 1 ? 'Her alarm is about to go.' : 'The day starts.'}</p></div>`;
   }
-  const p = s.person;
-  const record = records().find((r) => r.moment === a.moment && r.answer.at === a.at);
-  const yours = record?.said?.ink;
-  const quiet = !a.said && s.inputs.some((i) => i.kind === 'quiet' && i.at === a.at);
-  const lines: string[] = [];
-  if (yours)
-    lines.push(
-      `<p class="yousaid"><span class="record-label">You suggested: </span><span class="ink" style="${inkStyle(trustOf(p, YOU))}">${esc(yours)}</span>${a.insisted ? ' <span class="insisted">you insisted</span>' : ''}</p>`,
-    );
-  else if (!a.said) lines.push(`<p class="soft">${quiet ? 'You let her be.' : 'You said nothing.'}</p>`);
-  if (record) lines.push(`<p class="herchoice">She chose: “${esc(record.chosen.ink)}”</p>`);
-  const reply = replyWords(s, a);
-  if (reply) lines.push(`<p class="her hand">“${esc(reply)}” <span class="who">she says</span></p>`);
-  // Say plainly when she did not do what you said, before the narrator line shows what she did.
-  if (a.said && a.said !== a.chosen) {
-    const how =
-      a.verdict === 'deferred'
-        ? 'She put yours off, so the pencil’s way, for now.'
-        : a.pullWon
-          ? 'She didn’t. She went the pencil’s way.'
-          : 'She didn’t. She did something else.';
-    lines.push(`<p class="turn small">${how}</p>`);
-  }
-  lines.push(thoughtHtml(a));
-  const done = doneLine(s, a);
-  if (done) lines.push(`<p class="n">${esc(done.text)}</p>`);
-  if (a.learned)
-    lines.push(`<p class="margin hand">She took it as “${esc(a.learned)}.” She kept that one.</p>`);
-  if (a.turnedAlone) lines.push(`<p class="margin hand">“${esc(a.turnedAlone)}.” Her own words now.</p>`);
-  return `<div class="gap ink-in">${lines.join('')}</div>
-    <div class="gap-actions"><p class="caption">The clock keeps running.</p><button class="quiet" id="hurry">Let time pass faster ▸</button></div>`;
+  return '<div class="gap-actions"><p class="caption">The clock keeps running.</p><button class="quiet" id="hurry">Let time pass faster ▸</button></div>';
 }
 
 /** These are her reported thoughts, not a promise to agree next time. */
@@ -654,7 +692,7 @@ function bindHold(b: HTMLButtonElement) {
 
 /** Say nothing, now: she decides with only the pull. */
 function hush(): Answer | null {
-  if (s?.phase !== 'day' || !s.card) return null;
+  if (menuPausedAt !== null || s?.phase !== 'day' || !s.card) return null;
   queueInput(s, { kind: 'quiet' });
   writeSave();
   answeredAt = performance.now();
@@ -666,7 +704,7 @@ function hush(): Answer | null {
 }
 
 function sayIt(option: string, insist: boolean): Answer | null {
-  if (s?.phase !== 'day' || !s.card) return null;
+  if (menuPausedAt !== null || s?.phase !== 'day' || !s.card) return null;
   queueInput(s, insist ? { kind: 'say', option, insist: true } : { kind: 'say', option });
   writeSave();
   answeredAt = performance.now();
@@ -840,10 +878,11 @@ function handsHtml(f: Final): string {
 function backPage() {
   if (!s) return;
   lab.screen('back page');
-  // The back page is a sheet over the day; time keeps its slow pace under it.
+  if (menuPausedAt !== null) return;
+  menuPausedAt = performance.now();
   const el = document.createElement('div');
   el.className = 'backpage-wrap';
-  el.innerHTML = `<div class="backpage ink-in" role="dialog" aria-label="Game menu">
+  el.innerHTML = `<div class="backpage ink-in" role="dialog" aria-modal="true" aria-label="Game menu">
     <p class="label">Game menu</p>
     <button class="row" id="bp-export">Download this run</button>
     <button class="row" id="bp-send">Send this run to the notebook</button>
@@ -854,8 +893,26 @@ function backPage() {
     <p class="soft small">Week ${s.seed}. Edition ${s.version}. Dilan is a person from the Human Framework ${FRAMEWORK_VERSION}; what she says comes from it.</p>
     <button class="primary" id="bp-close">Close</button>
   </div>`;
+  const background = [...app.children] as HTMLElement[];
+  const previousInert = background.map((node) => node.inert);
+  for (const node of background) node.inert = true;
   app.appendChild(el);
-  const close = () => el.remove();
+  document.getElementById('bp-close')?.focus();
+  const close = () => {
+    if (!el.isConnected) return;
+    el.remove();
+    for (const [i, node] of background.entries()) node.inert = previousInert[i] ?? false;
+    document.getElementById('menu')?.focus();
+    const now = performance.now();
+    const paused = now - (menuPausedAt ?? now);
+    answeredAt += paused;
+    if (turnAt) turnAt += paused;
+    last = now;
+    menuPausedAt = null;
+  };
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close();
+  });
   el.addEventListener('click', (e) => {
     if (e.target === el) close();
   });

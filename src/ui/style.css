@@ -806,3 +806,37 @@ button:focus-visible {
     display: none;
   }
 }
+
+/* New journal entries settle back into the page without moving the text. */
+.journal-new {
+  animation: journal-highlight 1.4s ease-out;
+}
+@keyframes journal-highlight {
+  from {
+    background-color: var(--paper-2);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.day:not(.has-card) .sheet {
+  min-height: 0;
+}
+.record-reply {
+  font-size: 25px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .journal-new {
+    animation: none;
+  }
+}

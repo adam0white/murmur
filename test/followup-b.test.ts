@@ -96,17 +96,17 @@ describe('follow-up b rendered exact runs', { timeout: 30_000 }, () => {
   it('shows retained words, the first Tuesday recall and its distinct silent result once, then no Wednesday repeat', async () => {
     const s = retained();
     let page = await load(s);
-    expect(await page.locator('.gap .stayed').count()).toBe(1);
+    expect(await page.locator('.journal .stayed').last().count()).toBe(1);
     await page.close();
     nextAlarm(s);
     const recall = required(cardThought(s, required(cardView(s))));
     page = await load(s);
     expect(await visibleText(page, '.card .stayed')).toContain(recall);
     await page.locator('#hush').click();
-    expect(await page.locator('.gap .stayed').count()).toBe(1);
-    expect(await visibleText(page, '.gap .stayed')).not.toContain(recall);
+    expect(await page.locator('.journal .stayed').last().count()).toBe(1);
+    expect(await page.locator('.journal .stayed').last().innerText()).not.toContain(recall);
     queueInput(s, { kind: 'quiet' });
-    expect(await visibleText(page, '.gap .stayed')).toContain(
+    expect(await page.locator('.journal .stayed').last().innerText()).toContain(
       answerThoughts(s, required(s.answer), momentRecords(s))[0],
     );
     await page.close();

@@ -8,16 +8,12 @@ export function doneLine(s: GameState, a: Answer | null = s.answer): LogLine | u
   return s.log.find((l) => l.who === 'narrator' && l.at >= a.at && l.at <= s.minute);
 }
 
-/** Today's journal; the current card and reply stay below it until the next card opens. */
+/** Today's journal; only the still-open scene and pull remain on the choice card. */
 export function journalLines(s: GameState): LogLine[] {
-  const done = s.card ? undefined : doneLine(s);
   return s.log.filter(
     (l) =>
       Math.floor((l.at - DAY0) / 1440) + 1 === s.day &&
       l.at <= s.minute &&
-      l !== done &&
-      // Her unprompted phrase also appears in the reply below the card.
-      !(done && s.answer?.turnedAlone && l.who === 'dilan' && l.at === done.at) &&
       !(s.card && l.at === s.card.openedAt && (l.who === 'scene' || l.who === 'pull')),
   );
 }
