@@ -78,6 +78,7 @@ export function showFeedback(options: {
   let sending = false;
   const close = () => {
     if (!wrap.isConnected) return;
+    window.removeEventListener('hf-lab-preference', syncPreference);
     wrap.remove();
     background.forEach((node, index) => {
       node.inert = oldInert[index] ?? false;
@@ -101,6 +102,10 @@ export function showFeedback(options: {
       run: options.getRun(),
     };
     wrap.querySelector('#feedback-preview')!.textContent = JSON.stringify(preview, null, 2);
+  };
+  const syncPreference = () => {
+    wrap.querySelector<HTMLInputElement>('#feedback-toggle input')!.checked = lab.eventsOn;
+    refresh();
   };
   wrap.addEventListener('input', refresh);
   wrap.addEventListener('change', refresh);
@@ -169,6 +174,7 @@ export function showFeedback(options: {
       refresh();
     }
   });
+  window.addEventListener('hf-lab-preference', syncPreference);
   refresh();
   wrap.querySelector<HTMLElement>('#feedback-back')?.focus();
 }

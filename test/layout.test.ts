@@ -148,3 +148,20 @@ it('offers privacy beside the recording switch and yields journal room before sc
     await page.close();
   }
 }, 30000);
+it('refreshes Send when the shared recording preference changes after the form opens', async () => {
+  const page = await browser.newPage();
+  try {
+    await page.addInitScript(() => localStorage.setItem('hf-lab-recording-off', '1'));
+    await page.goto(url);
+    await page.locator('#menu').click();
+    await page.locator('#bp-send').click();
+    expect(await page.locator('#feedback-send').isDisabled()).toBe(true);
+    await page.evaluate(async () => {
+      const { lab } = await new Function('return import("/src/ui/lab.ts")')();
+      lab.setEventsOff(false);
+    });
+    expect(await page.locator('#feedback-send').isDisabled()).toBe(false);
+  } finally {
+    await page.close();
+  }
+}, 30000);
