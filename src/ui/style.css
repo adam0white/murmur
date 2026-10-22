@@ -1574,3 +1574,11 @@ button:disabled {
   height: 44px;
   flex: 0 0 44px;
 }
+/* The form scrolls rather than shortening the four-line note as details open. */
+.feedback-body > * {
+  flex-shrink: 0;
+}
+.feedback textarea {
+  height: calc(4lh + 18px);
+  min-height: calc(4lh + 18px);
+}

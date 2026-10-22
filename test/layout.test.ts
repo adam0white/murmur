@@ -100,6 +100,7 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
       await page.locator('#feedback-note').fill('I wanted to read the reply.');
       await page.locator('.feedback-name summary').click();
       await page.locator('#feedback-name').fill('  tester  ');
+      expect((await page.locator('#feedback-note').boundingBox())?.height).toBeGreaterThanOrEqual(100);
       if (mode === 'off') {
         expect(await page.locator('#feedback-send').isDisabled()).toBe(true);
         await page.locator('#feedback-toggle input').click();
