@@ -4,6 +4,7 @@
  * slowed while a card is open (never a hard pause), then a short readable beat after each answer.
  */
 import { FRAMEWORK_VERSION } from '@adam0white/human-framework';
+import { telemetryNotice, telemetryToggle } from '@adam0white/lab-kit';
 import { PULL, YOU } from '../sim/dilan.ts';
 import { playedFirstWeek } from '../sim/firstweek.ts';
 import {
@@ -55,6 +56,11 @@ interface Save {
   inputs: Input[];
 }
 
+const notice = telemetryNotice();
+if (notice) {
+  Object.assign(notice.style, { position: 'static', transform: 'none', margin: '0 auto' });
+}
+
 const app = document.getElementById('app') as HTMLElement;
 let s: GameState | null = null;
 let fast = false;
@@ -72,6 +78,11 @@ const journalMarkup = new WeakMap<HTMLElement, string>();
 let history: { state: GameState; minute: number; applied: number; records: MomentRecord[] } | null = null;
 let toast = '';
 let wake: { release(): Promise<void> } | null = null;
+
+lab.trackRun(() => structuredClone(exportRun()), {
+  runKey: () => s?.seed ?? 'title',
+  getLogs: () => s?.log.slice(-40).map((line) => line.text) ?? [],
+});
 
 // ---------- save ----------
 
@@ -92,7 +103,9 @@ function readSave(): Save | null {
 function writeSave() {
   if (!s) return;
   try {
-    localStorage.setItem(SAVE, JSON.stringify({ version: s.version, seed: s.seed, inputs: s.inputs }));
+    const text = JSON.stringify({ version: s.version, seed: s.seed, inputs: s.inputs });
+    localStorage.setItem(SAVE, text);
+    lab.captureSave(JSON.parse(text));
   } catch {}
 }
 function clearSave() {
@@ -197,6 +210,10 @@ function title() {
     </div>
     ${footer()}
   </div>`;
+  if (notice && !notice.dataset.shown) {
+    app.prepend(notice);
+    notice.dataset.shown = '1';
+  }
   document.getElementById('cont')?.addEventListener('click', () => {
     if (!save) return;
     s = replay(save.seed, save.inputs, undefined, save.version ?? LEGACY_VERSION);
@@ -267,6 +284,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
 }
 
 function enter() {
+  notice?.remove();
   if (!s) return;
   view = null;
   menuPausedAt = null;
@@ -895,6 +913,7 @@ function backPage() {
     <p class="soft small">Week ${s.seed}. Edition ${s.version}. Dilan is a person from the Human Framework ${FRAMEWORK_VERSION}; what she says comes from it.</p>
     <button class="primary" id="bp-close">Close</button>
   </div>`;
+  el.querySelector('.backpage')?.append(telemetryToggle(lab));
   const background = [...app.children] as HTMLElement[];
   const previousInert = background.map((node) => node.inert);
   for (const node of background) node.inert = true;
