@@ -32,9 +32,10 @@ import {
   weekOf,
 } from '../sim/game.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
+import { showFeedback } from './feedback.ts';
 import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
 import { lab } from './lab.ts';
-import { answerThoughts, cardThought, finalInputWords, keptWords } from './presentation.ts';
+import { answerThoughts, cardThought, finalInputWords } from './presentation.ts';
 import { replyWords } from './reply.ts';
 import { notebookTally } from './tally.ts';
 
@@ -64,6 +65,10 @@ if (notice) {
 const app = document.getElementById('app') as HTMLElement;
 let s: GameState | null = null;
 let fast = false;
+let pacing: 'automatic' | 'slow' | 'steady' | 'fast' = 'automatic';
+let cardVisibleAt = -1e9;
+let screen: 'title' | 'day' | 'evening' | 'end' = 'title';
+let feedbackOpen = false;
 // Presentation preference only; never saved or passed to the simulation.
 let raf = 0;
 let last = 0;
@@ -74,6 +79,8 @@ let turnAt = 0;
 let view: { key: string; v: CardView } | null = null;
 let drawn = { log: '', sheet: '' };
 let menuPausedAt: number | null = null;
+let clockHolds = 0;
+let activePanel: { kind: 'info' | 'menu'; close: () => void } | null = null;
 const journalMarkup = new WeakMap<HTMLElement, string>();
 let history: { state: GameState; minute: number; applied: number; records: MomentRecord[] } | null = null;
 let toast = '';
@@ -155,13 +162,131 @@ const tick = (key: number) =>
   `<svg class="tick" viewBox="0 0 18 16" width="18" height="16" aria-hidden="true"><path d="M2 9 L7 13 L16 2" transform="rotate(${(Math.sin(key) * 4).toFixed(1)} 9 8)"/></svg>`;
 const rule = (key: number) =>
   `<svg class="rule" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path d="${wob(2, 3, 298, 3, key, 1)}"/></svg>`;
-const markLink = '<a class="mark" href="https://human.adamwhite.work/">◇ human framework</a>';
-/** The same header on every screen: mark, the day and clock (on the day screen), the back-page button. */
-const header = (menu = true, when = false) =>
-  `<header class="top">${markLink}<span class="when">${when ? '<span class="dayname notebook-text"><span id="dayname" class="long"></span><span id="dayshort" class="short"></span></span><span class="week-label" id="week-label" hidden>second week</span><span class="clock" id="clock"></span>' : ''}</span>${menu ? '<button class="menu-btn" id="menu" aria-label="Game menu">≡</button>' : '<span></span>'}</header>${when ? '<p class="pace" id="pace"></p><p class="kept-words notebook-text" id="kept-words" hidden></p>' : ''}`;
+const header = (_menu = true, when = false) =>
+  `<header class="top"><span class="when">${when || screen !== 'title' ? `<span class="dayname notebook-text"><span id="dayname" class="long">${s ? DAY_NAMES[s.day] : ''}</span><span id="dayshort" class="short">${s ? DAY_NAMES[s.day]?.slice(0, 3) : ''}</span></span> <span class="clock" id="clock">${s ? (screen === 'evening' ? '· in bed' : screen === 'end' ? '· week is done' : clock(s.minute)) : ''}</span><span class="week-label" id="week-label" ${!s || weekOf(s.day) !== 2 ? 'hidden' : ''}> · second week</span>` : '<a href="https://human.adamwhite.work/games/">All games</a>'}</span><div class="top-controls"><button class="info-btn" id="info" aria-label="Information">i</button><button class="menu-btn" id="menu" aria-label="Game menu">≡</button></div></header>${when ? `<div class="state-strip" role="status"><span id="state-words"></span><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, 1, 1)}"/></svg></div>` : ''}`;
 const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 };
-const footer = () =>
-  '<div class="footer"><a href="https://human.adamwhite.work/games/">◇ All games</a></div>';
+const credit = () =>
+  `<p class="credit soft small">Dilan is a person from the <a href="https://human.adamwhite.work/">Human Framework ${FRAMEWORK_VERSION}</a>.</p>`;
+
+function holdClock() {
+  clockHolds++;
+  if (menuPausedAt === null) menuPausedAt = performance.now();
+  drawStatus();
+}
+function resumeClock() {
+  clockHolds = Math.max(0, clockHolds - 1);
+  if (clockHolds) return;
+  const now = performance.now();
+  const paused = now - (menuPausedAt ?? now);
+  answeredAt += paused;
+  if (turnAt) turnAt += paused;
+  last = now;
+  menuPausedAt = null;
+  drawStatus();
+}
+function bindHeader() {
+  const toggle = (kind: 'info' | 'menu', open: () => void) => {
+    const previous = activePanel;
+    previous?.close();
+    if (previous?.kind !== kind) open();
+  };
+  document.getElementById('menu')?.addEventListener('click', () => toggle('menu', backPage));
+  document.getElementById('info')?.addEventListener('click', () => toggle('info', infoPage));
+}
+function overlay(markup: string, className: string, onClose?: () => void) {
+  holdClock();
+  const previous = document.activeElement as HTMLElement | null;
+  const background = [...app.children] as HTMLElement[];
+  const inert = background.map((node) => node.inert);
+  const dayChildren = background.flatMap((node) =>
+    node.matches('.day') ? ([...node.children] as HTMLElement[]) : [],
+  );
+  const childInert = dayChildren.map((node) => node.inert);
+  const el = document.createElement('div');
+  el.className = className;
+  el.innerHTML = markup;
+  for (const node of background) {
+    if (!node.matches('.top')) node.inert = true;
+    // The day contains its header; leave the header available while holding the rest.
+    if (node.matches('.day')) {
+      node.inert = false;
+      for (const child of node.children) if (!child.matches('.top')) (child as HTMLElement).inert = true;
+    }
+  }
+  app.append(el);
+  const close = () => {
+    if (!el.isConnected) return;
+    el.remove();
+    background.forEach((node, i) => {
+      node.inert = inert[i] ?? false;
+    });
+    dayChildren.forEach((node, index) => {
+      node.inert = childInert[index] ?? false;
+    });
+    resumeClock();
+    previous?.focus();
+    onClose?.();
+  };
+  el.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      close();
+    }
+    if (event.key !== 'Tab') return;
+    const controls = [
+      ...el.querySelectorAll<HTMLElement>('button:not(:disabled), a, input, textarea, summary'),
+    ].filter((node) => node.getClientRects().length);
+    const first = controls[0],
+      last = controls.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  });
+  el.addEventListener('click', (event) => {
+    if (event.target === el) close();
+  });
+  el.querySelector<HTMLElement>('[data-close]')?.addEventListener('click', close);
+  el.querySelector<HTMLElement>('button, textarea')?.focus();
+  return { el, close };
+}
+function infoPage() {
+  const content =
+    screen === 'title'
+      ? '<h2>Dilan</h2><p>Dilan is thirty-three. She dispatches vans at a courier depot in the town she came back to.</p><p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>'
+      : screen === 'day'
+        ? '<h2>The two voices</h2><p>Tap a line to suggest it. Hold it to insist; it works only while she trusts you, and it costs trust.</p><p>Say nothing and she decides with only the pencil. The pencil is the other voice.</p><p>The small words under each line are her mood about it.</p><p>Your ink darkens as she trusts you; the pencil grows as she trusts it.</p><p>Her day slows while she decides and hurries between moments.</p><p class="desktop-only">Shift+Enter insists on the focused line.</p>'
+        : screen === 'evening'
+          ? '<h2>Her page</h2><p>A tick is something she kept today; a struck line is something she missed.</p><p>Tally marks are things she means to keep.</p><p>“In the margin” holds phrases she is taking as her own; larger means more hers.</p>'
+          : '<h2>Saturday</h2><p>The two hands compare how much she trusted each voice, at the start and at the end.</p><p>The tally counts what you did: suggestions, holds, silences.</p><p>Another week continues with the same Dilan.</p>';
+  const panel = overlay(
+    `<section class="info-panel" role="dialog" aria-modal="true" aria-label="Information"><button class="overlay-close" data-close aria-label="Close information">×</button>${content}</section>`,
+    'info-wrap',
+    () => {
+      if (activePanel?.close === panel.close) activePanel = null;
+    },
+  );
+  activePanel = { kind: 'info', close: panel.close };
+}
+function feedback(returnToMenu = false) {
+  if (feedbackOpen) return;
+  feedbackOpen = true;
+  holdClock();
+  showFeedback({
+    app,
+    lab,
+    getRun: exportRun,
+    download,
+    close: () => {
+      feedbackOpen = false;
+      resumeClock();
+      if (returnToMenu) backPage();
+    },
+  });
+}
 
 /** Her mood about each option, in a few words: never a number, never odds. */
 function cue(lean: Lean, pushed: Lean): string {
@@ -187,45 +312,70 @@ export function start() {
   title();
 }
 
+function expireToast() {
+  const alert = app.querySelector('.toast');
+  if (alert) setTimeout(() => alert.remove(), 4000);
+}
+
 function title() {
+  feedbackOpen = false;
+  clockHolds = 0;
+  menuPausedAt = null;
+  activePanel = null;
   cancelAnimationFrame(raf);
+  releaseWake();
+  screen = 'title';
   lab.screen('title');
   const save = readSave();
-  app.innerHTML = `${header(false)}<div class="page title">
-    <h1>The Two Voices</h1>
-    <p>Accompany Dilan through her week. Your words can change her choices and become her own.</p>
-    <button type="button" class="about-info" popovertarget="dilan-about" aria-label="More about Dilan">i</button><div class="about about-popover" id="dilan-about" popover="auto"><h2>More about Dilan</h2>
-      <p class="soft">an ordinary week, from the inside</p>
-      <p>Dilan is thirty-three. She dispatches vans at a courier depot in the town she came back to.</p>
-      <p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>
-    </div>
-    <div class="grow"></div>
-    <div class="actions">
-      ${save ? '<button class="primary" id="cont">Continue the week</button>' : ''}
-      <button class="${save ? '' : 'primary'}" id="new">${save ? 'New week' : 'Wake her up'}</button>
-      <button class="quiet" id="second" aria-describedby="second-explained">Begin at the second week</button>
-      <p class="soft small" id="second-explained">Her first week is played for you, by a quiet voice. You start on Monday of the second.</p>
-      <button class="quiet" id="load">Replay a run file</button>
-      <input type="file" id="file" accept="application/json,.json" hidden />
-    </div>
-    ${footer()}
-  </div>`;
+  const saved = save ? replay(save.seed, save.inputs, undefined, save.version ?? LEGACY_VERSION) : null;
+  app.innerHTML = `${header()}<div class="page title"><div class="page-body">
+    <h1>The Two Voices</h1><p class="soft subtitle">an ordinary week, from the inside</p>
+    <p>Accompany Dilan from Monday to Saturday. Your words can change her choices and become her own.</p>
+    ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
+    </div><div class="other-ways-wrap"><button class="row" id="other-ways">Other ways in <span aria-hidden="true">▸</span></button></div>
+    <div class="title-spacer" id="title-spacer"></div>
+    <div class="page-actions actions">
+      ${save ? `<button class="primary" id="cont">Continue · ${esc(DAY_NAMES[saved!.day]?.slice(0, 3) ?? '')} ${clock(saved!.minute)}</button>` : ''}
+      <button class="${save ? '' : 'primary'}" id="new">${save ? 'A new week' : 'Wake her up'}</button>
+      <div id="new-confirm" hidden><p>This tears out the week so far.</p><div class="confirm-actions"><button id="confirm-new">Yes, a new week</button><button id="cancel-new">No</button></div></div>
+      ${credit()}
+    </div></div>`;
+  toast = '';
+  bindHeader();
+  expireToast();
   if (notice && !notice.dataset.shown) {
-    app.prepend(notice);
+    document.getElementById('title-spacer')?.append(notice);
     notice.dataset.shown = '1';
   }
   document.getElementById('cont')?.addEventListener('click', () => {
-    if (!save) return;
-    s = replay(save.seed, save.inputs, undefined, save.version ?? LEGACY_VERSION);
+    s = saved;
     enter();
   });
-  document.getElementById('new')?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed()));
-  document.getElementById('second')?.addEventListener('click', () => {
-    s = anotherWeek(playedFirstWeek(urlSeed() ?? randomSeed()));
-    writeSave();
-    enter();
+  document.getElementById('new')?.addEventListener('click', () => {
+    if (!save) newWeek(urlSeed() ?? randomSeed());
+    else {
+      document.getElementById('new-confirm')!.hidden = false;
+      document.getElementById('new')!.hidden = true;
+    }
   });
-  bindImport(document.getElementById('load'), document.getElementById('file'));
+  document.getElementById('confirm-new')?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed()));
+  document.getElementById('cancel-new')?.addEventListener('click', () => {
+    document.getElementById('new-confirm')!.hidden = true;
+    document.getElementById('new')!.hidden = false;
+  });
+  document.getElementById('other-ways')?.addEventListener('click', () => {
+    const { el, close } = overlay(
+      `<section class="other-ways" role="dialog" aria-modal="true" aria-label="Other ways in"><button data-close aria-label="Close other ways in">×</button><h2>Other ways in</h2><button id="second">Begin at the second week</button><p class="soft small">Her first week is played for you, by a quiet voice. You start on Monday of the second.</p><button id="load">Load a playtest run</button><input type="file" id="file" accept="application/json,.json" hidden /></section>`,
+      'backpage-wrap other-ways-overlay',
+    );
+    el.querySelector('#second')?.addEventListener('click', () => {
+      close();
+      s = anotherWeek(playedFirstWeek(urlSeed() ?? randomSeed()));
+      writeSave();
+      enter();
+    });
+    bindImport(el.querySelector('#load'), el.querySelector('#file'));
+  });
 }
 
 function newWeek(seed: number, version = GAME_VERSION) {
@@ -287,7 +437,10 @@ function enter() {
   notice?.remove();
   if (!s) return;
   view = null;
+  feedbackOpen = false;
   menuPausedAt = null;
+  clockHolds = 0;
+  activePanel = null;
   turnAt = 0;
   if (s.phase === 'day') day();
   else if (s.phase === 'evening') evening();
@@ -298,6 +451,7 @@ function enter() {
 
 function day() {
   if (!s) return;
+  screen = 'day';
   lab.screen(`day ${s.day}`);
   requestWake();
   drawn = { log: '', sheet: '' };
@@ -316,7 +470,8 @@ function day() {
       document.getElementById('toast')?.remove();
     }, 4000);
   }
-  document.getElementById('menu')?.addEventListener('click', backPage);
+  bindHeader();
+  expireToast();
   drawDay();
   last = performance.now();
   carry = 0;
@@ -350,7 +505,12 @@ function frame(t: number) {
     if (fast) {
       if (!s.card) runToCard(s);
     } else {
-      carry += dt * rate(t);
+      carry +=
+        dt *
+        rate(t) *
+        (s.card || hurry || (t - answeredAt) / 1000 < READ_SECONDS
+          ? 1
+          : { automatic: 1, slow: 0.5, steady: 1, fast: 2 }[pacing]);
       while (carry >= 1 && s.phase === 'day') {
         carry -= 1;
         const had = !!s.card;
@@ -403,12 +563,6 @@ function drawDay() {
   if (ck) ck.textContent = clock(s.minute);
   const week = document.getElementById('week-label');
   if (week) week.hidden = weekOf(s.day) !== 2;
-  const margin = document.getElementById('kept-words');
-  const words = keptWords(s);
-  if (margin) {
-    margin.hidden = !words;
-    margin.textContent = words ? `She kept “${words}”` : '';
-  }
   const shown = journalLines(s);
   const logKey = `${shown.length}:${s.card?.openedAt ?? ''}:${s.applied}:${doneLine(s) ? 1 : 0}`;
   if (drawn.log !== logKey) {
@@ -426,18 +580,8 @@ function drawDay() {
     const j = document.getElementById('journal');
     if (j) j.scrollTop = j.scrollHeight;
   }
-  const pace = document.getElementById('pace');
-  if (pace) {
-    const now = performance.now();
-    const speed = rate(now);
-    const amount = speed < 1 ? speed.toFixed(2) : speed.toFixed(0);
-    const mode = s.card ? 'choice waiting' : speed === 1 ? 'reading her reply' : 'between moments';
-    pace.textContent =
-      s.phase !== 'day'
-        ? 'Day ended · clock stopped'
-        : `${s.card || speed === 1 ? 'Slow' : 'Fast'} · ${amount} min/s · ${mode}`;
-  }
-  drawTimer();
+  fitCard();
+  drawStatus();
 }
 
 /** Did the player act (say something, or choose quiet) on the card that opened at `at`? */
@@ -456,10 +600,8 @@ function records(): MomentRecord[] {
 
 function recordHtml(record: MomentRecord): string {
   const yours = record.said
-    ? `You suggested${record.insisted ? ' · you insisted' : ''}: “${esc(record.said.ink)}”`
-    : record.quiet === 'explicit'
-      ? 'You chose to say nothing.'
-      : 'You said nothing · time ran out.';
+    ? `You${record.insisted ? ' insisted' : ''}: “${esc(record.said.ink)}”${record.said.ink === record.chosen.ink ? ' ✓' : ` She chose “${esc(record.chosen.ink)}”`}`
+    : `You said nothing${record.quiet === 'timeout' ? ' · time ran out' : ''}. She chose “${esc(record.chosen.ink)}”`;
   const a = record.answer;
   const reply = s ? replyWords(s, a) : undefined;
   const how =
@@ -472,7 +614,7 @@ function recordHtml(record: MomentRecord): string {
           ? 'She didn’t. She went the pencil’s way.'
           : 'She didn’t. She did something else.'
       : '';
-  return `<p class="record-yours">${yours}</p><p class="record-chosen">She chose: “${esc(record.chosen.ink)}”</p>${reply ? `<p class="record-reply her notebook-text">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${how ? `<p class="turn small${how.includes('pencil') ? ' notebook-text other-voice' : ''}">${how}</p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She took it as “${esc(a.learned)}.” She kept that one.</p>` : ''}`;
+  return `<p class="record-yours">${yours}</p>${reply ? `<p class="record-reply her notebook-text">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${how ? `<p class="turn small${how.includes('pencil') ? ' notebook-text other-voice' : ''}">${how}</p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She took it as “${esc(a.learned)}.” She kept that one.</p>` : ''}`;
 }
 
 function drawJournal(lines: LogLine[]) {
@@ -481,12 +623,7 @@ function drawJournal(lines: LogLine[]) {
   if (!el) return;
   const scenes = lines.filter((l) => l.who === 'scene').map((l) => l.at);
   const past = new Map(records().map((record) => [record.sceneAt, record]));
-  const head =
-    lines.length === 0
-      ? `<p class="jhead notebook-text">${esc(DAY_NAMES[s.day] ?? '')}${weekOf(s.day) === 2 ? ' <span class="week-label">second week</span>' : ''}</p>`
-      : '';
   const entries: { key: string; html: string }[] = [];
-  if (head) entries.push({ key: 'head', html: head });
   for (const l of lines) {
     const key = `line:${s.log.indexOf(l)}`;
     if (l.who === 'scene') {
@@ -554,13 +691,26 @@ function drawJournal(lines: LogLine[]) {
   el.scrollTop = el.scrollHeight;
 }
 
+function fitCard() {
+  if (!s?.card || !matchMedia('(max-width: 699px)').matches) return;
+  const journal = document.getElementById('journal');
+  const text = app.querySelector<HTMLElement>('.card-text');
+  if (!journal || !text) return;
+  const overflow = text.scrollHeight - text.clientHeight;
+  if (overflow > 0) {
+    journal.style.flexBasis = `${clamp(journal.getBoundingClientRect().height - overflow, 64, 112)}px`;
+  }
+}
+
 function drawSheet() {
+  document.getElementById('journal')?.style.removeProperty('flex-basis');
   if (!s) return;
   const el = document.getElementById('sheet');
   if (!el) return;
   const v = currentView();
   if (v && s.card) {
     el.className = 'sheet open';
+    cardVisibleAt = performance.now();
     el.innerHTML = cardHtml(v);
     for (const b of el.querySelectorAll<HTMLButtonElement>('button.opt')) bindHold(b);
     const silence = document.getElementById('hush');
@@ -570,6 +720,7 @@ function drawSheet() {
   el.className = 'sheet';
   el.innerHTML = gapHtml(s.answer);
   document.getElementById('hurry')?.addEventListener('click', () => {
+    if (s?.card || s?.phase !== 'day') return;
     hurry = true;
     answeredAt = -1e9;
   });
@@ -599,40 +750,52 @@ function cardHtml(v: CardView): string {
     )
     .join('');
   return `<div class="card ink-in">
-    <div class="timerrow"><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, v.id.length, 1)}"/></svg><span class="caption time-left" id="time-left"></span></div>
     <div class="card-text">
       <p class="scene">${esc(v.scene)}</p>
       ${resolve}${forecast}${pull}${recalled ? `<p class="stayed notebook-text">“${esc(recalled)}” <span class="who">she thinks</span></p>` : ''}
       ${first && !v.borrowed ? '<p class="caption notebook-text other-voice">the pencil is the other voice</p>' : ''}
       ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
     </div>
-    <div class="opts">${first ? '<p class="caption right">the small words are her mood about each</p>' : ''}${opts}
+    <div class="opts card-actions">${first ? '<p class="caption right">the small words are her mood about each</p>' : ''}${opts}
       <button class="hush" id="hush">say nothing</button>
     </div>
   </div>`;
 }
 
-function drawTimer() {
-  if (!s?.card) return;
+function drawStatus() {
+  const words = document.getElementById('state-words');
   const el = document.getElementById('timer');
-  if (!el) return;
-  const win = Math.max(1, s.card.closesAt - s.card.openedAt);
-  const left = clamp((s.card.closesAt - s.minute + 1 - (fast ? 0 : carry)) / win, 0, 1);
+  if (!words || !el || !s) return;
+  let left = 0;
+  if (s.card) {
+    const win = Math.max(1, s.card.closesAt - s.card.openedAt);
+    left = clamp((s.card.closesAt - s.minute + 1 - (fast ? 0 : carry)) / win, 0, 1);
+  }
   el.setAttribute('stroke-dasharray', `${(left * 100).toFixed(1)} 100`);
-  const time = document.getElementById('time-left');
-  if (time)
-    time.textContent = fast
-      ? 'She’s waiting for your words'
-      : `She decides in ${Math.max(1, Math.ceil(left * CARD_SECONDS))}s`;
+  el.closest('svg')?.toggleAttribute('hidden', !s.card);
+  el.classList.toggle('urgent', left * CARD_SECONDS <= 8);
+  words.textContent =
+    menuPausedAt !== null
+      ? 'Her day waits'
+      : s.phase !== 'day'
+        ? 'The day is done'
+        : s.card
+          ? left * CARD_SECONDS <= 8
+            ? "She's about to decide"
+            : "She's deciding"
+          : hurry
+            ? 'Hurrying to the next moment'
+            : (performance.now() - answeredAt) / 1000 < READ_SECONDS
+              ? "She's answering"
+              : '';
 }
 
-/** Only pacing controls remain below the journal after a decision. */
 function gapHtml(a: Answer | null): string {
   if (!s) return '';
-  if (!a) {
+  if (!a || !journalLines(s).some((line) => line.who === 'scene')) {
     return `<div class="gap"><p class="soft">${s.day === 1 ? 'Her alarm is about to go.' : 'The day starts.'}</p></div>`;
   }
-  return '<div class="gap-actions"><p class="caption">The clock keeps running.</p><button class="quiet" id="hurry">Until something happens</button></div>';
+  return '<div class="gap-actions"><p class="soft desktop-only">Her day runs on. The next moment will open here.</p><button class="quiet" id="hurry" aria-label="Skip to the next event">Skip ⏩</button></div>';
 }
 
 /** These are her reported thoughts, not a promise to agree next time. */
@@ -646,7 +809,7 @@ function thoughtHtml(answer: Answer): string {
 function bindSilence(button: HTMLElement) {
   const card = s?.card;
   let down = false;
-  const current = () => button.isConnected && s?.card === card;
+  const current = () => button.isConnected && s?.card === card && performance.now() - cardVisibleAt >= 300;
   const cancel = () => {
     down = false;
   };
@@ -673,7 +836,7 @@ function bindHold(b: HTMLButtonElement) {
   const card = s?.card;
   const gesture = b.querySelector('.gesture');
   const label = gesture?.textContent ?? '';
-  const current = () => b.isConnected && s?.card === card;
+  const current = () => b.isConnected && s?.card === card && performance.now() - cardVisibleAt >= 300;
   b.addEventListener('contextmenu', (e) => e.preventDefault());
   b.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || !e.isPrimary || !current() || down) return;
@@ -741,17 +904,17 @@ function evening() {
   if (!s) return;
   const pg = s.pages.at(-1);
   if (!pg) return;
+  screen = 'evening';
   lab.screen(`day ${s.day}: evening`);
   lab.milestone(`day ${s.day} done`);
   app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
-    ${pageHtml(pg)}
-    <div class="grow"></div>
-    <div class="actions"><button class="primary" id="next">Tomorrow</button></div>
-    ${footer()}
+    <div class="page-body">${pageHtml(pg)}</div>
+    <div class="page-actions actions"><button class="primary" id="next">On to ${esc(DAY_NAMES[s.day + 1] ?? 'Saturday')}</button></div>
   </div>`;
   toast = '';
-  document.getElementById('menu')?.addEventListener('click', backPage);
+  bindHeader();
+  expireToast();
   document.getElementById('next')?.addEventListener('click', nextDay);
 }
 
@@ -797,22 +960,21 @@ function ending() {
   cancelAnimationFrame(raf);
   if (!s?.final) return;
   const f = s.final;
+  screen = 'end';
   lab.screen('ending');
   lab.milestone('ending reached');
   app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
-    ${finalHtml(f)}
+    <div class="page-body">${finalHtml(f)}
     <details class="final-tally"><summary>See the tally</summary><div id="notebook-tally">${notebookTally(s, true)}</div></details>
-    <div class="grow"></div>
-    ${canAnotherWeek(s) ? '<div class="continuation"><p class="notebook-text soft">Monday will come round again.</p><button class="primary" id="another">Another week</button></div>' : ''}
-    <div class="actions">
-      <button class="quiet" id="again">Start over</button>
-      <button class="quiet" id="export">Download this run</button>
-      <button class="quiet" id="send">Send this run to the notebook</button>
-    </div>
-    ${footer()}
-  </div>`;
-  document.getElementById('menu')?.addEventListener('click', backPage);
+    ${canAnotherWeek(s) ? '<p class="notebook-text soft">Monday will come round again.</p>' : ''}</div>
+    <div class="page-actions actions end-actions">
+      <div class="action-pair"><button id="send">Send word</button><button id="export">Download this run</button></div>
+      <button class="${canAnotherWeek(s) ? '' : 'primary'}" id="again">A new week</button>
+      ${canAnotherWeek(s) ? '<button class="primary" id="another">Another week</button>' : ''}
+    </div></div>`;
+  bindHeader();
+  expireToast();
   toast = '';
   document.getElementById('another')?.addEventListener('click', () => {
     if (!s || !canAnotherWeek(s)) return;
@@ -822,9 +984,7 @@ function ending() {
   });
   document.getElementById('again')?.addEventListener('click', () => newWeek(randomSeed()));
   document.getElementById('export')?.addEventListener('click', download);
-  document
-    .getElementById('send')
-    ?.addEventListener('click', () => lab.openSendDialog({ getRun: () => exportRun() }));
+  document.getElementById('send')?.addEventListener('click', () => feedback());
 }
 
 function stripHtml(f: Final): string {
@@ -896,62 +1056,47 @@ function handsHtml(f: Final): string {
 // ---------- the back page (menu) ----------
 
 function backPage() {
-  if (!s) return;
   lab.screen('back page');
-  if (menuPausedAt !== null) return;
-  menuPausedAt = performance.now();
-  const el = document.createElement('div');
-  el.className = 'backpage-wrap';
-  el.innerHTML = `<div class="backpage ink-in" role="dialog" aria-modal="true" aria-label="Game menu">
-    <p class="label">Game menu</p>
-    <button class="row" id="bp-export">Download this run</button>
-    <button class="row" id="bp-send">Send this run to the notebook</button>
-    <button class="row" id="bp-load">Replay a run file</button>
-    <input type="file" id="bp-file" accept="application/json,.json" hidden />
-    <button class="row" id="bp-new">Start a new week</button>
-    <button class="row" id="bp-title">Back to the cover</button>
-    <p class="soft small">Week ${s.seed}. Edition ${s.version}. Dilan is a person from the Human Framework ${FRAMEWORK_VERSION}; what she says comes from it.</p>
-    <button class="primary" id="bp-close">Close</button>
-  </div>`;
-  el.querySelector('.backpage')?.append(telemetryToggle(lab));
-  const background = [...app.children] as HTMLElement[];
-  const previousInert = background.map((node) => node.inert);
-  for (const node of background) node.inert = true;
-  app.appendChild(el);
-  document.getElementById('bp-close')?.focus();
-  const close = () => {
-    if (!el.isConnected) return;
-    el.remove();
-    for (const [i, node] of background.entries()) node.inert = previousInert[i] ?? false;
-    document.getElementById('menu')?.focus();
-    const now = performance.now();
-    const paused = now - (menuPausedAt ?? now);
-    answeredAt += paused;
-    if (turnAt) turnAt += paused;
-    last = now;
-    menuPausedAt = null;
-  };
-  el.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') close();
-  });
-  el.addEventListener('click', (e) => {
-    if (e.target === el) close();
-  });
-  document.getElementById('bp-close')?.addEventListener('click', close);
-  document.getElementById('bp-export')?.addEventListener('click', download);
-  document
-    .getElementById('bp-send')
-    ?.addEventListener('click', () => lab.openSendDialog({ getRun: () => exportRun() }));
-  document.getElementById('bp-new')?.addEventListener('click', () => {
+  const { el, close } = overlay(
+    `<section class="backpage ink-in" role="dialog" aria-modal="true" aria-label="Game menu">
+    <div class="menu-heading"><h2>Game menu${s && screen !== 'title' ? ` · ${esc(DAY_NAMES[s.day]?.slice(0, 3) ?? '')} ${clock(s.minute)}` : ''}</h2><button data-close aria-label="Close game menu">×</button></div>
+    ${screen === 'day' ? '<p class="soft small">Her day waits while this is open.</p>' : ''}
+    <fieldset class="menu-speed"><legend>Pace between moments</legend>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>
+    <button class="row" id="bp-send">Send word <span aria-hidden="true">▸</span></button>
+    <button class="row phone-only" id="bp-fullscreen">Full screen</button>
+    ${screen !== 'title' ? '<button class="row" id="bp-title">To the title page</button>' : ''}
+    <a class="row" href="https://human.adamwhite.work/games/">All games</a>
+    <p class="soft small provenance">${s ? `Week ${s.seed} · edition ${s.version} · ` : ''}Dilan is from the <a href="https://human.adamwhite.work/">Human Framework ${FRAMEWORK_VERSION}</a></p>
+    <div class="menu-footer"><div id="menu-recording"></div><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a></div>
+    <button class="primary" id="bp-close">${screen === 'title' ? 'Close' : screen === 'day' ? 'Back to her day' : 'Back to her page'}</button>
+  </section>`,
+    'backpage-wrap',
+    () => {
+      if (activePanel?.close === close) activePanel = null;
+    },
+  );
+  activePanel = { kind: 'menu', close };
+  el.querySelector('#menu-recording')?.append(telemetryToggle(lab));
+  el.querySelector('#bp-close')?.addEventListener('click', close);
+  el.querySelector('#bp-send')?.addEventListener('click', () => {
     close();
-    newWeek(randomSeed());
+    feedback(true);
   });
-  document.getElementById('bp-title')?.addEventListener('click', () => {
+  el.querySelector('#bp-title')?.addEventListener('click', () => {
     close();
     writeSave();
     title();
   });
-  bindImport(document.getElementById('bp-load'), document.getElementById('bp-file'));
+  el.querySelector('#bp-fullscreen')?.addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else document.documentElement.requestFullscreen?.().catch(() => {});
+  });
+  for (const button of el.querySelectorAll<HTMLButtonElement>('[data-speed]'))
+    button.addEventListener('click', () => {
+      pacing = button.dataset.speed as typeof pacing;
+      for (const item of el.querySelectorAll('[data-speed]'))
+        item.setAttribute('aria-pressed', String(item === button));
+    });
 }
 
 function exportRun() {

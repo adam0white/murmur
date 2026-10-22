@@ -54,6 +54,7 @@ async function load(s: GameState, viewport = { width: 360, height: 690 }, base =
     window.requestAnimationFrame = () => 1;
   });
   await page.goto(base);
+  if (base === url) await page.locator('#other-ways').click();
   await page.locator('#file').setInputFiles({
     name: 'exact-run.json',
     mimeType: 'application/json',
@@ -65,6 +66,7 @@ async function load(s: GameState, viewport = { width: 360, height: 690 }, base =
   expect(await page.locator('.toast').textContent()).toContain('matches the file');
   // Layout assertions must use the shipped fonts, as Playwright screenshots already do.
   await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(350);
   return page;
 }
 async function visibleText(page: BrowserPage, selector: string) {
@@ -128,7 +130,7 @@ describe('follow-up b rendered exact runs', { timeout: 30_000 }, () => {
     runToCard(learned);
     queueInput(learned, { kind: 'say', option: 'up', insist: true });
     let page = await load(learned);
-    expect(await visibleText(page, '#kept-words')).toContain(required(learned.phrases.at(-1)).text);
+    expect(await visibleText(page, '.journal .margin')).toContain(required(learned.phrases.at(-1)).text);
     await page.close();
     const base = newGame(42, '0.3.0');
     while (base.day < 6) {
@@ -172,8 +174,9 @@ describe('follow-up b rendered exact runs', { timeout: 30_000 }, () => {
         if (label === 'after') {
           expect(await page.locator('.opt').count()).toBe(3);
           expect(await page.locator('.card .stayed').count()).toBe(1);
-          for (const selector of ['#kept-words', '.scene', '.card .stayed', '.opt', '#hush'])
+          for (const selector of ['.scene', '.card .stayed', '.opt', '#hush'])
             for (const el of await page.locator(selector).all()) {
+              await el.scrollIntoViewIfNeeded();
               const b = await el.boundingBox();
               expect(b).not.toBeNull();
               if (!b) throw new Error(`Missing bounds: ${selector}`);

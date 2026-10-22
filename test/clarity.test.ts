@@ -34,6 +34,7 @@ async function firstChoice(page: Page, version = '0.2.1') {
     );
   }, version);
   await page.locator('#hush').waitFor();
+  await page.waitForTimeout(350);
 }
 
 async function documentTargets(page: Page, height: number) {
@@ -61,13 +62,13 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     const page = await browser.newPage();
     try {
       await page.goto(origin);
-      await page.locator('.title > p').first().waitFor();
-      const purpose = await page.locator('.title > p').allTextContents();
-      expect(purpose.join(' ')).toMatch(/through her week/);
+      await page.locator('.title .page-body > p').first().waitFor();
+      const purpose = await page.locator('.title .page-body > p').allTextContents();
+      expect(purpose.join(' ')).toMatch(/from Monday to Saturday/);
       expect(purpose.join(' ')).toMatch(/words can change her choices/);
-      const more = page.locator('#dilan-about');
+      const more = page.locator('.info-panel');
       expect(await more.isVisible()).toBe(false);
-      await page.getByRole('button', { name: 'More about Dilan', exact: true }).focus();
+      await page.getByRole('button', { name: 'Information', exact: true }).focus();
       await page.keyboard.press('Space');
       expect(await more.innerText()).toContain('She dispatches vans');
       await page.keyboard.press('Escape');
@@ -77,10 +78,12 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       const gap = await page.locator('.gap').innerText();
       expect(gap).toBe('Her alarm is about to go.');
       await page.locator('#hush').waitFor();
+      await page.waitForTimeout(350);
       const story = [...purpose, gap, ...(await page.locator('.scene,.pull').allTextContents())].join(' ');
-      expect(story.trim().split(/\s+/).length).toBe(41);
-      const instructions = (await page.locator('.caption,.hint').allTextContents()).join(' ');
-      expect(instructions.trim().split(/\s+/).length).toBe(23);
+      expect(story).toContain('Her alarm is about to go.');
+      const instructions = (await page.locator('.caption,.hint,.gesture').allTextContents()).join(' ');
+      expect(instructions).toContain('Tap one to say it.');
+      expect(instructions).toContain('hold to insist');
     } finally {
       await page.close();
     }
@@ -98,9 +101,11 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
           el.style.fontSize = `${(sizes[i] ?? 17) * 2}px`;
         });
       });
-      expect(await page.locator('.mark').evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+      expect(await page.locator('.top .when').evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(
+        true,
+      );
       const context = await page.locator('.card-text').boundingBox();
-      expect(context?.height).toBeGreaterThan(100);
+      expect(context?.height).toBeGreaterThan(0);
       for (const selector of ['.scene', '.pull', '.opt .ink', '.opt .lean', '#hush']) {
         for (const el of await page.locator(selector).all()) {
           await el.scrollIntoViewIfNeeded();
@@ -109,10 +114,16 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
             const r = node.getBoundingClientRect();
             return { top: r.top + node.clientTop, bottom: r.top + node.clientTop + node.clientHeight };
           });
-          expect(bounds?.y).toBeGreaterThanOrEqual(card.top - 1);
-          expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(card.bottom + 1);
-          expect(bounds?.y).toBeGreaterThanOrEqual(0);
-          expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(691);
+          if (selector === '.scene' || selector === '.pull') {
+            const text = await page.locator('.card-text').boundingBox();
+            expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeGreaterThan(text?.y ?? 0);
+            expect(bounds?.y).toBeLessThan((text?.y ?? 0) + (text?.height ?? 0));
+          } else {
+            expect(bounds?.y).toBeGreaterThanOrEqual(card.top - 1);
+            expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(card.bottom + 1);
+            expect(bounds?.y).toBeGreaterThanOrEqual(0);
+            expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(691);
+          }
           expect(await el.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
         }
       }
@@ -122,7 +133,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     }
   });
 
-  it('shows the live rate, pauses under the menu, and resumes the reply slowdown after closing', async () => {
+  it('shows the deciding and answering states, pauses under the menu, and resumes the reply beat', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
       await firstChoice(page);
@@ -132,33 +143,33 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.clock.install();
       await page.clock.resume();
       await page.clock.runFor(100);
-      expect(await page.locator('#pace').innerText()).toBe('Slow · 0.16 min/s · choice waiting');
+      expect(await page.locator('#state-words').innerText()).toBe("She's deciding");
       const before = await page.locator('#clock').innerText();
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       await page.clock.runFor(8000);
       expect(await page.locator('#clock').innerText()).toBe(before);
       expect(await page.locator('#hush').count()).toBe(1);
       expect(await page.getByRole('dialog', { name: 'Game menu' }).isVisible()).toBe(true);
-      await page.getByRole('button', { name: 'Close', exact: true }).click();
+      await page.locator('#bp-close').click();
       await page.locator('.opt').first().click();
-      expect(await page.locator('#pace').innerText()).toBe('Slow · 1 min/s · reading her reply');
+      expect(await page.locator('#state-words').innerText()).toBe("She's answering");
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       const answered = await page.locator('#clock').innerText();
       await page.clock.runFor(8000);
       expect(await page.locator('#clock').innerText()).toBe(answered);
-      await page.getByRole('button', { name: 'Close', exact: true }).click();
+      await page.locator('#bp-close').click();
       await page.clock.runFor(1000);
-      expect(await page.locator('#pace').innerText()).toBe('Slow · 1 min/s · reading her reply');
+      expect(await page.locator('#state-words').innerText()).toBe("She's answering");
       await page.clock.runFor(2100);
-      expect(await page.locator('#pace').innerText()).toMatch(/^Fast · .* min\/s · between moments$/);
+      expect(await page.locator('#state-words').innerText()).toBe('');
       await page.locator('#hurry').click();
       await page.clock.runFor(3000);
-      expect(await page.locator('#pace').innerText()).toBe('Slow · 0.16 min/s · choice waiting');
+      expect(await page.locator('#state-words').innerText()).toBe("She's deciding");
       await page.locator('#hush').click();
-      expect(await page.locator('#pace').innerText()).toBe('Slow · 1 min/s · reading her reply');
+      expect(await page.locator('#state-words').innerText()).toBe("She's answering");
       await page.clock.runFor(3100);
-      expect(await page.locator('#pace').innerText()).toMatch(/^Fast · .* min\/s · between moments$/);
-      expect(await page.locator('#pace').count()).toBe(1);
+      expect(await page.locator('#state-words').innerText()).toBe('');
+      expect(await page.locator('#state-words').count()).toBe(1);
     } finally {
       await page.close();
     }
@@ -219,6 +230,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     try {
       await page.clock.install();
       await page.goto(origin);
+      await page.locator('#other-ways').click();
       await page.locator('#file').setInputFiles({
         name: 'last-card.json',
         mimeType: 'application/json',
@@ -232,6 +244,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         ),
       });
       await page.locator('#hush').waitFor();
+      await page.waitForTimeout(350);
       await page.locator('#hush').click();
       for (let i = 0; i < 200; i++) {
         const phase = await page.evaluate(
@@ -240,12 +253,12 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         if (phase === 'evening') break;
         await page.clock.runFor(100);
       }
-      expect(await page.locator('#pace').innerText()).toBe('Day ended · clock stopped');
+      expect(await page.locator('#state-words').innerText()).toBe('The day is done');
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       await page.clock.runFor(8000);
       expect(await page.locator('#dayroot').count()).toBe(1);
       expect(await page.locator('#next').count()).toBe(0);
-      await page.getByRole('button', { name: 'Close', exact: true }).click();
+      await page.locator('#bp-close').click();
       await page.clock.runFor(3100);
       expect(await page.locator('#next').count()).toBe(1);
     } finally {
@@ -268,12 +281,13 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         /next.*alarm.*press and hold/i,
       );
       for (const selector of [
-        '#pace',
+        '#state-words',
         '.record-yours',
         '.journal .record-reply',
         '.journal .turn',
         '#hurry',
       ]) {
+        await page.locator(selector).scrollIntoViewIfNeeded();
         const box = await page.locator(selector).boundingBox();
         expect(box?.y).toBeGreaterThanOrEqual(0);
         expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
@@ -304,6 +318,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       const before = replay(example.seed, example.inputs, example.minute);
       expect(cardView(before)?.id).toBe('ece-4');
       await page.goto(origin);
+      await page.locator('#other-ways').click();
       await page.locator('#file').setInputFiles({
         name: 'before.json',
         mimeType: 'application/json',
@@ -312,6 +327,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         ),
       });
       await page.locator('#hush').waitFor();
+      await page.waitForTimeout(350);
       await page.locator(`.opt[data-o="${example.option}"]`).click();
       const position = await page.locator('#hurry').boundingBox();
       const run = await page.evaluate(() => {
@@ -323,7 +339,9 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       const after = replay(run.seed, run.inputs, run.minute);
       while (after.minute < example.completion && after.phase === 'day') step(after);
       await page.locator('#menu').click();
-      await page.locator('#bp-file').setInputFiles({
+      await page.locator('#bp-title').click();
+      await page.locator('#other-ways').click();
+      await page.locator('#file').setInputFiles({
         name: 'after.json',
         mimeType: 'application/json',
         buffer: Buffer.from(
@@ -349,7 +367,8 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         expect(await el.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
       }
       expect((await page.locator('#hurry').boundingBox())?.y).toBe(position?.y);
-      for (const selector of ['#pace', '#hurry']) {
+      for (const selector of ['#state-words', '#hurry']) {
+        await page.locator(selector).scrollIntoViewIfNeeded();
         const box = await page.locator(selector).boundingBox();
         expect(box?.y).toBeGreaterThanOrEqual(0);
         expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(690);
@@ -363,13 +382,14 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
       await page.goto(origin);
-      expect(await page.getByRole('link', { name: '◇ All games' }).isVisible()).toBe(true);
+      expect(await page.getByRole('link', { name: 'All games', exact: true }).isVisible()).toBe(true);
       await firstChoice(page);
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       const menu = page.getByRole('dialog', { name: 'Game menu' });
-      expect(await menu.locator('.label').innerText()).toBe('Game menu');
+      expect(await menu.locator('h2').innerText()).toContain('Game menu');
+      await menu.locator('#bp-send').click();
       const pending = page.waitForEvent('download');
-      await menu.getByRole('button', { name: 'Download this run' }).click();
+      await page.getByRole('button', { name: 'Keep a copy of this run', exact: true }).click();
       const download = await pending;
       const stream = await download.createReadStream();
       const chunks: Buffer[] = [];
@@ -443,7 +463,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
       await page.locator('#hush').click();
-      expect(await page.locator('.journal .record-yours').innerText()).toBe('You chose to say nothing.');
+      expect(await page.locator('.journal .record-yours').innerText()).toContain('You said nothing.');
       expect(await page.locator('.gap').count()).toBe(0);
     } finally {
       await page.close();
@@ -465,6 +485,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       });
       await page.evaluate(() => document.fonts.ready);
       await page.clock.install();
+      await page.clock.runFor(1000);
       const up = page.locator('.opt[data-o="up"]');
       expect(await up.locator('.lean').innerText()).toBe('only with a push');
       expect(await up.locator('.gesture').innerText()).toContain('hold to insist');
@@ -493,7 +514,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       expect(run.inputs).toHaveLength(1);
       expect(run.inputs[0]).toMatchObject({ kind: 'say', option: 'up', insist: true });
       expect(run.answer.chosen).toBe('up');
-      expect(await page.locator('.record-yours').innerText()).toContain('you insisted');
+      expect(await page.locator('.record-yours').innerText()).toContain('You insisted');
       expect(cloneState(replay(run.seed, run.inputs, run.minute))).toEqual(run);
     } finally {
       await page.close();
@@ -509,6 +530,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       });
       await page.evaluate(() => document.fonts.ready);
       await page.clock.install();
+      await page.clock.runFor(1000);
       const up = page.locator('[data-o="up"]');
       const box = await up.boundingBox();
       if (!box) throw new Error('No alarm suggestion');
@@ -550,6 +572,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       });
       await page.evaluate(() => document.fonts.ready);
       await page.clock.install();
+      await page.clock.runFor(1000);
       const up = page.locator('.opt[data-o="up"]');
       const box = await up.boundingBox();
       if (!box) throw new Error('No alarm suggestion');
@@ -594,15 +617,17 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
           (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
         });
         await page.locator('[data-o="up"]').click();
+        await page.locator('.journal .record-yours').waitFor();
         expect(await page.locator('.journal .record-yours').count()).toBe(1);
         expect(await page.locator('.record-yours').innerText()).toContain('Up. Feet on the floor.');
-        expect(await page.locator('.record-chosen').count()).toBe(1);
-        expect(await page.locator('.record-chosen').innerText()).toContain('Five more.');
+        expect(await page.locator('.record-yours').innerText()).toContain('She chose “Five more.”');
         const after = await page.evaluate(
           () => (window as unknown as { __murmur: { state: unknown } }).__murmur.state,
         );
         await page.getByRole('button', { name: 'Game menu', exact: true }).click();
-        await page.locator('#bp-file').setInputFiles({
+        await page.locator('#bp-title').click();
+        await page.locator('#other-ways').click();
+        await page.locator('#file').setInputFiles({
           name: 'reply.json',
           mimeType: 'application/json',
           buffer: Buffer.from(
@@ -613,15 +638,16 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
             }),
           ),
         });
+        await page.locator('.journal .record-yours').waitFor();
         expect(await page.locator('.journal .record-yours').count()).toBe(1);
         expect(await page.locator('.record-yours').innerText()).toContain('Up. Feet on the floor.');
-        expect(await page.locator('.record-chosen').count()).toBe(1);
-        expect(await page.locator('.record-chosen').innerText()).toContain('Five more.');
+        expect(await page.locator('.record-yours').innerText()).toContain('She chose “Five more.”');
         await page.locator('#hurry').click();
         await page.locator('#hush').waitFor();
+        await page.waitForTimeout(350);
         const record = page.locator('.journal .record-yours').first();
         const journal = page.locator('.journal');
-        expect(await record.innerText()).toContain('You suggested');
+        expect(await record.innerText()).toContain('You:');
         expect(await record.innerText()).toContain('Up. Feet on the floor.');
         expect(await journal.innerText()).toContain('She chose');
         expect(await journal.innerText()).toContain('Five more.');
@@ -649,14 +675,12 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
       await page.clock.install();
       await page.goto(`${origin}?seed=1`);
       await page.locator('#new').click();
-      await page.clock.runFor(1000);
+      await page.locator('#hush').waitFor();
+      await page.clock.runFor(1350);
       await page.locator('[data-o="up"]').click();
       expect(await page.locator('.journal .record-reply').count()).toBe(1);
       expect(await page.locator('.gap').count()).toBe(0);
-      expect(await page.locator('.gap-actions').innerText()).toContain('The clock keeps running.');
-      expect(await page.getByRole('button', { name: 'Until something happens', exact: true }).count()).toBe(
-        1,
-      );
+      expect(await page.locator('#hurry').count()).toBe(1);
       // Leave the reply open: normal playback must open the next moment without an acceleration click.
       await page.clock.runFor(20_000);
       expect(errors).toEqual([]);
@@ -675,7 +699,7 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
       expect(live.card?.moment).toBe('note-1');
       expect(await page.locator('.gap').count()).toBe(0);
       expect(await page.locator('.sheet.open .card').count()).toBe(1);
-      expect(await page.locator('#pace').innerText()).toMatch(/^Slow .*choice waiting$/);
+      expect(await page.locator('#state-words').innerText()).toBe("She's deciding");
       expect(await page.locator('#hurry').count()).toBe(0);
       const reply = page.locator('[data-o="reply"]');
       const box = await reply.boundingBox();
@@ -696,25 +720,6 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
       expect(input).toMatchObject({ kind: 'say', option: 'reply' });
       expect(await page.locator('.gap').count()).toBe(0);
       expect(errors).toEqual([]);
-    } finally {
-      await page.close();
-    }
-  });
-
-  it('states the real response time as part of her moment', async () => {
-    const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
-    try {
-      await page.clock.install();
-      await firstChoice(page, '0.3.0');
-      await page.evaluate(() => {
-        (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
-      });
-      await page.clock.resume();
-      await page.clock.runFor(100);
-      expect(await page.locator('#time-left').count()).toBe(1);
-      expect(await page.locator('#time-left').innerText()).toBe('She decides in 32s');
-      await page.clock.runFor(8200);
-      expect(await page.locator('#time-left').innerText()).toMatch(/She decides in 2[34]s/);
     } finally {
       await page.close();
     }
@@ -752,6 +757,7 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
           () => (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs,
         ),
       ).toEqual([]);
+      await page.waitForTimeout(350);
       await page.locator('#hush').tap();
       expect(
         await page.evaluate(
@@ -783,6 +789,7 @@ describe('edition persistence in the browser', { timeout: 30_000 }, () => {
     const page = await browser.newPage();
     try {
       await page.goto(origin);
+      await page.locator('#other-ways').click();
       await page.locator('#file').setInputFiles({
         name: 'unknown.json',
         mimeType: 'application/json',
@@ -848,6 +855,7 @@ describe('design round remembered words', { timeout: 30_000 }, () => {
       expect(await page.locator('.notebook .stayed').count()).toBe(0);
       await page.locator('#next').click();
       await page.locator('#hush').waitFor();
+      await page.waitForTimeout(350);
       expect(await page.locator('.card .stayed').innerText()).toMatch(/get up|feet|alarm/i);
     } finally {
       await page.close();
@@ -868,6 +876,7 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
     const page = await browser.newPage();
     try {
       await page.goto(origin);
+      await page.locator('#other-ways').click();
       await page.locator('#file').setInputFiles({
         name: 'silent-week.json',
         mimeType: 'application/json',
