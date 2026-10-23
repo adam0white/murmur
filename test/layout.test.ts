@@ -202,3 +202,45 @@ it('quotes an already quoted suggestion only once in the journal', async () => {
     await page.close();
   }
 }, 30000);
+
+it('keeps an explicitly started run when the asynchronous bootstrap finishes later', async () => {
+  const page = await browser.newPage({
+    viewport: { width: 360, height: 690 },
+    serviceWorkers: 'block',
+    extraHTTPHeaders: { DNT: '1' },
+  });
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('https://murmur.adamwhite.work/**', async (route) => {
+    const requested = new URL(route.request().url());
+    await route.fulfill({
+      response: await route.fetch({ url: new URL(requested.pathname + requested.search, url).href }),
+    });
+  });
+  await page.route('**/lab/api/**', (route) => route.abort());
+  const identity = 'https://human.adamwhite.work/lab/identity/**';
+  await page.route(identity, async (route) => {
+    await held;
+    await route.abort();
+  });
+  try {
+    const requested = page.waitForRequest(identity);
+    await page.goto('https://murmur.adamwhite.work/', { waitUntil: 'domcontentloaded' });
+    await requested;
+    await page.waitForFunction(() => Boolean(window.__murmur));
+    await page.evaluate(() => {
+      window.__murmur.fast = true;
+      window.__murmur.start(31);
+    });
+    release();
+    await page.evaluate(() => window.__murmur.ready);
+    expect(await page.locator('#dayroot').count()).toBe(1);
+    expect(await page.locator('#new').count()).toBe(0);
+    expect(await page.evaluate(() => window.__murmur.state?.seed)).toBe(31);
+  } finally {
+    release();
+    await page.close();
+  }
+}, 30000);

@@ -316,3 +316,19 @@ it('renders source departure history and the actual admitted suffix without repl
     returned.answer?.chosen,
   );
 });
+
+it('accepts the declared Hearsay4/5 contract and refuses other return editions', async () => {
+  const source = playedDeparture();
+  await checkpoint(source, () => {});
+  const incoming = await targetReturn(source.personaHead!);
+  const { revision, ...body } = incoming;
+  const future = await createPersona({ ...body, source: { ...body.source, rules: '6' } });
+  await expect(returnedChapter(future)).rejects.toThrow('unsupported edition');
+  const edition5 = await createPersona({ ...body, source: { ...body.source, rules: '5' } });
+  const returned = await returnedChapter(edition5);
+  expect(returned?.returnChapter?.envelope.source.rules).toBe('5');
+  if (!returned) throw new Error('Missing returned chapter');
+  await expect(validateRun(cloneState(returned))).resolves.toMatchObject({
+    returnChapter: { envelope: { source: { rules: '5' } } },
+  });
+});

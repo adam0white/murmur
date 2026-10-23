@@ -87,6 +87,10 @@ if (notice) {
 const app = document.getElementById('app') as HTMLElement;
 let s: GameState | null = null;
 let loadGeneration = 0;
+let finishStartup: () => void = () => {};
+const startupReady = new Promise<void>((resolve) => {
+  finishStartup = resolve;
+});
 let fast = false;
 let pacing: 'automatic' | 'slow' | 'steady' | 'fast' = 'automatic';
 let cardVisibleAt = -1e9;
@@ -336,12 +340,13 @@ export async function start() {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   await initOneCast();
   // Do not allow the title's autosend hook to capture a cached continuing run.
-  await gateContinuity(undefined);
+  await gateContinuity(recordingState(s));
   lab.trackRun(() => structuredClone(exportRun()), {
     runKey: () => s?.seed ?? 'title',
     getLogs: () => s?.log.slice(-40).map((line) => line.text) ?? [],
   });
-  title();
+  if (!s) title();
+  finishStartup();
 }
 
 function expireToast() {
@@ -1369,6 +1374,9 @@ document.addEventListener('visibilitychange', () => {
  * gaps are skipped at once and cards stay open until answered or skipped.
  */
 export const tester = {
+  get ready() {
+    return startupReady;
+  },
   get state(): GameState | null {
     return s;
   },

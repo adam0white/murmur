@@ -25,7 +25,9 @@ export const CAST = 'hf.cast.dilan.murmur';
 const PREFIX = 'murmur-one-cast-prefix:';
 let checkpointTask: Promise<void> | null = null;
 let status = '';
-let build = 'unknown';
+declare const __MURMUR_BUILD__: string;
+// Pin the executing bundle, even when an offline service worker retains older assets.
+const build = __MURMUR_BUILD__;
 let pendingReturn: { envelope: PersonaEnvelope; scope: OneCastRow['scope'] } | undefined;
 export function hasPendingReturn() {
   return Boolean(pendingReturn);
@@ -39,9 +41,6 @@ export function continuityMessage() {
 }
 export async function initOneCast() {
   await shelf.ready;
-  try {
-    build = ((await (await fetch('/release.json')).json()) as { commit: string }).commit;
-  } catch {}
 }
 export function recordingState(s: GameState | null) {
   return s
@@ -72,6 +71,16 @@ function storePrefix(s: GameState) {
   if (!s.personaHead) return;
   localStorage.setItem(PREFIX + s.personaHead.branchId, JSON.stringify(cloneState(s)));
 }
+function requireReturnEnvelope(incoming: PersonaEnvelope): void {
+  if (
+    incoming.castId !== CAST ||
+    incoming.castRevision !== '1' ||
+    incoming.source.game !== 'hearsay' ||
+    !['4', '5'].includes(incoming.source.rules) ||
+    incoming.source.engine !== '2.14.1'
+  )
+    throw new Error('This return is from an unsupported edition. Start a fresh week.');
+}
 /** Validate all pinned envelopes before restoring a run; never read the current shelf head. */
 export async function validateRun(json: GameState): Promise<GameState> {
   if (!json || !Array.isArray(json.inputs)) throw new Error('Not a notebook run.');
@@ -80,6 +89,7 @@ export async function validateRun(json: GameState): Promise<GameState> {
   if (json.returnChapter) {
     const chapter = json.returnChapter;
     await validatePersona(chapter.envelope);
+    requireReturnEnvelope(chapter.envelope);
     await validatePersona(chapter.departure);
     const prefix = replay(json.seed, chapter.prefixInputs, chapter.prefixMinute, json.version);
     if (prefix.phase === 'day') step(prefix);
@@ -229,13 +239,7 @@ export async function returnedChapter(
     (shelf.enabled ? await shelf.request<PersonaEnvelope | null>({ action: 'get', castId: CAST }) : null);
   if (!incoming || incoming.source.game !== 'hearsay') return null;
   await validatePersona(incoming);
-  if (
-    incoming.castId !== CAST ||
-    incoming.castRevision !== '1' ||
-    incoming.source.rules !== '4' ||
-    incoming.source.engine !== '2.14.1'
-  )
-    throw new Error('This return is from an unsupported edition. Start a fresh week.');
+  requireReturnEnvelope(incoming);
   const raw = localStorage.getItem(PREFIX + incoming.branchId);
   if (!raw)
     throw new Error(

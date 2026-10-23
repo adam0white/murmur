@@ -1,6 +1,6 @@
 # Murmur handoff
 
-What remains: exact-commit CI, repository deployment, real live two-viewport journey and owner play. Peer Hearsay needs its compatible fitness opening and exact return sourceRevision/sourceCheckpointDigest. Actual phone preview source→live target4fb refusal is recorded; no positive journey is claimed yet.
+What remains: Adam’s acceptance play, due2026-11-03. The implementation is complete. The exact commit, CI, deployment and browser status are recorded in ~/code/.lab-scratch/universe/murmur.md; use that delivery report for live receipts and any held peer verification. The earlier actual phone preview source→live target4fb fitness refusal remains a negative control. Hearsay editions4/5 share the immutable revision1 Dilan mapping; both require compatible clinical health and exact original source revision/digest.
 
 Edition0.5.0 implements wave-1 Dilan revision1 only. HF2.15.0/engine2.14.1, exact vendor client0.3.1 and kit0.4.0 hashes match universe/artifacts.json; installed packages are real directories. New revision2 roster/life work remains a later increment. Other game repositories are unchanged.
 
