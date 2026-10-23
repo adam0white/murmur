@@ -31,10 +31,25 @@ import {
   weekdayOf,
   weekOf,
 } from '../sim/game.ts';
+import { departureReleaseDescription } from '../sim/one-cast.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
+import { continuityControls, gateContinuity, installContinuity, invalidateContinuity } from './continuity.ts';
 import { showFeedback } from './feedback.ts';
 import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
 import { lab } from './lab.ts';
+import {
+  checkpoint,
+  continuityMessage,
+  forkDeparture,
+  forkPendingReturn,
+  heldReturn,
+  initOneCast,
+  personaFile,
+  recordingState,
+  releaseAndCheckpoint,
+  returnedChapter,
+  validateRun,
+} from './one-cast.ts';
 import {
   answerThoughts,
   cardThought,
@@ -61,6 +76,7 @@ interface Save {
   version?: string;
   seed: number;
   inputs: Input[];
+  state?: GameState;
 }
 
 const notice = telemetryNotice();
@@ -70,6 +86,7 @@ if (notice) {
 
 const app = document.getElementById('app') as HTMLElement;
 let s: GameState | null = null;
+let loadGeneration = 0;
 let fast = false;
 let pacing: 'automatic' | 'slow' | 'steady' | 'fast' = 'automatic';
 let cardVisibleAt = -1e9;
@@ -92,10 +109,12 @@ let history: { state: GameState; minute: number; applied: number; records: Momen
 let toast = '';
 let wake: { release(): Promise<void> } | null = null;
 
-lab.trackRun(() => structuredClone(exportRun()), {
-  runKey: () => s?.seed ?? 'title',
-  getLogs: () => s?.log.slice(-40).map((line) => line.text) ?? [],
-});
+// Gate is installed before automatic telemetry obtains a run.
+lab.setPersonaRecording('initializing-history');
+installContinuity(
+  () => recordingState(s),
+  () => checkpoint(s, writeSave),
+);
 
 // ---------- save ----------
 
@@ -116,7 +135,7 @@ function readSave(): Save | null {
 function writeSave() {
   if (!s) return;
   try {
-    const text = JSON.stringify({ version: s.version, seed: s.seed, inputs: s.inputs });
+    const text = JSON.stringify({ version: s.version, seed: s.seed, inputs: s.inputs, state: cloneState(s) });
     localStorage.setItem(SAVE, text);
     lab.captureSave(JSON.parse(text));
   } catch {}
@@ -312,9 +331,16 @@ const randomSeed = () => (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
 
 // ---------- title ----------
 
-export function start() {
+export async function start() {
   if ('serviceWorker' in navigator && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1')
     navigator.serviceWorker.register('/sw.js').catch(() => {});
+  await initOneCast();
+  // Do not allow the title's autosend hook to capture a cached continuing run.
+  await gateContinuity(undefined);
+  lab.trackRun(() => structuredClone(exportRun()), {
+    runKey: () => s?.seed ?? 'title',
+    getLogs: () => s?.log.slice(-40).map((line) => line.text) ?? [],
+  });
   title();
 }
 
@@ -333,7 +359,14 @@ function title() {
   screen = 'title';
   lab.screen('title');
   const save = readSave();
-  const saved = save ? replay(save.seed, save.inputs, undefined, save.version ?? LEGACY_VERSION) : null;
+  let saved: GameState | null = null;
+  try {
+    saved =
+      save?.state ??
+      (save ? replay(save.seed, save.inputs, undefined, save.version ?? LEGACY_VERSION) : null);
+  } catch {
+    toast = 'This notebook is from an older version; start fresh.';
+  }
   app.innerHTML = `${header()}<div class="page title"><div class="page-body">
     <h1>The Two Voices</h1><p class="soft subtitle">an ordinary week, from the inside</p>
     <p>Accompany Dilan from Monday to Saturday. Your words can change her choices and become her own.</p>
@@ -341,7 +374,9 @@ function title() {
     </div><div class="other-ways-wrap"><button class="row" id="other-ways">Other ways in <span aria-hidden="true">▸</span></button></div>
     <div class="title-spacer" id="title-spacer"></div>
     <div class="page-actions actions">
-      ${save ? `<button class="primary" id="cont">Continue · ${esc(DAY_NAMES[saved!.day]?.slice(0, 3) ?? '')} ${clock(saved!.minute)}</button>` : ''}
+      ${saved ? `<button class="primary" id="cont">Continue · ${esc(DAY_NAMES[saved!.day]?.slice(0, 3) ?? '')} ${clock(saved!.minute)}</button>` : ''}
+      <button id="fresh-authored">Start a fresh authored Dilan</button>
+      <button id="return-shelf">Look for Dilan’s return from Hearsay</button><button id="held-return">Resume a locally held return</button><button id="return-fork">Explicitly fork a competing return</button><p id="return-status" class="soft small"></p>
       <button class="${save ? '' : 'primary'}" id="new">${save ? 'A new week' : 'Wake her up'}</button>
       <div id="new-confirm" hidden><p>This tears out the week so far.</p><div class="confirm-actions"><button id="confirm-new">Yes, a new week</button><button id="cancel-new">No</button></div></div>
       ${credit()}
@@ -353,9 +388,20 @@ function title() {
     document.getElementById('title-spacer')?.append(notice);
     notice.dataset.shown = '1';
   }
-  document.getElementById('cont')?.addEventListener('click', () => {
-    s = saved;
-    enter();
+  document.getElementById('cont')?.addEventListener('click', async () => {
+    try {
+      if (!saved) return;
+      const attempt = ++loadGeneration;
+      const loaded = await validateRun(saved);
+      if (attempt !== loadGeneration) return;
+      invalidateContinuity();
+      s = loaded;
+      await gateContinuity(recordingState(s));
+      enter();
+    } catch (error) {
+      toast = error instanceof Error ? error.message : 'This notebook could not be loaded.';
+      title();
+    }
   });
   document.getElementById('new')?.addEventListener('click', () => {
     if (!save) newWeek(urlSeed() ?? randomSeed());
@@ -369,6 +415,58 @@ function title() {
     document.getElementById('new-confirm')!.hidden = true;
     document.getElementById('new')!.hidden = false;
   });
+  document
+    .getElementById('fresh-authored')
+    ?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed(), GAME_VERSION, false));
+  document.getElementById('return-shelf')?.addEventListener('click', async () => {
+    try {
+      const attempt = ++loadGeneration;
+      const arrived = await returnedChapter(undefined, 'shared', false, () => attempt === loadGeneration);
+      if (attempt !== loadGeneration) return;
+      if (!arrived)
+        throw new Error('No supported return is on this browser’s shelf. Fresh play remains available.');
+      invalidateContinuity();
+      s = arrived;
+      await gateContinuity(recordingState(s));
+      writeSave();
+      enter();
+    } catch (error) {
+      const message = document.getElementById('return-status');
+      if (message) message.textContent = error instanceof Error ? error.message : String(error);
+    }
+  });
+  document.getElementById('held-return')?.addEventListener('click', async () => {
+    const attempt = ++loadGeneration;
+    try {
+      const held = await heldReturn();
+      if (attempt !== loadGeneration) return;
+      invalidateContinuity();
+      s = held;
+      await gateContinuity(recordingState(s));
+      if (attempt !== loadGeneration) return;
+      writeSave();
+      enter();
+    } catch (error) {
+      const message = document.getElementById('return-status');
+      if (message) message.textContent = String(error);
+    }
+  });
+  document.getElementById('return-fork')?.addEventListener('click', async () => {
+    try {
+      const attempt = ++loadGeneration;
+      const arrived = await forkPendingReturn(() => attempt === loadGeneration);
+      if (attempt !== loadGeneration) return;
+      if (!arrived) throw new Error('No supported return is available.');
+      invalidateContinuity();
+      s = arrived;
+      await gateContinuity(recordingState(s));
+      writeSave();
+      enter();
+    } catch (error) {
+      const message = document.getElementById('return-status');
+      if (message) message.textContent = String(error);
+    }
+  });
   document.getElementById('other-ways')?.addEventListener('click', () => {
     const { el, close } = overlay(
       `<section class="other-ways" role="dialog" aria-modal="true" aria-label="Other ways in"><button data-close aria-label="Close other ways in">×</button><h2>Other ways in</h2><button id="second">Begin at the second week</button><p class="soft small">Her first week is played for you, by a quiet voice. You start on Monday of the second.</p><button id="load">Load a playtest run</button><input type="file" id="file" accept="application/json,.json" hidden /></section>`,
@@ -376,17 +474,33 @@ function title() {
     );
     el.querySelector('#second')?.addEventListener('click', () => {
       close();
+      invalidateContinuity();
+      ++loadGeneration;
       s = anotherWeek(playedFirstWeek(urlSeed() ?? randomSeed()));
-      writeSave();
-      enter();
+      void gateContinuity(recordingState(s)).then(() => {
+        writeSave();
+        enter();
+      });
     });
     bindImport(el.querySelector('#load'), el.querySelector('#file'));
   });
 }
 
-function newWeek(seed: number, version = GAME_VERSION) {
+async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
+  const attempt = ++loadGeneration;
+  invalidateContinuity();
+  // Only creation may inspect the shelf. A loaded run never changes underneath play.
+  let arrival: GameState | null = null;
+  try {
+    if (useShelf && version === GAME_VERSION)
+      arrival = await returnedChapter(undefined, 'shared', false, () => attempt === loadGeneration);
+  } catch (error) {
+    toast = error instanceof Error ? error.message : String(error);
+  }
+  if (attempt !== loadGeneration) return;
   clearSave();
-  s = newGame(seed, version);
+  s = arrival ?? newGame(seed, version);
+  await gateContinuity(recordingState(s));
   writeSave();
   enter();
 }
@@ -398,6 +512,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
   file.addEventListener('change', async () => {
     const f = file.files?.[0];
     if (!f) return;
+    const attempt = ++loadGeneration;
     try {
       const ex = JSON.parse(await f.text()) as {
         game?: string;
@@ -411,7 +526,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       if (!isEdition(version) || (ex.version && ex.state?.version && ex.version !== ex.state.version))
         throw new Error('unknown or conflicting edition');
       const until = ex.state?.minute;
-      const r = replay(ex.seed, ex.inputs, until, version);
+      const r = ex.state ? await validateRun(ex.state) : replay(ex.seed, ex.inputs, until, version);
       // A timeout can end a day without advancing its minute. Include that boundary.
       if (ex.state && ex.state.phase !== 'day' && r.phase === 'day' && r.minute === until) step(r);
       let note = 'Replayed.';
@@ -427,7 +542,11 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
             ? 'Replayed. It matches the file.'
             : 'Replayed, but it differs from the file.';
       }
+      invalidateContinuity();
+      if (attempt !== loadGeneration) return;
       s = r;
+      s.fileHistory = true;
+      await gateContinuity(recordingState(s), Boolean(r.personaHead));
       writeSave();
       toast = note;
       enter();
@@ -962,6 +1081,15 @@ function ending() {
   app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     <div class="page-body">${finalHtml(f)}
+    ${
+      s.returnChapter
+        ? `<section><h2 class="notebook-text">Back from the garden</h2><p>${esc(s.log.findLast((line) => line.text.startsWith('Back from the garden.'))?.text ?? '')}</p><p>The previous week stays in this notebook. Another week continues from this new chapter.</p></section>`
+        : s.version === GAME_VERSION
+          ? `<section><h2 class="notebook-text">A short visit</h2><p>The route week is over. Dilan can visit Hatice’s tea garden in Istanbul. Aylin is still her sister; Mum, Ece and depot Murat remain her own relations, distinct from the garden’s namesakes.</p><p>She will explicitly set aside these unfinished purposes for the visit: ${esc(
+              departureReleaseDescription(s).join(', ') || 'none',
+            )}. The unfinished shelf stays at home for this visit. These purposes become new intentions on her return; their earlier progress stays in this week’s record. Dated alarm, dinner and call promises remain in the week’s record; unresolved promises block departure. No success is invented.</p><button id="depart">Set aside unfinished purposes and make the visit</button><button id="depart-fork">Explicitly fork this competing departure</button><p id="departure-status" role="status">${esc(continuityMessage())}</p><a href="https://hearsay.adamwhite.work/">Visit Hearsay</a></section>`
+          : ''
+    }
     <details class="final-tally"><summary>See the tally</summary><div id="notebook-tally">${notebookTally(s, true)}</div></details>
     ${canAnotherWeek(s) ? '<p class="notebook-text soft">Monday will come round again.</p>' : ''}</div>
     <div class="page-actions actions end-actions">
@@ -972,9 +1100,31 @@ function ending() {
   bindHeader();
   expireToast();
   toast = '';
+  document.getElementById('depart')?.addEventListener('click', async () => {
+    try {
+      if (!s) return;
+      await releaseAndCheckpoint(s, writeSave);
+      document.getElementById('departure-status')!.textContent =
+        continuityMessage() ||
+        'Departure recorded. Enable fictional continuity in the menu, or download her passport there.';
+    } catch (error) {
+      document.getElementById('departure-status')!.textContent = String(error);
+    }
+  });
+  document.getElementById('depart-fork')?.addEventListener('click', async () => {
+    try {
+      if (!s) return;
+      await forkDeparture(s, writeSave);
+      document.getElementById('departure-status')!.textContent = continuityMessage();
+    } catch (error) {
+      document.getElementById('departure-status')!.textContent = String(error);
+    }
+  });
+  void checkpoint(s, writeSave);
   document.getElementById('another')?.addEventListener('click', () => {
     if (!s || !canAnotherWeek(s)) return;
     s = anotherWeek(s);
+    void gateContinuity(recordingState(s));
     writeSave();
     enter();
   });
@@ -1073,6 +1223,65 @@ function backPage() {
   );
   activePanel = { kind: 'menu', close };
   el.querySelector('#menu-recording')?.append(telemetryToggle(lab));
+  el.querySelector('#menu-recording')?.append(continuityControls());
+  const passport = document.createElement('div');
+  passport.innerHTML =
+    '<button id="passport-export">Download Dilan’s passport</button><button id="passport-import">Import a returned passport</button><button id="passport-fork">Explicitly fork the selected competing return</button><input type="file" id="passport-file" accept=".json" hidden><p id="passport-status" role="status"></p>';
+  el.querySelector('#menu-recording')?.append(passport);
+  passport.querySelector('#passport-export')?.addEventListener('click', async () => {
+    try {
+      if (!s) throw new Error('Play Dilan’s week first.');
+      const envelope = await personaFile(s);
+      writeSave();
+      downloadJSON(envelope, 'dilan-passport.json');
+    } catch (error) {
+      passport.querySelector('#passport-status')!.textContent = String(error);
+    }
+  });
+  passport
+    .querySelector('#passport-import')
+    ?.addEventListener('click', () => (passport.querySelector('#passport-file') as HTMLInputElement).click());
+  passport.querySelector('#passport-fork')?.addEventListener('click', async () => {
+    const attempt = ++loadGeneration;
+    try {
+      const returned = await forkPendingReturn(() => attempt === loadGeneration);
+      if (attempt !== loadGeneration) return;
+      if (!returned) throw new Error('No selected competing return.');
+      invalidateContinuity();
+      s = returned;
+      await gateContinuity(recordingState(s), true);
+      if (attempt !== loadGeneration) return;
+      writeSave();
+      close();
+      enter();
+    } catch (error) {
+      const message = passport.querySelector('#passport-status');
+      if (message) message.textContent = String(error);
+    }
+  });
+  passport.querySelector('#passport-file')?.addEventListener('change', async (event) => {
+    try {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const attempt = ++loadGeneration;
+      const returned = await returnedChapter(
+        JSON.parse(await file.text()),
+        'file',
+        false,
+        () => attempt === loadGeneration,
+      );
+      if (attempt !== loadGeneration) return;
+      if (!returned) throw new Error('This is not a returned Dilan passport.');
+      invalidateContinuity();
+      s = returned;
+      await gateContinuity(recordingState(s), true);
+      writeSave();
+      close();
+      enter();
+    } catch (error) {
+      passport.querySelector('#passport-status')!.textContent = String(error);
+    }
+  });
   el.querySelector('#bp-close')?.addEventListener('click', close);
   el.querySelector('#bp-send')?.addEventListener('click', () => {
     close();
@@ -1097,7 +1306,22 @@ function backPage() {
 
 function exportRun() {
   if (!s) return null;
-  return { game: 'murmur', version: s.version, seed: s.seed, inputs: s.inputs, state: cloneState(s) };
+  return {
+    game: 'murmur',
+    version: s.version,
+    seed: s.seed,
+    inputs: s.inputs,
+    state: cloneState(s),
+    oneCast: s.oneCast ?? [],
+  };
+}
+
+function downloadJSON(value: unknown, filename: string) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(value)], { type: 'application/json' }));
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
 function download() {
@@ -1155,7 +1379,14 @@ export const tester = {
     fast = v;
   },
   start(seed?: number, version = GAME_VERSION) {
-    newWeek(seed ?? urlSeed() ?? randomSeed(), version);
+    ++loadGeneration;
+    // The documented tester start is an explicit fresh authored run, never an automatic arrival.
+    invalidateContinuity();
+    clearSave();
+    s = newGame(seed ?? urlSeed() ?? randomSeed(), version);
+    void gateContinuity(recordingState(s));
+    writeSave();
+    enter();
     return s;
   },
   view(): CardView | null {

@@ -40,6 +40,7 @@ import {
   recalledThought,
 } from './listening.ts';
 import { LAST_DAY, momentById, momentsOf, WEEK_TWO_LAST_DAY } from './moments.ts';
+import { releaseOneCastDeparture } from './one-cast.ts';
 import * as weekTwo from './week2.ts';
 
 export { listens } from './listening.ts';
@@ -58,7 +59,7 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = '0.4.2';
+export const GAME_VERSION = '0.5.0';
 export const LEGACY_VERSION = '0.2.1';
 export const isEdition = (version: string) => listens({ version }) || version === LEGACY_VERSION;
 export const DAY_NAMES = [
@@ -80,7 +81,11 @@ export const DAY_NAMES = [
 /** Edition 0.4.0 adds a second week after Saturday's last page. */
 export const WEEK_TWO_EDITION = '0.4.0';
 const hasWeekTwo = (s: GameState) =>
-  s.version === WEEK_TWO_EDITION || s.version === '0.4.1' || s.version === GAME_VERSION;
+  s.version === '0.4.2' ||
+  s.version === '0.5.0' ||
+  s.version === WEEK_TWO_EDITION ||
+  s.version === '0.4.1' ||
+  s.version === GAME_VERSION;
 export const weekOf = (day: number) => (day <= 7 ? 1 : 2);
 export const weekdayOf = (day: number) => ((day - 1) % 7) + 1;
 const WINDOW = 5;
@@ -371,6 +376,7 @@ function resolveLine(label: string): string {
 // ---------- inputs ----------
 
 export function queueInput(s: GameState, input: NewInput): void {
+  if (input.kind === 'one-cast-release') releaseOneCastDeparture(cloneState(s));
   s.inputs.push({ ...input, at: s.minute } as Input);
   applyPending(s);
 }
@@ -385,6 +391,10 @@ function applyPending(s: GameState) {
 }
 
 function apply(s: GameState, inp: Input) {
+  if (inp.kind === 'one-cast-release') {
+    s.oneCastDeparture = releaseOneCastDeparture(s);
+    return;
+  }
   if (inp.kind === 'say') {
     if (s.phase !== 'day' || !s.card) return;
     const m = momentById(s.card.moment);
@@ -605,7 +615,7 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
   const turned = prompts.find((r) => r.outcome === 'turned');
   if (turned && !said) {
     const phrase = s.phrases.find((x) => x.id === turned.responseId);
-    if (phrase && (s.version !== '0.4.2' || chosen.phrase?.id === phrase.id)) {
+    if (phrase && ((s.version !== '0.4.2' && s.version !== '0.5.0') || chosen.phrase?.id === phrase.id)) {
       answer.turnedAlone = phrase.text;
       st.turnedAlone.push(phrase.text);
     }
@@ -1099,7 +1109,8 @@ export function replay(
   const s = newGame(seed, version);
   for (const inp of inputs) {
     // A 'next' belongs to the evening: run the day out first, even when it ended on the minute of the last answer.
-    while (s.phase === 'day' && (s.minute < inp.at || inp.kind === 'next')) step(s);
+    while (s.phase === 'day' && (s.minute < inp.at || inp.kind === 'next' || inp.kind === 'one-cast-release'))
+      step(s);
     s.inputs.push(inp);
     applyPending(s);
   }

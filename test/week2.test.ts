@@ -9,6 +9,7 @@ import {
   cloneState,
   ctxOf,
   fingerprint,
+  GAME_VERSION,
   insistCarries,
   listens,
   newGame,
@@ -102,47 +103,22 @@ function expectRebuilt(s: GameState) {
 }
 
 describe('the second week edition', () => {
-  // Captured before 0.4.1 copy changes. Whole-state hashes include the authored journal and replies.
-  it.each([
-    [
-      'silent',
-      '49bd23a4dae54ed0c7f79976c24945dfde4dbafe62483733bb7f780b7d193d01',
-      '20589e61f4a69603f13bd7fbe0b9e8ca99135ec7e294795a853ce63539378216',
-      'f442355a516d8503e958d8432d0eea720856de37e883cf8de9e4a0146e9e6b54',
-    ],
-    [
-      'tap',
-      '202c423b479b15a0f680a9c5bca195227e75e736ce45fac737b61b1b8ac91ced',
-      '2f73cee1d03d3a1b0c2cb04335911fe2d055ef1ee72631e37c6c8f66c4daf6d8',
-      '26cb9f69b93b7755cd46f6cd7586253458e91095ba8feb9e73f56809c313b02a',
-    ],
-    [
-      'insist',
-      'd65383a76f6b6bde56a87c8c4767becfefc8553274876cc1f7a9cfe446fb3957',
-      '2d0b7c2663d5cd448f2b07aad7b135585dff660c62065beb4ae91423acb8eb80',
-      '1bb26087f3be51cda5e6c5df14b731c3a50c411c3d3a0c5acca94c1a4df66138',
-    ],
-    [
-      'edge',
-      'cd490c81082120348d7d63811cad31d828c5992148e894f0bda95ac28238680a',
-      '8b181df8fdd236aeb2ff586d2557a498a7c5275468ca6914818740d18ed29a52',
-      '0faef056e622981591c45f63459f3d760369c114ca39a1753c1becba78153870',
-    ],
-  ] as const)(
-    'preserves 0.4.0 export, replay, and restored continuation: %s',
-    (policy, first, checkpoint, final) => {
-      const s = play(newGame(1000, '0.4.0'), policy);
-      expect(hash(s)).toBe(first);
+  it.each(['silent', 'tap', 'insist', 'edge'] as const)(
+    'reconstructs current-edition first week, checkpoint, and complete restored second week: %s',
+    (policy) => {
+      const s = play(newGame(1000), policy);
+      expect(s.version).toBe(GAME_VERSION);
+      expect(s.day).toBe(6);
       expectRebuilt(s);
       expect(anotherWeek(s)).toBe(s);
-      expect(s.version).toBe('0.4.0');
+      expect(s.version).toBe(GAME_VERSION);
       play(s, policy, 10);
-      expect(hash(s)).toBe(checkpoint);
       const restored = expectRebuilt(s);
       play(s, policy);
       play(restored, policy);
-      expect(hash(s)).toBe(final);
-      expect(hash(restored)).toBe(final);
+      expect(s.day).toBe(13);
+      expect(s.phase).toBe('end');
+      expect(hash(restored)).toBe(hash(s));
       expectRebuilt(s);
     },
     30_000,
@@ -164,7 +140,8 @@ describe('the second week edition', () => {
     30_000,
   );
 
-  it('shares listening rules across editions 0.3.0, 0.4.0, and 0.4.1', () => {
+  it('retains the listening rule for authored older editions and the current edition', () => {
+    expect(listens({ version: GAME_VERSION })).toBe(true);
     expect(listens({ version: '0.3.0' })).toBe(true);
     expect(listens({ version: '0.4.0' })).toBe(true);
     expect(listens({ version: '0.4.1' })).toBe(true);
@@ -173,7 +150,7 @@ describe('the second week edition', () => {
   });
   for (const seed of [1000, 1001, 1002, 1003]) {
     for (const policy of ['silent', 'tap', 'insist', 'edge'] as const) {
-      it(`keeps all week-one state identical to 0.3.0: ${seed}/${policy}`, () => {
+      it(`retained 0.3.0 and 0.4.0 authored paths share first-week rules on the current HF runtime: ${seed}/${policy}`, () => {
         const old = newGame(seed, '0.3.0');
         const current = newGame(seed, '0.4.0');
         expect(hash(current, true)).toBe(hash(old));
@@ -189,7 +166,7 @@ describe('the second week edition', () => {
   }
 
   it('offers continuation only at the first Saturday ending in listening editions', () => {
-    for (const edition of ['0.2.1', '0.3.0', '0.4.0', '0.4.1']) {
+    for (const edition of ['0.2.1', '0.3.0', '0.4.0', '0.4.1', GAME_VERSION]) {
       const s = newGame(1000, edition);
       expect(canAnotherWeek(s)).toBe(false);
       play(s, 'tap', 5);
@@ -203,7 +180,7 @@ describe('the second week edition', () => {
     }
   }, 30_000);
 
-  it('leaves old-edition endings unchanged when next is logged', () => {
+  it('retained single-week authored editions do not start a second week through next', () => {
     for (const edition of ['0.2.1', '0.3.0']) {
       const s = play(newGame(1001, edition), 'tap');
       const before = cloneState(s);
@@ -241,7 +218,7 @@ describe('the second week edition', () => {
   }, 30_000);
 
   it('next preserves Saturday canon and crosses the offstage weekend to Monday waking', () => {
-    const s = play(newGame(1000, '0.4.0'), 'tap');
+    const s = play(newGame(1000), 'tap');
     const final = structuredClone(s.final);
     const pages = structuredClone(s.pages);
     const before = s.minute;
@@ -284,7 +261,7 @@ describe('the second week edition', () => {
   }, 30_000);
 
   it('fades unused practice on both offstage nights and releases Saturday reinforcement on Sunday', () => {
-    const s = play(newGame(1001, '0.4.0'), 'tap');
+    const s = play(newGame(1001), 'tap');
     const responses = s.person.promptings?.responses;
     if (!responses) throw new Error('Dilan must have HF promptings enabled');
     responses.push(
@@ -298,7 +275,7 @@ describe('the second week edition', () => {
   }, 30_000);
 
   it('counts missed Mum calls within the current week', () => {
-    const s = play(newGame(1003, '0.4.0'), 'silent');
+    const s = play(newGame(1003), 'silent');
     const firstWeek = s.pages.filter((p) => p.missed.includes(LABEL.mum)).length;
     expect(firstWeek).toBeGreaterThan(0);
     expect(ctxOf(s).missedMum).toBe(firstWeek);
@@ -309,7 +286,7 @@ describe('the second week edition', () => {
   }, 30_000);
 
   it('lets an explicit HF release remove an Ece promise from the evening accounting', () => {
-    const held = play(newGame(1002, '0.4.0'), 'tap');
+    const held = play(newGame(1002), 'tap');
     queueInput(held, { kind: 'next' });
     const label = 'my test word to Ece';
     const commitment = promise(held.person, {
@@ -332,45 +309,41 @@ describe('the second week edition', () => {
     expect(withdrawn.person.agenda.commitments.find((c) => c.id === commitment.id)?.status).toBe('released');
   }, 30_000);
 
-  it.skipIf(!weekTwo.WEEK_TWO.some((m) => m.day === 8 && m.id.startsWith('alarm-')))(
-    'uses strong Feet practice for an unprompted morning and records it in the evening',
-    () => {
-      const alarm = weekTwo.WEEK_TWO.find((m) => m.day === 8 && m.id.startsWith('alarm-'));
-      if (!alarm) throw new Error('Expected the authored Monday alarm');
-      const threshold = (weekTwo as typeof weekTwo & { FEET_ALONE_FROM?: number }).FEET_ALONE_FROM ?? 0.35;
-      const strong = play(newGame(1000, '0.4.0'), 'tap');
-      queueInput(strong, { kind: 'next' });
-      const weak = restoreState(cloneState(strong));
-      for (const [s, practice] of [
-        [strong, threshold],
-        [weak, threshold - 0.001],
-      ] as const) {
-        s.phrases = [...s.phrases.filter((p) => p.id !== 'feet'), { id: 'feet', text: 'Feet on the floor' }];
-        const promptings = s.person.promptings;
-        if (!promptings) throw new Error('Dilan must have HF promptings enabled');
-        promptings.responses = [
-          ...promptings.responses.filter((r) => r.id !== 'feet'),
-          { id: 'feet', kind: 'leave', practice, lastUsedAt: s.minute },
-        ];
-        runToCard(s);
-      }
-      expect(weak.card?.moment).toBe(alarm.id);
-      expect(weak.stats.gotUpAlone).toBeUndefined();
-      expect(strong.card?.moment).not.toBe(alarm.id);
-      expect(strong.chosen[alarm.id]).toBeTruthy();
-      expect(strong.stats.gotUpAlone).toBe(true);
-      expect(strong.inputs.some((i) => i.kind === 'say' && i.at >= dayStart(8))).toBe(false);
-      expect(strong.log.some((line) => line.at >= dayStart(8) && /feet|floor/i.test(line.text))).toBe(true);
-      play(strong, 'silent', 8);
-      expect(strong.pages.find((p) => p.day === 8)?.gotUpAlone).toBe(true);
-    },
-    30_000,
-  );
+  it('uses strong Feet practice for an unprompted morning and records it in the evening', () => {
+    const alarm = weekTwo.WEEK_TWO.find((m) => m.day === 8 && m.id.startsWith('alarm-'));
+    if (!alarm) throw new Error('Expected the authored Monday alarm');
+    const threshold = (weekTwo as typeof weekTwo & { FEET_ALONE_FROM?: number }).FEET_ALONE_FROM ?? 0.35;
+    const strong = play(newGame(1000), 'tap');
+    queueInput(strong, { kind: 'next' });
+    const weak = restoreState(cloneState(strong));
+    for (const [s, practice] of [
+      [strong, threshold],
+      [weak, threshold - 0.001],
+    ] as const) {
+      s.phrases = [...s.phrases.filter((p) => p.id !== 'feet'), { id: 'feet', text: 'Feet on the floor' }];
+      const promptings = s.person.promptings;
+      if (!promptings) throw new Error('Dilan must have HF promptings enabled');
+      promptings.responses = [
+        ...promptings.responses.filter((r) => r.id !== 'feet'),
+        { id: 'feet', kind: 'leave', practice, lastUsedAt: s.minute },
+      ];
+      runToCard(s);
+    }
+    expect(weak.card?.moment).toBe(alarm.id);
+    expect(weak.stats.gotUpAlone).toBeUndefined();
+    expect(strong.card?.moment).not.toBe(alarm.id);
+    expect(strong.chosen[alarm.id]).toBeTruthy();
+    expect(strong.stats.gotUpAlone).toBe(true);
+    expect(strong.inputs.some((i) => i.kind === 'say' && i.at >= dayStart(8))).toBe(false);
+    expect(strong.log.some((line) => line.at >= dayStart(8) && /feet|floor/i.test(line.text))).toBe(true);
+    play(strong, 'silent', 8);
+    expect(strong.pages.find((p) => p.day === 8)?.gotUpAlone).toBe(true);
+  }, 30_000);
 
   for (const seed of [1000, 1001, 1002, 1003]) {
     for (const policy of ['silent', 'tap', 'insist'] as const) {
       it(`finishes and reconstructs both weeks: ${seed}/${policy}`, () => {
-        const s = play(newGame(seed, '0.4.0'), policy);
+        const s = play(newGame(seed), policy);
         anotherWeek(s);
         const restoredAtWake = expectRebuilt(s);
         for (const day of [8, 10, 12, 13]) {

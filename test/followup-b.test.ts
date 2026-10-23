@@ -87,7 +87,7 @@ describe('follow-up b rendered exact runs', { timeout: 30_000 }, () => {
       await before.listen();
       beforeUrl = before.resolvedUrls?.local[0];
     }
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: true, channel: 'chrome' });
     if (shots) mkdirSync(shots, { recursive: true });
   });
   afterAll(async () => {

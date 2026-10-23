@@ -94,7 +94,11 @@ export function showFeedback(options: {
     const privacy = lab.privacySignalOn && !lab.privacyOverride;
     wrap.querySelector<HTMLElement>('#feedback-recording')!.hidden = !off;
     wrap.querySelector<HTMLElement>('#feedback-consent')!.hidden = off || !privacy;
-    send.disabled = !sent && (sending || off || (privacy && !consent.checked));
+    send.disabled =
+      !sent && (sending || off || !lab.personaRecordingAllowed || (privacy && !consent.checked));
+    if (!sent && !lab.personaRecordingAllowed)
+      status.textContent =
+        'This history stays local until you choose whether to record this continuing person in the game menu.';
     const preview = {
       note: note.value,
       verdict: verdict || undefined,

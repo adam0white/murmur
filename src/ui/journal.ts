@@ -1,3 +1,4 @@
+import { restore } from '@adam0white/human-framework';
 import { DAY0 } from '../sim/dilan.ts';
 import { ctxOf, newGame, openMoment, optionsOf, queueInput, step } from '../sim/game.ts';
 import type { Answer, GameState, LogLine } from '../sim/types.ts';
@@ -78,9 +79,15 @@ export function momentRecords(s: GameState): MomentRecord[] {
     if (history.card && history.minute >= history.card.closesAt) advance(() => step(history), 'timeout');
     else step(history);
   };
-  for (const input of s.inputs.slice(0, s.applied)) {
+  for (const [index, input] of s.inputs.slice(0, s.applied).entries()) {
+    if (s.returnChapter && index === s.returnChapter.prefixInputs.length)
+      history.person = restore(s.returnChapter.initialPerson);
     // This is replay's evening rule: next can share the last answer's minute.
-    while (history.phase === 'day' && (history.minute < input.at || input.kind === 'next')) minute();
+    while (
+      history.phase === 'day' &&
+      (history.minute < input.at || input.kind === 'next' || input.kind === 'one-cast-release')
+    )
+      minute();
     advance(() => queueInput(history, input), input.kind === 'quiet' ? 'explicit' : null);
   }
   while (history.phase === 'day' && history.minute < s.minute) minute();

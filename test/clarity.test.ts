@@ -13,7 +13,7 @@ beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
   await server.listen();
   origin = server.resolvedUrls?.local[0] ?? '';
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, channel: 'chrome' });
 }, 30_000);
 
 afterAll(async () => {
@@ -880,7 +880,7 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
       expect(await page.locator('.toast').innerText()).toBe('Replayed. It matches the file.');
       expect(
         await page.evaluate(() => (window as unknown as { __murmur: { state: unknown } }).__murmur.state),
-      ).toEqual(cloneState(state));
+      ).toEqual({ ...cloneState(state), fileHistory: true });
     } finally {
       await page.close();
     }

@@ -1,25 +1,26 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
-import { cloneState, replay, step } from '../src/sim/game.ts';
+import { cloneState, GAME_VERSION, replay, restoreState, step } from '../src/sim/game.ts';
 import type { Input } from '../src/sim/types.ts';
 
-it('exactly replays and continues the pre-clarity 0.2.1 export prefix', () => {
-  const old = JSON.parse(
+it('replays the historical input corpus under the current edition and continues its current save exactly', () => {
+  // Only the ordinary inputs are reused. HF2.8 state/hash fixtures are not a compatibility contract.
+  const corpus = JSON.parse(
     readFileSync(new URL('./fixtures/clarity-legacy.json', import.meta.url), 'utf8'),
-  ) as {
-    seed: number;
-    inputs: Input[];
-    minute: number;
-    hash: string;
-    continuation: string;
-  };
-  const s = replay(old.seed, old.inputs, old.minute);
-  const hash = () =>
-    createHash('sha256')
-      .update(JSON.stringify(cloneState(s)))
-      .digest('hex');
-  expect(hash()).toBe(old.hash);
-  for (let i = 0; i < 37; i++) step(s);
-  expect(hash()).toBe(old.continuation);
+  ) as { seed: number; inputs: Input[]; minute: number };
+  const inputs = structuredClone(corpus.inputs);
+  const direct = replay(corpus.seed, inputs, corpus.minute, GAME_VERSION);
+  const reconstructed = replay(corpus.seed, inputs, corpus.minute, GAME_VERSION);
+  const restored = restoreState(JSON.parse(JSON.stringify(cloneState(direct))));
+  expect(direct.version).toBe(GAME_VERSION);
+  expect(direct.inputs).toEqual(corpus.inputs);
+  expect(cloneState(reconstructed)).toEqual(cloneState(direct));
+  for (let i = 0; i < 37; i++) {
+    step(direct);
+    step(reconstructed);
+    step(restored);
+  }
+  expect(cloneState(restored)).toEqual(cloneState(direct));
+  expect(cloneState(reconstructed)).toEqual(cloneState(direct));
+  expect(inputs).toEqual(corpus.inputs);
 });

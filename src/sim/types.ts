@@ -1,4 +1,6 @@
 import type { FollowOn, NeedId, NormTag, Person, PromptingResponseKind } from '@adam0white/human-framework';
+import type { PersonaEnvelope } from '@adam0white/lab-client';
+import type { DepartureReceipt } from './one-cast.ts';
 
 /** One thing Dilan could do at a moment. */
 export interface Opt {
@@ -175,7 +177,8 @@ export interface Page {
 export type Input =
   | { kind: 'say'; at: number; option: string; insist?: boolean }
   | { kind: 'quiet'; at: number }
-  | { kind: 'next'; at: number };
+  | { kind: 'next'; at: number }
+  | { kind: 'one-cast-release'; at: number };
 export type NewInput = Input extends infer I ? (I extends { at: number } ? Omit<I, 'at'> : never) : never;
 
 export interface Final {
@@ -190,7 +193,33 @@ export interface Final {
   line: string;
 }
 
+export interface OneCastRow {
+  v: 1;
+  probe: 'dilan';
+  arm: 'fresh' | 'biography' | 'continuing';
+  scope: 'shared' | 'local' | 'file';
+  castId: string;
+  branchId: string;
+  revision: string;
+  parentRevision: string | null;
+  stage: string;
+  outcome: string;
+}
+export interface ReturnChapter {
+  prefixInputs: Input[];
+  prefixMinute: number;
+  envelope: PersonaEnvelope;
+  departure: PersonaEnvelope;
+  initialPerson: Person;
+}
 export interface GameState {
+  fileHistory?: boolean;
+  oneCastDeparture?: DepartureReceipt;
+  personaHead?: PersonaEnvelope;
+  personaScope?: 'shared' | 'local' | 'file';
+  oneCast?: OneCastRow[];
+  returnChapter?: ReturnChapter;
+
   version: string;
   seed: number;
   day: number;

@@ -152,7 +152,7 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
 
   // HF's deferred wording can promise rejected advice after an action that closes its window.
   // Describe these recorded choices without adding a future commitment.
-  if (s.version === '0.4.2' && a.verdict === 'deferred') {
+  if ((s.version === '0.4.2' || s.version === '0.5.0') && a.verdict === 'deferred') {
     if (a.moment === 'gym-5' && a.said === 'cancel' && a.chosen === 'keep')
       return 'I’m leaving the membership as it is. It renews this morning.';
     if (a.moment === 'error-10' && a.said === 'aside' && a.chosen === 'room')

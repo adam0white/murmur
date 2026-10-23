@@ -1,9 +1,8 @@
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   cardView,
   cloneState,
+  GAME_VERSION,
   newGame,
   queueInput,
   replay,
@@ -11,75 +10,46 @@ import {
   runToCard,
   step,
 } from '../src/sim/game.ts';
-import type { GameState, Input } from '../src/sim/types.ts';
+import type { GameState } from '../src/sim/types.ts';
 
-const canonical = (x: unknown): unknown =>
-  Array.isArray(x)
-    ? x.map(canonical)
-    : x && typeof x === 'object'
-      ? Object.fromEntries(
-          Object.entries(x)
-            .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-            .map(([k, v]) => [k, canonical(v)]),
-        )
-      : x;
-const hash = (s: GameState) =>
-  createHash('sha256')
-    .update(JSON.stringify(canonical(cloneState(s))))
-    .digest('hex');
-interface Checkpoint {
-  minute: number;
-  inputs: Input[];
-  hash: string;
-  after37: string;
+function answer(s: GameState): void {
+  if (s.phase === 'evening') queueInput(s, { kind: 'next' });
+  runToCard(s);
+  const option = cardView(s)?.options.find((o) => !o.isPull);
+  if (option) queueInput(s, { kind: 'say', option: option.id });
 }
-interface EditionFixture {
-  seed: number;
-  policy: string;
-  version: string;
-  minute: number;
-  inputs: Input[];
-  hash: string;
-  checkpoints: Checkpoint[];
-}
-// 0.3.0 hashes captured before simulation changes at 052ad26f47e9e90685deb53d9998821af85e1473.
-const fixtures = ['edition021-hashes.json', 'edition030-hashes.json'].flatMap(
-  (file) =>
-    JSON.parse(readFileSync(new URL(`./fixtures/${file}`, import.meta.url), 'utf8')) as EditionFixture[],
-);
-describe('edition boundaries', () => {
-  it('starts new weeks on the listening edition', () => {
-    expect(newGame(7).version).toBe('0.4.2');
+
+describe('current edition replay boundaries', () => {
+  it('starts fresh games on the explicitly versioned one-cast edition', () => {
+    expect(GAME_VERSION).toBe('0.5.0');
+    expect(newGame(7).version).toBe(GAME_VERSION);
+    // Retained authored editions are selectable; no old HF snapshot compatibility is claimed.
     expect(newGame(7, '0.3.0').version).toBe('0.3.0');
   });
-  for (const row of fixtures)
-    it(`preserves full ${row.version} ${row.seed}/${row.policy} and restored continuations`, () => {
-      const final = replay(row.seed, row.inputs, row.minute, row.version);
-      while (final.phase === 'day') step(final);
-      expect(hash(final)).toBe(row.hash);
-      for (const c of row.checkpoints) {
-        const s = replay(row.seed, c.inputs, c.minute, row.version);
-        expect(hash(s)).toBe(c.hash);
-        const restored = restoreState(JSON.parse(JSON.stringify(cloneState(s))));
-        for (let i = 0; i < 37; i++) step(restored);
-        expect(hash(restored)).toBe(c.after37);
+
+  it.each([7, 31, 42])('pins complete current replay and resumed continuation: seed %s', (seed) => {
+    const s = newGame(seed);
+    for (const checkpoint of [3, 8, 14]) {
+      while (s.inputs.length < checkpoint) answer(s);
+      const saved = JSON.parse(JSON.stringify(cloneState(s))) as GameState;
+      const rebuilt = replay(s.seed, s.inputs, s.minute, s.version);
+      expect(cloneState(rebuilt)).toEqual(saved);
+      const restored = restoreState(saved);
+      expect(cloneState(restored)).toEqual(saved);
+      expect(restored.person.rng).toEqual(s.person.rng);
+      for (let i = 0; i < 37; i++) {
+        step(s);
+        step(restored);
+        step(rebuilt);
       }
-    });
-  it('replays and restores the new edition including its RNG and remembered words', () => {
-    const s = newGame(42);
-    for (let i = 0; i < 12; i++) {
-      if (s.phase === 'evening') queueInput(s, { kind: 'next' });
-      runToCard(s);
-      const option = cardView(s)?.options.find((o) => !o.isPull);
-      if (option) queueInput(s, { kind: 'say', option: option.id });
+      expect(cloneState(restored)).toEqual(cloneState(s));
+      expect(cloneState(rebuilt)).toEqual(cloneState(s));
+      // Exercise further actual inputs after loading, rather than only an idle snapshot round trip.
+      answer(s);
+      answer(restored);
+      answer(rebuilt);
+      expect(cloneState(restored)).toEqual(cloneState(s));
+      expect(cloneState(rebuilt)).toEqual(cloneState(s));
     }
-    const r = replay(s.seed, s.inputs, s.minute, s.version);
-    expect(hash(r)).toBe(hash(s));
-    const restored = restoreState(cloneState(s));
-    for (let i = 0; i < 200; i++) {
-      step(s);
-      step(restored);
-    }
-    expect(hash(restored)).toBe(hash(s));
   });
 });

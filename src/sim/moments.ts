@@ -212,7 +212,7 @@ const callMum: Opt = {
   done: (c) =>
     c.missedMum >= 2
       ? 'Mum picked up on the first ring. Neither of them mentioned the voice note.'
-      : c.version === '0.4.2'
+      : c.version === '0.4.2' || c.version === '0.5.0'
         ? byDay(c, [
             'Twenty minutes. Mum talked about the neighbour’s roof. Dilan laughed twice.',
             'Mum had bought too many tomatoes. Dilan was given instructions for three dinners.',
@@ -818,7 +818,7 @@ const wednesday: Moment[] = [
     at: at(19, 45),
     place: 'aylin',
     scene: (c) =>
-      c.version === '0.4.2' && c.flags.route
+      (c.version === '0.4.2' || c.version === '0.5.0') && c.flags.route
         ? 'Aylin’s kitchen. She is fifteen minutes late after finishing the extra route. Aylin has saved her a plate. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”'
         : 'Aylin’s kitchen. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”',
     pull: {

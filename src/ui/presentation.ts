@@ -15,7 +15,7 @@ export function quotedWords(text: string, nested = false): string {
 
 /** A little more of completed calls; the stored log and legacy editions stay exact. */
 export function conversationWords(s: GameState, text: string): string {
-  if (s.version !== '0.4.2') return text;
+  if (s.version !== '0.4.2' && s.version !== '0.5.0') return text;
   const extra: Record<string, string> = {
     'Twenty minutes. Mum talked about the neighbour’s roof. Dilan laughed twice.':
       '“He says he can patch it himself,” Mum said. “He said that before the rain, too.”',

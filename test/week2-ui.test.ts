@@ -35,7 +35,7 @@ beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
   await server.listen();
   origin = server.resolvedUrls?.local[0] ?? '';
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, channel: 'chrome' });
   if (shots) await mkdir(shots, { recursive: true });
 }, 30_000);
 
@@ -76,11 +76,11 @@ describe('a played first week', () => {
     'plays and replays seed %i through the normal inputs',
     (seed) => {
       const s = playedFirstWeek(seed);
-      expect(s.version).toBe('0.4.2');
+      expect(s.version).toBe('0.5.0');
       expect(s.phase).toBe('end');
       expect(s.day).toBe(6);
       expect(s.inputs.some((i) => i.kind === 'say' && i.insist)).toBe(false);
-      const again = replay(seed, s.inputs, s.minute, '0.4.2');
+      const again = replay(seed, s.inputs, s.minute, '0.5.0');
       // The last answer can end the day on its own minute; finish that day as anotherWeek does.
       while (again.phase === 'day') step(again);
       expect(cloneState(again)).toEqual(cloneState(s));
@@ -196,7 +196,10 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
           viewport.width,
         );
-        expect(await page.evaluate(() => window.__murmur.state)).toEqual(cloneState(state));
+        expect(await page.evaluate(() => window.__murmur.state)).toEqual({
+          ...cloneState(state),
+          fileHistory: true,
+        });
         await snapshot(page, `week-two-ending-${size}`);
       } finally {
         await page.close();
@@ -221,7 +224,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       await page.locator('#bp-title').click();
       await page.locator('#new').click();
       await page.locator('#confirm-new').click();
-      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.2');
+      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.5.0');
       expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(1);
     } finally {
       await page.close();
