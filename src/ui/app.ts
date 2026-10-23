@@ -35,7 +35,13 @@ import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/type
 import { showFeedback } from './feedback.ts';
 import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
 import { lab } from './lab.ts';
-import { answerThoughts, cardThought, finalInputWords } from './presentation.ts';
+import {
+  answerThoughts,
+  cardThought,
+  conversationWords,
+  finalInputWords,
+  quotedWords,
+} from './presentation.ts';
 import { replyWords } from './reply.ts';
 import { notebookTally } from './tally.ts';
 
@@ -600,21 +606,11 @@ function records(): MomentRecord[] {
 
 function recordHtml(record: MomentRecord): string {
   const yours = record.said
-    ? `You${record.insisted ? ' insisted' : ''}: “${esc(record.said.ink)}”${record.said.ink === record.chosen.ink ? ' ✓' : ` She chose “${esc(record.chosen.ink)}”`}`
-    : `You said nothing${record.quiet === 'timeout' ? ' · time ran out' : ''}. She chose “${esc(record.chosen.ink)}”`;
+    ? `You${record.insisted ? ' insisted' : ''}: ${esc(quotedWords(record.said.ink))}${record.said.ink === record.chosen.ink ? ' ✓' : ` She chose ${esc(quotedWords(record.chosen.ink))}`}`
+    : `You said nothing${record.quiet === 'timeout' ? ' · time ran out' : ''}. She chose ${esc(quotedWords(record.chosen.ink))}`;
   const a = record.answer;
   const reply = s ? replyWords(s, a) : undefined;
-  const how =
-    a.said && a.said !== a.chosen
-      ? a.verdict === 'deferred'
-        ? s?.version === '0.4.2'
-          ? 'She chose this instead.'
-          : 'She put yours off, so the pencil’s way, for now.'
-        : a.pullWon
-          ? 'She didn’t. She went the pencil’s way.'
-          : 'She didn’t. She did something else.'
-      : '';
-  return `<p class="record-yours">${yours}</p>${reply ? `<p class="record-reply her notebook-text">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${how ? `<p class="turn small${how.includes('pencil') ? ' notebook-text other-voice' : ''}">${how}</p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She took it as “${esc(a.learned)}.” She kept that one.</p>` : ''}`;
+  return `<p class="record-yours">${yours}</p>${reply ? `<p class="record-reply her notebook-text">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She took it as “${esc(a.learned)}.” She kept that one.</p>` : ''}`;
 }
 
 function drawJournal(lines: LogLine[]) {
@@ -652,7 +648,7 @@ function drawJournal(lines: LogLine[]) {
           ? `<p class="jl pencil other-voice">${esc(l.text)}</p>`
           : l.who === 'dilan'
             ? `<p class="jl notebook-text her">“${esc(l.text.replace(/\.$/, ''))}.”</p>`
-            : `<p class="jl ${l.who === 'you' ? 'yours' : 'n'}"><span class="jt">${clock(l.at)}</span> ${esc(l.text)}</p>`;
+            : `<p class="jl ${l.who === 'you' ? 'yours' : 'n'}"><span class="jt">${clock(l.at)}</span> ${esc(l.who === 'narrator' ? conversationWords(s, l.text) : l.text)}</p>`;
       entries.push({ key, html });
     }
   }

@@ -280,13 +280,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       expect(await page.locator('.journal .record-reply').innerText()).toMatch(
         /next.*alarm.*press and hold/i,
       );
-      for (const selector of [
-        '#state-words',
-        '.record-yours',
-        '.journal .record-reply',
-        '.journal .turn',
-        '#hurry',
-      ]) {
+      for (const selector of ['#state-words', '.record-yours', '.journal .record-reply', '#hurry']) {
         await page.locator(selector).scrollIntoViewIfNeeded();
         const box = await page.locator(selector).boundingBox();
         expect(box?.y).toBeGreaterThanOrEqual(0);
@@ -353,13 +347,11 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       expect(completion).toBeDefined();
       await page.locator('.journal .n').filter({ hasText: completion?.text }).waitFor();
       expect(await page.locator('.journal').innerText()).toContain(completion?.text);
-      expect(await latest.locator('.record-reply').last().innerText()).toContain(example.words);
+      expect(await latest.locator('.record-reply').last().innerText()).toContain(
+        example.words.replaceAll('“', '‘').replaceAll('”', '’'),
+      );
       expect(await page.locator('.gap').count()).toBe(0);
-      for (const el of [
-        latest.locator('.record-reply').last(),
-        latest.locator('.turn').last(),
-        page.locator('.journal .n').last(),
-      ]) {
+      for (const el of [latest.locator('.record-reply').last(), page.locator('.journal .n').last()]) {
         await el.scrollIntoViewIfNeeded();
         const box = await el.boundingBox();
         expect(box?.y).toBeGreaterThanOrEqual(0);

@@ -4,6 +4,29 @@ import { momentById } from '../sim/moments.ts';
 import type { Answer, GameState } from '../sim/types.ts';
 import type { MomentRecord } from './journal.ts';
 
+/** Authored options may already carry quotation marks. Add just one pair for display. */
+export function quotedWords(text: string, nested = false): string {
+  const bare =
+    (text.startsWith('“') && text.endsWith('”')) || (text.startsWith('"') && text.endsWith('"'))
+      ? text.slice(1, -1)
+      : text;
+  return nested ? `‘${bare}’` : `“${bare}”`;
+}
+
+/** A little more of completed calls; the stored log and legacy editions stay exact. */
+export function conversationWords(s: GameState, text: string): string {
+  if (s.version !== '0.4.2') return text;
+  const extra: Record<string, string> = {
+    'Twenty minutes. Mum talked about the neighbour’s roof. Dilan laughed twice.':
+      '“He says he can patch it himself,” Mum said. “He said that before the rain, too.”',
+    'Mum had bought too many tomatoes. Dilan was given instructions for three dinners.':
+      '“You can freeze it,” Mum said. “I know,” Dilan said, and wrote it down anyway.',
+    'Mum put the phone down to find her glasses. Dilan could hear her asking the empty room.':
+      '“On your head?” Dilan asked. The room went quiet. “Well,” Mum said.',
+  };
+  return extra[text] ? `${text} ${extra[text]}` : text;
+}
+
 type Thought = NonNullable<GameState['thoughts']>[number];
 const recallOf = (t: Thought) =>
   t.action === 'call-mum'
@@ -16,7 +39,7 @@ export function cardThought(s: GameState, view: CardView): string | undefined {
   const t = s.thoughts?.findLast((t) => recallOf(t) === view.recalled);
   if (!t || !s.card) return;
   return t.surfacedAt === s.card.openedAt
-    ? `On ${DAY_NAMES[momentById(t.moment).day]} you said “${t.ink}”`
+    ? `On ${DAY_NAMES[momentById(t.moment).day]} you said ${quotedWords(t.ink, true)}`
     : undefined;
 }
 
@@ -32,7 +55,7 @@ function retainedWords(t: Thought): string {
     write: 'The notebook is beside the bed. I could put the phone down for it.',
     'lights-out': 'Sleep before another video. That would be a different end to the day.',
   };
-  return specific[t.action] ?? `“${t.ink}” I could still ${t.label} another time.`;
+  return specific[t.action] ?? `${quotedWords(t.ink, true)} I could still ${t.label} another time.`;
 }
 
 export function answerThoughts(s: GameState, a: Answer, records: MomentRecord[]): string[] {
@@ -61,7 +84,9 @@ export function answerThoughts(s: GameState, a: Answer, records: MomentRecord[])
     } else if (record.chosen.id === 'none') {
       lines.push(`I couldn’t ${recalled.label} this time. I stayed where I was.`);
     } else {
-      lines.push(`I still didn’t ${recalled.label}. This time I chose “${record.chosen.ink}”`);
+      lines.push(
+        `I still didn’t ${recalled.label}. This time I chose ${quotedWords(record.chosen.ink, true)}`,
+      );
     }
   }
   return lines;
@@ -78,12 +103,12 @@ export function finalInputWords(_s: GameState, records: MomentRecord[]): string 
   if (!r) return;
   if (!r.said)
     return r.quiet === 'timeout'
-      ? `You said nothing; time ran out. She chose “${r.chosen.ink}”`
-      : `You left it to her. She chose “${r.chosen.ink}”`;
+      ? `You said nothing; time ran out. She chose ${quotedWords(r.chosen.ink)}`
+      : `You left it to her. She chose ${quotedWords(r.chosen.ink)}`;
   if (r.insisted)
     return r.answer.chosen === r.said.id &&
       (r.answer.verdict === 'assented' || r.answer.verdict === 'complied')
-      ? `You pressed: “${r.said.ink}” She went along with you.`
-      : `You pressed: “${r.said.ink}” She chose “${r.chosen.ink}” anyway.`;
-  return `You suggested: “${r.said.ink}” She chose “${r.chosen.ink}”`;
+      ? `You pressed: ${quotedWords(r.said.ink)} She went along with you.`
+      : `You pressed: ${quotedWords(r.said.ink)} She chose ${quotedWords(r.chosen.ink)} anyway.`;
+  return `You suggested: ${quotedWords(r.said.ink)} She chose ${quotedWords(r.chosen.ink)}`;
 }

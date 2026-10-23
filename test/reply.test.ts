@@ -159,3 +159,66 @@ describe('refusal recovery in her words', () => {
     expect(fingerprint(continued)).toBe(fingerprint(s));
   });
 });
+
+it('uses distinct, concrete acknowledgements for ordinary accepted suggestions', () => {
+  const s = newGame(1);
+  const before = JSON.stringify(s);
+  const words = ['alarm-1', 'alarm-2', 'alarm-3'].map((moment) =>
+    replyWords(s, {
+      moment,
+      said: 'up',
+      chosen: 'up',
+      verdict: 'assented',
+      says: 'Alright. I’ll do it.',
+      at: s.minute,
+    } as Answer),
+  );
+  expect(new Set(words).size).toBe(3);
+  expect(words.every((line) => !line?.includes('Alright'))).toBe(true);
+  expect(JSON.stringify(s)).toBe(before);
+});
+
+it('keeps Tuesday lunch in Dilan’s first person and gives its actual reason', () => {
+  const s = newGame(1);
+  for (let guard = 0; guard < 40 && s.card?.moment !== 'lunch-2'; guard++) {
+    if (s.phase === 'evening') queueInput(s, { kind: 'next' });
+    runToCard(s);
+    if (s.card?.moment !== 'lunch-2' && s.card) queueInput(s, { kind: 'quiet' });
+  }
+  expect(s.card?.moment).toBe('lunch-2');
+  queueInput(s, { kind: 'say', option: 'sit' });
+  expect(s.answer?.chosen).toBe('desk');
+  const before = JSON.stringify(s);
+  expect(replyWords(s, answer(s))).toContain('eat at my desk');
+  expect(replyWords(s, answer(s))).toMatch(/deliveries|board/);
+  expect(replyWords(s, answer(s))).not.toMatch(/her desk|Everyone at the table/);
+  expect(JSON.stringify(s)).toBe(before);
+});
+
+it('varies accepted bus and bedtime choices from real runs', () => {
+  const seen = new Set<string>();
+  for (let seed = 1; seed <= 8; seed++) {
+    const s = newGame(seed);
+    while (s.phase !== 'end') {
+      if (s.phase === 'evening') queueInput(s, { kind: 'next' });
+      runToCard(s);
+      const view = cardView(s);
+      if (!view) continue;
+      const option = view.id.startsWith('bus-')
+        ? ['scroll', 'text'][seed % 2]
+        : view.id.startsWith('bed-')
+          ? ['write', 'scroll'][seed % 2]
+          : view.options[0]?.id;
+      if (!option) throw new Error('Expected option');
+      queueInput(s, { kind: 'say', option });
+      const a = answer(s);
+      if (a.said === a.chosen && a.verdict === 'assented' && /^(bus|bed)-/.test(a.moment)) {
+        const before = JSON.stringify(s);
+        expect(replyWords(s, a)).not.toMatch(/^(Fine\.|Alright, I'll do it\.)$/);
+        expect(JSON.stringify(s)).toBe(before);
+        seen.add(`${a.moment.split('-')[0]}:${option}`);
+      }
+    }
+  }
+  expect([...seen].sort()).toEqual(['bed:scroll', 'bed:write', 'bus:scroll', 'bus:text']);
+}, 15000);

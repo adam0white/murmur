@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
 import type { GameState } from '../src/sim/types.ts';
 import { momentRecords } from '../src/ui/journal.ts';
-import { answerThoughts, cardThought, finalInputWords, keptWords } from '../src/ui/presentation.ts';
+import {
+  answerThoughts,
+  cardThought,
+  conversationWords,
+  finalInputWords,
+  keptWords,
+} from '../src/ui/presentation.ts';
 import { replyWords } from '../src/ui/reply.ts';
 
 function required<T>(value: T | null | undefined): T {
@@ -163,4 +169,20 @@ describe('follow-up b presentation, with exact edition state', () => {
     const timed = replay(base.seed, base.inputs, required(base.card).closesAt + 1, base.version);
     expect(finalInputWords(timed, momentRecords(timed))).toMatch(/time ran out/);
   });
+});
+
+it('adds a line from the call after it completes without changing the recorded conversation', () => {
+  const s = newGame(1);
+  while (s.card?.moment !== 'bus-1') {
+    runToCard(s);
+    if (s.card?.moment !== 'bus-1' && s.card) queueInput(s, { kind: 'quiet' });
+  }
+  queueInput(s, { kind: 'say', option: 'call', insist: true });
+  expect(s.answer?.chosen).toBe('call');
+  const line = required(s.log.findLast((line) => line.who === 'narrator'));
+  expect(line.text).toContain('neighbour’s roof');
+  const before = JSON.stringify(s);
+  expect(conversationWords(s, line.text)).toContain('“He says he can patch it himself,” Mum said.');
+  expect(JSON.stringify(s)).toBe(before);
+  expect(conversationWords(newGame(1, '0.4.1'), line.text)).toBe(line.text);
 });

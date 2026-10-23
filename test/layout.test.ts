@@ -166,3 +166,39 @@ it('refreshes Send when the shared recording preference changes after the form o
     await page.close();
   }
 }, 30000);
+it('records a refusal once in plain words, including on a legacy run', async () => {
+  const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
+  try {
+    await page.goto(url);
+    await page.evaluate(() => {
+      window.__murmur.fast = true;
+      window.__murmur.start(9, '0.2.1');
+    });
+    await page.locator('#hush').waitFor();
+    await page.evaluate(() => window.__murmur.say('up'));
+    const journal = await page.locator('#journal').innerText();
+    expect(journal).toContain('You: “Up. Feet on the floor.” She chose “Five more.”');
+    expect(journal).not.toMatch(/pencil’s way|She didn’t\. She|She put yours off/);
+  } finally {
+    await page.close();
+  }
+}, 30000);
+
+it('quotes an already quoted suggestion only once in the journal', async () => {
+  const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
+  try {
+    await page.goto(url);
+    await page.evaluate(() => {
+      window.__murmur.fast = true;
+      window.__murmur.start(1);
+      window.__murmur.skipToCard();
+      for (let i = 0; i < 20 && window.__murmur.view()?.id !== 'lunch-1'; i++) window.__murmur.quiet();
+      window.__murmur.say('defend');
+    });
+    const journal = await page.locator('#journal .record-yours').allTextContents();
+    expect(journal.join(' ')).toContain('“She found it, didn’t she?”');
+    expect(journal.join(' ')).not.toContain('““');
+  } finally {
+    await page.close();
+  }
+}, 30000);
