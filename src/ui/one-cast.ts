@@ -180,35 +180,41 @@ export function checkpoint(s: GameState | null, save: () => void): Promise<void>
   if (checkpointTask) return checkpointTask;
   checkpointTask = (async () => {
     const guard = await recordingEpochGuard();
-    const transfer = await createOneCastDeparture(s);
+    const prefix = cloneState(s);
+    const transfer = await createOneCastDeparture(prefix);
     const unchanged =
-      s.personaHead?.source.game === 'murmur' &&
-      canonicalPersona(s.personaHead.transfer.checkpoint) === canonicalPersona(transfer.checkpoint);
+      prefix.personaHead?.source.game === 'murmur' &&
+      canonicalPersona(prefix.personaHead.transfer.checkpoint) === canonicalPersona(transfer.checkpoint);
     // Even a retained duplicate must pass current-head CAS; a historical receipt is not active authority.
     const head =
-      unchanged && s.personaHead
-        ? s.personaHead
+      unchanged && prefix.personaHead
+        ? prefix.personaHead
         : await createPersona({
             format: 'hf-persona/1',
             castId: CAST,
             castRevision: '1',
-            branchId: s.personaHead?.branchId ?? crypto.randomUUID(),
-            parentRevision: s.personaHead?.revision ?? null,
-            source: { game: 'murmur', build, engine: s.person.engine, rules: GAME_VERSION },
+            branchId: prefix.personaHead?.branchId ?? crypto.randomUUID(),
+            parentRevision: prefix.personaHead?.revision ?? null,
+            source: { game: 'murmur', build, engine: prefix.person.engine, rules: GAME_VERSION },
             transfer: { ...transfer },
             limitations: transfer.person.limitations.slice(0, 64),
           });
     const accepted = await publishPersona(head, {
-      guard: s.fileHistory || s.personaHead ? { ...guard, authored: false } : guard,
+      guard: prefix.fileHistory || prefix.personaHead ? { ...guard, authored: false } : guard,
     });
+    prefix.personaHead = accepted;
+    prefix.personaScope = 'shared';
+    row(prefix, accepted, 'checkpoint', prefix.fileHistory ? 'file' : 'shared');
+    storePrefix(prefix);
+    if (!departureGuardCurrent(guard)) {
+      status = 'The earlier departure receipt is kept locally. The active run has not changed.';
+      return;
+    }
     s.personaHead = accepted;
     s.personaScope = 'shared';
-    row(s, accepted, 'checkpoint', s.fileHistory ? 'file' : 'shared');
-    storePrefix(s);
-    if (departureGuardCurrent(guard)) {
-      await gateContinuity(recordingState(s));
-      save();
-    }
+    s.oneCast = structuredClone(prefix.oneCast);
+    await gateContinuity(recordingState(s));
+    save();
     lab.milestone('one-cast-source-complete');
     status = 'Dilan is on this browser’s shelf. Her remembered delivery travels as biography only.';
   })()
@@ -330,26 +336,32 @@ export async function personaFile(s: GameState): Promise<PersonaEnvelope> {
 /** A competing source stays blocked until the player explicitly chooses a new branch. */
 export async function forkDeparture(s: GameState, save: () => void) {
   const guard = await recordingEpochGuard();
-  const transfer = await createOneCastDeparture(s);
+  const prefix = cloneState(s);
+  const transfer = await createOneCastDeparture(prefix);
   const envelope = await createPersona({
     format: 'hf-persona/1',
     castId: CAST,
     castRevision: '1',
     branchId: crypto.randomUUID(),
     parentRevision: null,
-    source: { game: 'murmur', build, engine: s.person.engine, rules: GAME_VERSION },
+    source: { game: 'murmur', build, engine: prefix.person.engine, rules: GAME_VERSION },
     transfer: { ...transfer },
     limitations: transfer.person.limitations.slice(0, 64),
   });
   const accepted = await publishPersona(envelope, { fork: true, guard: { ...guard, authored: false } });
+  prefix.personaHead = accepted;
+  prefix.personaScope = 'shared';
+  row(prefix, accepted, 'checkpoint', prefix.fileHistory ? 'file' : 'shared');
+  storePrefix(prefix);
+  if (!departureGuardCurrent(guard)) {
+    status = 'The earlier fork receipt is kept locally. The active run has not changed.';
+    return;
+  }
   s.personaHead = accepted;
   s.personaScope = 'shared';
-  row(s, accepted, 'checkpoint', s.fileHistory ? 'file' : 'shared');
-  storePrefix(s);
-  if (departureGuardCurrent(guard)) {
-    await gateContinuity(recordingState(s));
-    save();
-  }
+  s.oneCast = structuredClone(prefix.oneCast);
+  await gateContinuity(recordingState(s));
+  save();
   status = 'An explicit new branch is on the shelf. The competing continuation stays separate.';
 }
 

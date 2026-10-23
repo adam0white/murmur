@@ -54,6 +54,8 @@ beforeEach(() => {
     getItem: (key: string) => storage.get(key) ?? null,
     setItem: (key: string, value: string) => storage.set(key, value),
   });
+  transport.gateContinuity.mockClear();
+  transport.departureGuardCurrent.mockReturnValue(true);
   transport.publishPersona.mockReset();
   transport.publishPersona.mockImplementation(async (head: unknown) => validatePersona(head));
   transport.claimPersona.mockReset();
@@ -331,4 +333,16 @@ it('accepts the declared Hearsay4/5 contract and refuses other return editions',
   await expect(validateRun(cloneState(returned))).resolves.toMatchObject({
     returnChapter: { envelope: { source: { rules: '5' } } },
   });
+});
+
+it('keeps a late source receipt only in its detached departure prefix after identity generation changes', async () => {
+  const source = playedDeparture();
+  transport.publishPersona.mockImplementationOnce(async (head) => {
+    transport.departureGuardCurrent.mockReturnValue(false);
+    return validatePersona(head);
+  });
+  await checkpoint(source, () => {});
+  expect(source.personaHead).toBeUndefined();
+  expect(transport.gateContinuity).not.toHaveBeenCalled();
+  transport.departureGuardCurrent.mockReturnValue(true);
 });
