@@ -147,7 +147,7 @@ export function chooseContinuityRecording(value: boolean): Promise<void> {
           castId: head.castId,
           envelope: head,
           allowRecording: value,
-          recordingEpoch: epoch.recordingEpoch,
+          recordingEpoch: epoch.recordingEpoch ?? undefined,
         };
         const reply = await shelf.request<RecordingReply>(request);
         if (!valid()) return;
@@ -213,7 +213,7 @@ export async function publishPersona(
     envelope: checked,
     fork: options.fork,
     authored: Boolean(options.guard?.authored),
-    recordingEpoch: options.guard?.recordingEpoch,
+    recordingEpoch: options.guard?.recordingEpoch ?? undefined,
   };
   const accepted = await validatePersona(await shelf.request<PersonaEnvelope>(request));
   if (accepted.revision !== checked.revision)

@@ -102,21 +102,19 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
       await page.locator('#feedback-name').fill('  tester  ');
       expect((await page.locator('#feedback-note').boundingBox())?.height).toBeGreaterThanOrEqual(100);
       if (mode === 'off') {
-        expect(await page.locator('#feedback-send').isDisabled()).toBe(true);
-        await page.locator('#feedback-toggle input').click();
+        expect(await page.locator('#feedback-send').isDisabled()).toBe(false);
       }
       if (mode === 'privacy') {
-        expect(await page.locator('#feedback-send').isDisabled()).toBe(true);
-        await page.locator('#feedback-consent-check').check();
+        expect(await page.locator('#feedback-send').isDisabled()).toBe(false);
       }
       await page.locator('#feedback-send').click();
       expect(await page.locator('#feedback-status').innerText()).toBe('Sent. Thank you.');
       const calls = await page.evaluate(() => Reflect.get(window, 'feedbackCalls'));
       expect(calls).toHaveLength(1);
-      expect(calls[0][0]).toBe(mode === 'privacy' ? 'run' : 'feedback');
+      expect(calls[0][0]).toBe('feedback');
       const extra = calls[0].at(-1);
       expect(extra.name).toBe('tester');
-      expect(mode === 'privacy' ? extra.note : calls[0][1]).toContain('Verdict: keep');
+      expect(calls[0][1]).toContain('Verdict: keep');
       expect(await page.evaluate(() => localStorage.getItem('hf-lab-feedback-name'))).toBe('tester');
       await page.locator('#feedback-send').click();
       await page.locator('#bp-send').click();
@@ -156,7 +154,7 @@ it('refreshes Send when the shared recording preference changes after the form o
     await page.goto(url);
     await page.locator('#menu').click();
     await page.locator('#bp-send').click();
-    expect(await page.locator('#feedback-send').isDisabled()).toBe(true);
+    expect(await page.locator('#feedback-send').isDisabled()).toBe(false);
     await page.evaluate(async () => {
       const { lab } = await new Function('return import("/src/ui/lab.ts")')();
       lab.setEventsOff(false);

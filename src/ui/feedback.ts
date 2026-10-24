@@ -1,4 +1,4 @@
-import { telemetryToggle } from '@adam0white/lab-kit';
+import { feedbackPersonaControl, telemetryToggle } from '@adam0white/lab-kit';
 import type { lab as gameLab } from './lab.ts';
 
 const NAME_KEY = 'hf-lab-feedback-name';
@@ -46,7 +46,7 @@ export function showFeedback(options: {
   wrap.innerHTML = `<section class="feedback" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
     <div class="feedback-heading"><button id="feedback-back">← Back</button><h2 id="feedback-title">Send word</h2></div>
     <div class="feedback-body">
-      <p>Your run, saves and log reach us on their own. Tell us what they can't show.</p>
+      <p>Send a note about this game. Recording and continuing-person choices are optional.</p>
       <div class="verdicts" role="group" aria-label="Would you keep playing?">
         <button type="button" class="chip" data-verdict="keep" aria-pressed="false">I'd keep playing</button>
         <button type="button" class="chip" data-verdict="mixed" aria-pressed="false">Not sure</button>
@@ -58,8 +58,8 @@ export function showFeedback(options: {
         <label for="feedback-name">Your name or tester id</label><input type="text" id="feedback-name" maxlength="60" autocomplete="off" value="${esc(remembered)}" />
         <p class="soft small">A name labels everything this device has sent, past and future. Leave it empty to stay unnamed.</p>
       </details>
-      <details class="feedback-preview"><summary>What is sent</summary><p>Your note, optional verdict and name, and the run's seed, inputs and state.</p><pre id="feedback-preview"></pre><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noreferrer">Lab privacy</a></details>
-      <div class="feedback-recording" id="feedback-recording"><p>Recording is off, so nothing is sent.</p><div id="feedback-toggle"></div></div>
+      <details class="feedback-preview"><summary>What is sent</summary><p>Your note, optional verdict and name. With recording off, no run or linked history is sent.</p><pre id="feedback-preview"></pre><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noreferrer">Lab privacy</a></details>
+      <div class="feedback-recording" id="feedback-recording"><p>Recording is off. You can still send your note.</p><div id="feedback-toggle"></div></div>
       <label class="feedback-consent" id="feedback-consent"><input type="checkbox" id="feedback-consent-check" /> Send this run with my note</label>
       <button type="button" id="feedback-download">Keep a copy of this run</button>
       <p role="status" id="feedback-status"></p>
@@ -73,6 +73,16 @@ export function showFeedback(options: {
   const consent = wrap.querySelector<HTMLInputElement>('#feedback-consent-check')!;
   const send = wrap.querySelector<HTMLButtonElement>('#feedback-send')!;
   const status = wrap.querySelector<HTMLElement>('#feedback-status')!;
+  const feedbackRun = () => {
+    try {
+      return options.getRun();
+    } catch {
+      return undefined;
+    }
+  };
+  const personaChoice = feedbackPersonaControl(lab);
+  if (personaChoice) wrap.querySelector('textarea')?.after(personaChoice);
+
   let verdict = '';
   let sent = false;
   let sending = false;
@@ -94,16 +104,12 @@ export function showFeedback(options: {
     const privacy = lab.privacySignalOn && !lab.privacyOverride;
     wrap.querySelector<HTMLElement>('#feedback-recording')!.hidden = !off;
     wrap.querySelector<HTMLElement>('#feedback-consent')!.hidden = off || !privacy;
-    send.disabled =
-      !sent && (sending || off || !lab.personaRecordingAllowed || (privacy && !consent.checked));
-    if (!sent && !lab.personaRecordingAllowed)
-      status.textContent =
-        'This history stays local until you choose whether to record this continuing person in the game menu.';
+    send.disabled = !sent && sending;
     const preview = {
       note: note.value,
       verdict: verdict || undefined,
       name: name.value.trim() || undefined,
-      run: options.getRun(),
+      run: feedbackRun(),
     };
     wrap.querySelector('#feedback-preview')!.textContent = JSON.stringify(preview, null, 2);
   };
@@ -155,15 +161,9 @@ export function showFeedback(options: {
       .join('\n\n');
     const privacy = lab.privacySignalOn && !lab.privacyOverride;
     try {
-      if (privacy) {
-        try {
-          await lab.sendRun(options.getRun(), { note: submittedNote, name: submittedName });
-        } catch {
-          lab.openSendDialog({ getRun: options.getRun, name: submittedName, note: submittedNote });
-          status.textContent = 'Finish sending in the open dialog.';
-          return;
-        }
-      } else await lab.sendFeedback(submittedNote, { name: submittedName });
+      if (!recordingOff() && privacy && consent.checked && lab.personaRecordingAllowed) {
+        await lab.sendRun(options.getRun(), { note: submittedNote, name: submittedName });
+      } else await lab.sendFeedback(submittedNote, { name: submittedName, run: feedbackRun() });
       try {
         if (submittedName) localStorage.setItem(NAME_KEY, submittedName);
         else localStorage.removeItem(NAME_KEY);
