@@ -1,5 +1,9 @@
 # Murmur handoff
 
+## Frictionless feedback (owner, 2026-10-23)
+
+Owner 2026-10-23: recorded play links across games on this device automatically. The first-visit notice covers recording and linking. One menu recording switch controls both. Browser DNT/GPC sets only the default off. Send word offers one unticked “Share this run and my play with the lab” checkbox when recording is off; Submit opts in if ticked and otherwise sends the note alone. No separate continuing-person recording consent or gate applies. Character analysis still needs its separate opt-in.
+
 What remains: Adam’s acceptance play, due2026-11-03. The implementation is complete. The exact commit, CI, deployment and browser status are recorded in ~/code/.lab-scratch/universe/murmur.md; use that delivery report for live receipts and any held peer verification. The earlier actual phone preview source→live target4fb fitness refusal remains a negative control. Hearsay editions4/5 share the immutable revision1 Dilan mapping; both require compatible clinical health and exact original source revision/digest.
 
 Edition0.5.0 implements wave-1 Dilan revision1 only. HF2.15.0/engine2.14.1, exact vendor client0.3.1 and kit0.4.0 hashes match universe/artifacts.json; installed packages are real directories. New revision2 roster/life work remains a later increment. Other game repositories are unchanged.

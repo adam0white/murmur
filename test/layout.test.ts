@@ -95,7 +95,22 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
         window.__murmur.start(1);
       });
       await page.locator('#menu').click();
+      // The SDK deliberately disables recording on localhost. Model its on state for this form-only test.
+      if (mode === 'linked')
+        await page.evaluate(async () => {
+          const { lab } = await new Function('return import("/src/ui/lab.ts")')();
+          Object.defineProperty(lab, 'telemetryOn', { get: () => true });
+        });
       await page.locator('#bp-send').click();
+      const share = page.getByRole('checkbox', {
+        name: 'Share this run and my play with the lab',
+        exact: true,
+      });
+      expect(await share.count()).toBe(mode === 'linked' ? 0 : 1);
+      if (mode !== 'linked') {
+        expect(await share.isVisible()).toBe(true);
+        expect(await share.isChecked()).toBe(false);
+      }
       await page.locator('[data-verdict="keep"]').click();
       await page.locator('#feedback-note').fill('I wanted to read the reply.');
       await page.locator('.feedback-name summary').click();
@@ -243,13 +258,14 @@ it('keeps an explicitly started run when the asynchronous bootstrap finishes lat
   }
 }, 30000);
 
-it('does not grant an unverified title history from the inline choice and still sends the note', async () => {
+it('opts into sharing through one unchecked checkbox and sends the note', async () => {
   const page = await browser.newPage();
   try {
+    await page.addInitScript(() => localStorage.setItem('hf-lab-recording-off', '1'));
     await page.goto(url);
     await page.evaluate(async () => {
       const { lab } = await new Function('return import("/src/ui/lab.ts")')();
-      lab.setPersonaRecording('unverified-title-fixture');
+      lab.setPersonaRecording('legacy-title-fixture');
       const calls: unknown[] = [];
       Object.assign(window, { scopedFeedbackCalls: calls });
       lab.sendFeedback = async (...args: unknown[]) => {
@@ -259,16 +275,20 @@ it('does not grant an unverified title history from the inline choice and still 
     });
     await page.locator('#menu').click();
     await page.locator('#bp-send').click();
-    await page.getByRole('checkbox', { name: /Link all continuing histories/ }).click();
-    expect(
-      await page.evaluate(
-        async () => (await new Function('return import("/src/ui/lab.ts")')()).lab.personaRecordingAllowed,
-      ),
-    ).toBe(false);
+    const share = page.getByRole('checkbox', {
+      name: 'Share this run and my play with the lab',
+      exact: true,
+    });
+    expect(await share.count()).toBe(1);
+    expect(await share.isVisible()).toBe(true);
+    expect(await share.isChecked()).toBe(false);
+    await share.check();
     expect(await page.locator('#feedback-send').isEnabled()).toBe(true);
-    await page.locator('#feedback-note').fill('An unverified history must not block this note.');
+    await page.locator('#feedback-note').fill('Share my play with this note.');
     await page.locator('#feedback-send').click();
     await expect.poll(() => page.evaluate(() => Reflect.get(window, 'scopedFeedbackCalls').length)).toBe(1);
+    const calls = await page.evaluate(() => Reflect.get(window, 'scopedFeedbackCalls'));
+    expect(calls[0][1].sharePlay).toBe(true);
   } finally {
     await page.close();
   }

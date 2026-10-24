@@ -1,4 +1,4 @@
-/** Browser shelf transport and historical recording gate. Fiction belongs to the adapter. */
+/** Browser shelf transport and run-scoped history metadata. Fiction belongs to the adapter. */
 import {
   acceptPersona,
   createPersona,
@@ -22,12 +22,6 @@ export interface ContinuityRecordingState {
   heads: RecordingHead[];
   invalidHistory?: boolean;
 }
-interface RecordingReply {
-  sameEpoch: boolean;
-  branchId?: string;
-  revision?: string;
-  recordingEpoch?: string | null;
-}
 export const shelf = personaChannel();
 let current: () => ContinuityRecordingState | undefined = () => undefined;
 let checkpoint: () => void | Promise<void> = () => {};
@@ -36,8 +30,6 @@ let generation = 0;
 let gated: ContinuityRecordingState | undefined;
 let gatedFile = false;
 let known = false;
-let denied: object | undefined;
-let choices: Promise<void> = Promise.resolve();
 let statusText = '';
 const panels = new Set<HTMLElement>();
 const keyOf = (s?: ContinuityRecordingState) =>
@@ -45,19 +37,7 @@ const keyOf = (s?: ContinuityRecordingState) =>
     .map(({ head }) => head.branchId)
     .sort()
     .join(':') || null;
-const pinOf = (s?: ContinuityRecordingState) =>
-  JSON.stringify(s?.heads.map(({ head, scope }) => [head.castId, head.branchId, head.revision, scope]));
-const sharedOf = (s: ContinuityRecordingState) => s.heads.filter((h) => h.scope === 'shared');
-const echoes = (reply: RecordingReply, head?: PersonaEnvelope) =>
-  Boolean(head && reply.branchId === head.branchId && reply.revision === head.revision);
-const active = (serial: number, s: ContinuityRecordingState, pin: string) =>
-  serial === generation &&
-  gated?.owner === s.owner &&
-  pinOf(gated) === pin &&
-  current()?.owner === s.owner &&
-  pinOf(current()) === pin;
-
-/** Call before run replacement, validated load, reset, or a recording identity change. */
+/** Call before run replacement, validated load, reset, or a browser-person continuity change. */
 export function invalidateContinuity(): void {
   ++generation;
   gated = undefined;
@@ -68,126 +48,37 @@ export function invalidateContinuity(): void {
   refreshPanels();
 }
 
-/** Await before attaching ANY persona-derived run/save/log/note/event upload hook. */
+/** Keep loaded-run metadata; recording linkage needs no separate consent or RPC. */
 export async function gateContinuity(
   state: ContinuityRecordingState | undefined,
   file = false,
 ): Promise<void> {
-  const serial = ++generation;
+  ++generation;
   gated = state;
   gatedFile = file;
-  known = false;
-  const key = keyOf(state);
-  lab.setPersonaRecording(state?.invalidHistory ? 'invalid-history' : key);
-  const localAssociation = lab.personaRecordingAllowed;
-  if (key || state?.invalidHistory) lab.allowPersonaRecording(false);
-  refreshPanels();
-  const pin = pinOf(state);
-  await shelf.ready;
-  if (serial !== generation || !state || state.invalidHistory || !state.heads.length) return;
-  if (file || denied === state.owner) return;
-  const shared = sharedOf(state);
-  // Never use a central association to approve an imported/local branch after denial or reload.
-  if (shared.length !== state.heads.length && !localAssociation) return;
-  if (!shared.length) {
-    if (localAssociation && active(serial, state, pin)) {
-      known = true;
-      lab.allowPersonaRecording(true);
-      refreshPanels();
-    }
-    return;
-  }
-  try {
-    const replies = await Promise.all(
-      shared.map(({ head }) =>
-        shelf.request<RecordingReply>({ action: 'recording', castId: head.castId, envelope: head }),
-      ),
-    );
-    if (!active(serial, state, pin) || denied === state.owner) return;
-    if (replies.every((reply, i) => reply.sameEpoch && echoes(reply, shared[i]?.head))) {
-      known = true;
-      lab.allowPersonaRecording(true);
-      refreshPanels();
-    }
-  } catch {
-    // Bridge denial and missing echoes leave all upload paths closed.
-  }
-}
-
-/** Central choices are FIFO. A newer choice blocks older callbacks immediately. */
-export function chooseContinuityRecording(value: boolean): Promise<void> {
-  const serial = ++generation;
-  const state = current();
-  gated = state;
-  known = false;
-  if (!state?.heads.length || state.invalidHistory) return Promise.resolve();
-  denied = value ? undefined : state.owner;
+  known = true;
   lab.setPersonaRecording(keyOf(state));
-  lab.allowPersonaRecording(false);
   refreshPanels();
-  const pin = pinOf(state);
-  const valid = () => active(serial, state, pin);
-  const task = choices
-    .catch(() => {})
-    .then(async () => {
-      if (!valid()) return;
-      await shelf.ready;
-      if (!valid()) return;
-      for (const { head } of sharedOf(state)) {
-        const epoch = await shelf.request<RecordingReply>({
-          action: 'recording',
-          castId: head.castId,
-          envelope: head,
-        });
-        if (!valid()) return;
-        if (!echoes(epoch, head) || !('recordingEpoch' in epoch))
-          throw new Error('Recording choice could not verify this pinned history.');
-        const request = {
-          action: 'recording' as const,
-          castId: head.castId,
-          envelope: head,
-          allowRecording: value,
-          recordingEpoch: epoch.recordingEpoch ?? undefined,
-        };
-        const reply = await shelf.request<RecordingReply>(request);
-        if (!valid()) return;
-        if (!echoes(reply, head) || reply.sameEpoch !== value)
-          throw new Error('Recording identity changed. Choose again.');
-      }
-      if (!valid()) return;
-      known = value;
-      lab.allowPersonaRecording(value);
-      refreshPanels();
-    });
-  choices = task.catch(() => {});
-  return task;
+}
+export async function chooseContinuityRecording(_value: boolean): Promise<void> {
+  // Compatibility only. The shared recording menu preference applies automatically.
 }
 
 export interface DepartureGuard {
   readonly generation: number;
   readonly owner?: object;
-  readonly recordingEpoch?: string | null;
   readonly authored: boolean;
 }
-/** Capture BEFORE projection/hashing. The opaque epoch is checked atomically by central. */
+/** Capture loaded-run ownership before projection and hashing. */
 export async function recordingEpochGuard(): Promise<DepartureGuard> {
   const serial = generation;
-  const owner = current()?.owner;
-  const authored = Boolean(owner && gated?.owner === owner && lab.personaRecordingAllowed && lab.telemetryOn);
+  const state = current();
+  const owner = state?.owner;
+  const authored = Boolean(owner && gated?.owner === owner && !gatedFile && !state?.invalidHistory);
   await shelf.ready;
   if (serial !== generation || current()?.owner !== owner)
-    throw new Error('The loaded run or recording preference changed. Try the checkpoint again.');
-  const epoch = shelf.enabled
-    ? await shelf.request<{ recordingEpoch?: string | null }>({ action: 'recording' })
-    : undefined;
-  if (serial !== generation || current()?.owner !== owner)
-    throw new Error('The loaded run or recording preference changed. Try the checkpoint again.');
-  return {
-    generation: serial,
-    owner,
-    recordingEpoch: epoch?.recordingEpoch,
-    authored: Boolean(authored && epoch && 'recordingEpoch' in epoch),
-  };
+    throw new Error('The loaded run changed. Try the checkpoint again.');
+  return { generation: serial, owner, authored };
 }
 export function departureGuardCurrent(guard: DepartureGuard): boolean {
   return guard.generation === generation && guard.owner === current()?.owner;
@@ -205,7 +96,7 @@ export async function publishPersona(
   const checked = await validatePersona(envelope);
   await shelf.ready;
   if (options.guard && !departureGuardCurrent(options.guard))
-    throw new Error('The loaded run or recording preference changed. Try the checkpoint again.');
+    throw new Error('The loaded run changed. Try the checkpoint again.');
   if (options.scope && options.scope !== 'shared')
     return acceptLocalPersona(checked, { fork: options.fork, arrival: options.arrival });
   const request = {
@@ -213,7 +104,6 @@ export async function publishPersona(
     envelope: checked,
     fork: options.fork,
     authored: Boolean(options.guard?.authored),
-    recordingEpoch: options.guard?.recordingEpoch ?? undefined,
   };
   const accepted = await validatePersona(await shelf.request<PersonaEnvelope>(request));
   if (accepted.revision !== checked.revision)
@@ -296,19 +186,15 @@ export function continuityControls(): HTMLElement {
   return panel;
 }
 if (typeof window !== 'undefined') {
-  const identityChanged = () => {
+  const shelfChanged = () => {
     const state = current();
     const file = gatedFile;
     invalidateContinuity();
     void gateContinuity(state, file).catch(() => {});
   };
-  window.addEventListener('hf-lab-preference', identityChanged);
+  window.addEventListener('hf-persona-preference', shelfChanged);
   window.addEventListener('storage', (event) => {
-    if (
-      event.key === null ||
-      ['hf-lab-player', 'hf-lab-recording-off', 'hf-lab-events-off:murmur'].includes(event.key)
-    )
-      identityChanged();
+    if (event.key === null || event.key === 'hf-persona-opt-in') shelfChanged();
   });
 }
 

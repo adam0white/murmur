@@ -1,5 +1,4 @@
-import { feedbackPersonaControl } from '@adam0white/lab-kit';
-import { chooseContinuityRecording } from './continuity.ts';
+import { feedbackPersonaControl, feedbackSharePlay } from '@adam0white/lab-kit';
 import type { lab as gameLab } from './lab.ts';
 
 const NAME_KEY = 'hf-lab-feedback-name';
@@ -39,7 +38,7 @@ export function showFeedback(options: {
   wrap.innerHTML = `<section class="feedback" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
     <div class="feedback-heading"><button id="feedback-back">← Back</button><h2 id="feedback-title">Send word</h2></div>
     <div class="feedback-body">
-      <p>Send a note about this game. Recording and continuing-person choices are optional.</p>
+      <p>Send a note about this game. Recorded play links across games on this device. You can switch recording off in the menu.</p>
       <div class="verdicts" role="group" aria-label="Would you keep playing?">
         <button type="button" class="chip" data-verdict="keep" aria-pressed="false">I'd keep playing</button>
         <button type="button" class="chip" data-verdict="mixed" aria-pressed="false">Not sure</button>
@@ -55,7 +54,7 @@ export function showFeedback(options: {
       <button type="button" id="feedback-download">Keep a copy of this run</button>
       <p role="status" id="feedback-status"></p>
     </div>
-    <div class="feedback-actions page-actions"><button class="primary" id="feedback-send">Send</button></div>
+    <div class="feedback-actions page-actions"><button class="primary" id="feedback-send">Submit</button></div>
   </section>`;
   app.append(wrap);
   const note = wrap.querySelector<HTMLTextAreaElement>('#feedback-note')!;
@@ -69,24 +68,7 @@ export function showFeedback(options: {
       return undefined;
     }
   };
-  const personaChoice = feedbackPersonaControl({
-    personaRecordingRequired: lab.personaRecordingRequired,
-    get personaRecordingAllowed() {
-      return lab.personaRecordingAllowed;
-    },
-    allowPersonaRecording(allow) {
-      void Promise.resolve()
-        .then(() => chooseContinuityRecording(allow))
-        .then(syncPersonaChoice, syncPersonaChoice);
-    },
-  });
-  function syncPersonaChoice() {
-    const input = personaChoice?.querySelector('input');
-    if (input) input.checked = lab.personaRecordingAllowed;
-  }
-  if (personaChoice?.lastChild)
-    personaChoice.lastChild.textContent =
-      ' Link all continuing histories in this run to lab recording (optional)';
+  const personaChoice = feedbackPersonaControl(lab);
   if (personaChoice) wrap.querySelector('textarea')?.after(personaChoice);
 
   let verdict = '';
@@ -159,9 +141,14 @@ export function showFeedback(options: {
       .filter(Boolean)
       .join('\n\n');
     try {
-      const noteOnly = !lab.telemetryOn || (lab.privacySignalOn && !lab.privacyOverride);
-      const receipt = await lab.sendFeedback(submittedNote, { name: submittedName, run: feedbackRun() });
-      const sentMessage = `${noteOnly ? 'Note and verdict queued without a run or history linkage' : 'Note and verdict queued. Run details depend on recording and availability; continuing-person history links only after explicit consent'} · ${receipt}`;
+      const sharePlay = feedbackSharePlay(personaChoice);
+      const noteOnly = !lab.telemetryOn && !sharePlay;
+      const receipt = await lab.sendFeedback(submittedNote, {
+        name: submittedName,
+        run: feedbackRun(),
+        sharePlay,
+      });
+      const sentMessage = `${noteOnly ? 'Note and verdict queued without a run or history linkage' : 'Note and verdict queued with available run and linked play'} · ${receipt}`;
       try {
         if (submittedName) localStorage.setItem(NAME_KEY, submittedName);
         else localStorage.removeItem(NAME_KEY);
