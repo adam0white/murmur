@@ -242,3 +242,34 @@ it('keeps an explicitly started run when the asynchronous bootstrap finishes lat
     await page.close();
   }
 }, 30000);
+
+it('does not grant an unverified title history from the inline choice and still sends the note', async () => {
+  const page = await browser.newPage();
+  try {
+    await page.goto(url);
+    await page.evaluate(async () => {
+      const { lab } = await new Function('return import("/src/ui/lab.ts")')();
+      lab.setPersonaRecording('unverified-title-fixture');
+      const calls: unknown[] = [];
+      Object.assign(window, { scopedFeedbackCalls: calls });
+      lab.sendFeedback = async (...args: unknown[]) => {
+        calls.push(args);
+        return 'scoped-note';
+      };
+    });
+    await page.locator('#menu').click();
+    await page.locator('#bp-send').click();
+    await page.getByRole('checkbox', { name: /Link all continuing histories/ }).click();
+    expect(
+      await page.evaluate(
+        async () => (await new Function('return import("/src/ui/lab.ts")')()).lab.personaRecordingAllowed,
+      ),
+    ).toBe(false);
+    expect(await page.locator('#feedback-send').isEnabled()).toBe(true);
+    await page.locator('#feedback-note').fill('An unverified history must not block this note.');
+    await page.locator('#feedback-send').click();
+    await expect.poll(() => page.evaluate(() => Reflect.get(window, 'scopedFeedbackCalls').length)).toBe(1);
+  } finally {
+    await page.close();
+  }
+}, 30000);

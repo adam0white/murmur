@@ -1,4 +1,5 @@
 import { feedbackPersonaControl } from '@adam0white/lab-kit';
+import { chooseContinuityRecording } from './continuity.ts';
 import type { lab as gameLab } from './lab.ts';
 
 const NAME_KEY = 'hf-lab-feedback-name';
@@ -68,7 +69,24 @@ export function showFeedback(options: {
       return undefined;
     }
   };
-  const personaChoice = feedbackPersonaControl(lab);
+  const personaChoice = feedbackPersonaControl({
+    personaRecordingRequired: lab.personaRecordingRequired,
+    get personaRecordingAllowed() {
+      return lab.personaRecordingAllowed;
+    },
+    allowPersonaRecording(allow) {
+      void Promise.resolve()
+        .then(() => chooseContinuityRecording(allow))
+        .then(syncPersonaChoice, syncPersonaChoice);
+    },
+  });
+  function syncPersonaChoice() {
+    const input = personaChoice?.querySelector('input');
+    if (input) input.checked = lab.personaRecordingAllowed;
+  }
+  if (personaChoice?.lastChild)
+    personaChoice.lastChild.textContent =
+      ' Link all continuing histories in this run to lab recording (optional)';
   if (personaChoice) wrap.querySelector('textarea')?.after(personaChoice);
 
   let verdict = '';
