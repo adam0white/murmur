@@ -1030,6 +1030,9 @@ summary {
   flex: 1;
   min-height: 0;
 }
+.title .title-spacer:has(.lk-telemetry-notice) {
+  flex: 0 0 auto;
+}
 .other-ways-wrap {
   padding: 0 16px;
 }

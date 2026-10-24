@@ -45,12 +45,13 @@ async function documentTargets(page: Page, height: number) {
     expect(box?.height, await el.innerText()).toBeGreaterThanOrEqual(44);
     expect(box?.y).toBeGreaterThanOrEqual(0);
     expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(height);
-    if (box) boxes.push(box);
+    if (box) boxes.push({ ...box, label: await el.innerText(), id: await el.getAttribute('id') });
   }
   for (const [i, a] of boxes.entries()) {
     for (const b of boxes.slice(i + 1)) {
       expect(
         a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y,
+        JSON.stringify({ a, b }),
       ).toBe(true);
     }
   }
@@ -886,3 +887,22 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
     }
   });
 });
+
+it('reserves first-visit notice height when mobile text wraps', async () => {
+  const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
+  try {
+    await page.goto(origin);
+    const notice = page.locator('.lk-telemetry-notice');
+    await notice.waitFor();
+    // Mobile system fonts and user text sizing can wrap the longer automatic-linkage notice.
+    await notice.evaluate((el) => {
+      el.style.font = '16px/1.4 system-ui';
+    });
+    await documentTargets(page, 690);
+    const noticeBox = await notice.boundingBox();
+    const spacer = await page.locator('.title-spacer').boundingBox();
+    expect(spacer?.height).toBeGreaterThanOrEqual(noticeBox?.height ?? 0);
+  } finally {
+    await page.close();
+  }
+}, 30000);
