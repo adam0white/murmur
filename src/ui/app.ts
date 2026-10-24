@@ -125,6 +125,13 @@ let activePanel: { kind: 'info' | 'menu'; close: () => void } | null = null;
 const journalMarkup = new WeakMap<HTMLElement, string>();
 let history: { state: GameState; minute: number; applied: number; records: MomentRecord[] } | null = null;
 let toast = '';
+let failureRetry: (() => void) | null = null;
+
+function recordFailure(error: unknown, message: string, retry: () => void) {
+  console.warn('Two Voices could not complete the action.', error);
+  toast = labMode ? (error instanceof Error ? error.message : String(error)) : message;
+  failureRetry = labMode ? null : retry;
+}
 let wake: { release(): Promise<void> } | null = null;
 
 // Gate is installed before automatic telemetry obtains a run.
@@ -384,13 +391,13 @@ function title() {
     saved =
       save?.state ??
       (save ? replay(save.seed, save.inputs, undefined, save.version ?? LEGACY_VERSION) : null);
-  } catch {
-    toast = 'This notebook is from an older version; start fresh.';
+  } catch (error) {
+    recordFailure(error, 'We could not open your saved week. Your saved week is still here.', title);
   }
   app.innerHTML = `${header()}<div class="page title"><div class="page-body">
     <h1>Two Voices</h1>
     <p>You are one of the voices in Dilan’s head. Suggest what she should do during her week, from Monday to Saturday. Your words can change her choices.</p>${labMode ? `<p>${esc(castIntroduction())}</p>` : ''}
-    ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
+    ${toast ? `<div class="${failureRetry ? 'start-error' : 'toast'}" role="alert"><p>${esc(toast)}</p>${failureRetry ? '<div class="failure-actions"><button id="start-retry">Try again</button><button id="start-feedback">Feedback</button></div>' : ''}</div>` : ''}
     </div>${labMode ? '<div class="other-ways-wrap"><button class="row" id="other-ways">Lab tools <span aria-hidden="true">▸</span></button></div>' : ''}
     <footer class="title-spacer" id="title-spacer"></footer>
     <div class="page-actions actions">
@@ -406,7 +413,14 @@ function title() {
       ${labMode ? credit() : ''}
     </div></div>`;
   toast = '';
+  const retry = failureRetry;
+  failureRetry = null;
   bindHeader();
+  document.getElementById('start-retry')?.addEventListener('click', (event) => {
+    (event.currentTarget as HTMLButtonElement).disabled = true;
+    retry?.();
+  });
+  document.getElementById('start-feedback')?.addEventListener('click', () => feedback());
   expireToast();
   if (notice && !notice.dataset.shown) {
     document.getElementById('title-spacer')?.append(notice);
@@ -423,7 +437,9 @@ function title() {
       await gateContinuity(recordingState(s));
       enter();
     } catch (error) {
-      toast = error instanceof Error ? error.message : 'This notebook could not be loaded.';
+      recordFailure(error, 'We could not resume your saved week. Your saved week is still here.', () => {
+        document.getElementById('cont')?.click();
+      });
       title();
     }
   });
@@ -539,7 +555,15 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
         : newGame(seed, version);
   } catch (error) {
     if (attempt === loadGeneration) {
-      toast = error instanceof Error ? error.message : String(error);
+      recordFailure(
+        error,
+        readSave()
+          ? 'We could not start a new game. Your saved week is still here.'
+          : 'We could not start the game. You can try again or send Feedback.',
+        () => {
+          void newWeek(seed, version, useShelf);
+        },
+      );
       title();
     }
     return;

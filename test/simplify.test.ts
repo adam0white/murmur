@@ -84,35 +84,56 @@ it('starts local development play without making a shared admission', async () =
   }
 }, 30000);
 
-it('preserves the existing saved week when production admission loses its response', async () => {
-  const page = await browser.newPage({ serviceWorkers: 'block' });
-  const state = newGame(19, '0.2.1');
-  const saved = JSON.stringify({ version: state.version, seed: state.seed, inputs: state.inputs, state });
-  try {
-    await page.addInitScript((saved) => localStorage.setItem('murmur-save-v1', saved), saved);
-    await page.route('https://murmur.adamwhite.work/**', async (route) => {
-      const requested = new URL(route.request().url());
-      await route.fulfill({
-        response: await route.fetch({ url: new URL(requested.pathname + requested.search, url).href }),
+for (const labMode of [false, true])
+  it(`preserves the saved week and explains a failed production admission (${labMode ? 'lab' : 'ordinary'})`, async () => {
+    const page = await browser.newPage({ serviceWorkers: 'block', viewport: { width: 360, height: 690 } });
+    const state = newGame(19, '0.2.1');
+    const saved = JSON.stringify({ version: state.version, seed: state.seed, inputs: state.inputs, state });
+    try {
+      await page.addInitScript((saved) => localStorage.setItem('murmur-save-v1', saved), saved);
+      await page.route('https://murmur.adamwhite.work/**', async (route) => {
+        const requested = new URL(route.request().url());
+        await route.fulfill({
+          response: await route.fetch({ url: new URL(requested.pathname + requested.search, url).href }),
+        });
       });
-    });
-    await page.route('https://human.adamwhite.work/**', (route) => route.abort());
-    await page.goto('https://murmur.adamwhite.work/?lab=1');
-    await page.locator('#new').waitFor();
-    await page.evaluate(async () => {
-      const { shelf } = await new Function('return import("/src/ui/continuity.ts")')();
-      Object.defineProperty(shelf, 'enabled', { get: () => true });
-      shelf.request = async () => {
-        throw new Error('Shelf unavailable. The response was lost.');
-      };
-    });
-    await page.locator('#new').click();
-    await page.locator('#confirm-new').click();
-    await page.locator('.toast').waitFor();
-    expect(await page.locator('.toast').innerText()).toContain('response was lost');
-    expect(await page.locator('#cont').isVisible()).toBe(true);
-    expect(await page.evaluate(() => localStorage.getItem('murmur-save-v1'))).toBe(saved);
-  } finally {
-    await page.close();
-  }
-}, 30000);
+      await page.route('https://human.adamwhite.work/**', (route) => route.abort());
+      await page.goto(`https://murmur.adamwhite.work/${labMode ? '?lab=1' : ''}`);
+      await page.locator('#new').waitFor();
+      await page.evaluate(async () => {
+        const { shelf } = await new Function('return import("/src/ui/continuity.ts")')();
+        Object.defineProperty(shelf, 'enabled', { get: () => true });
+        shelf.request = async () => {
+          throw new Error('Shelf unavailable. The response was lost.');
+        };
+      });
+      await page.locator('#new').click();
+      await page.locator('#confirm-new').click();
+      const error = page.locator(labMode ? '.toast' : '.start-error');
+      await error.waitFor();
+      if (labMode) {
+        expect(await error.innerText()).toContain('response was lost');
+      } else {
+        expect(await error.innerText()).toContain('Your saved week is still here.');
+        expect(await page.locator('body').innerText()).not.toMatch(
+          /Shelf unavailable|local file|response was lost/,
+        );
+        expect(await page.locator('#start-retry').isVisible()).toBe(true);
+        expect(await page.locator('#start-feedback').isVisible()).toBe(true);
+        for (const selector of ['#start-retry', '#start-feedback']) {
+          const box = await page.locator(selector).boundingBox();
+          expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(690);
+        }
+        expect(await page.evaluate(() => Boolean(window.__murmur))).toBe(false);
+        await page.locator('#start-feedback').click();
+        expect(await page.locator('#feedback-title').innerText()).toBe('Feedback');
+        await page.locator('#feedback-back').click();
+        await page.locator('#start-retry').click();
+        await page.locator('#start-retry:not(:disabled)').waitFor();
+      }
+      expect(await page.locator('#cont').isVisible()).toBe(true);
+      expect(await page.evaluate(() => localStorage.getItem('murmur-save-v1'))).toBe(saved);
+    } finally {
+      await page.close();
+    }
+  }, 30000);

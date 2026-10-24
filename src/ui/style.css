@@ -1658,3 +1658,26 @@ body {
   max-height: calc(100% - 76px);
   overflow-y: auto;
 }
+
+/* A failed start keeps its explanation and recovery actions in the reading area. */
+.start-error {
+  border: 1px solid var(--ink-soft);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.failure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.failure-actions button {
+  flex: 1;
+}
+.title:has(.start-error) .page-body > p {
+  display: none;
+}
+.title:has(.start-error) .title-spacer {
+  flex: 0 0 auto;
+}
