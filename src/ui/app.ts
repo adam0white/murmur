@@ -5,6 +5,7 @@
  */
 import { FRAMEWORK_VERSION } from '@adam0white/human-framework';
 import { telemetryNotice, telemetryToggle } from '@adam0white/lab-kit';
+import { castIntroduction } from '../sim/canonical-cast.ts';
 import { PULL, YOU } from '../sim/dilan.ts';
 import { playedFirstWeek } from '../sim/firstweek.ts';
 import {
@@ -33,6 +34,7 @@ import {
 } from '../sim/game.ts';
 import { departureReleaseDescription } from '../sim/one-cast.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
+import { canonicalPersonControls, freshCanonicalWeek, heldCanonicalWeek } from './cast-chapter.ts';
 import { continuityControls, gateContinuity, installContinuity, invalidateContinuity } from './continuity.ts';
 import { showFeedback } from './feedback.ts';
 import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
@@ -374,14 +376,14 @@ function title() {
   }
   app.innerHTML = `${header()}<div class="page title"><div class="page-body">
     <h1>The Two Voices</h1><p class="soft subtitle">an ordinary week, from the inside</p>
-    <p>Accompany Dilan from Monday to Saturday. Your words can change her choices and become her own.</p>
+    <p>Accompany Dilan from Monday to Saturday. Your words can change her choices and become her own.</p><p>${esc(castIntroduction())}</p>
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     </div><div class="other-ways-wrap"><button class="row" id="other-ways">Other ways in <span aria-hidden="true">▸</span></button></div>
     <div class="title-spacer" id="title-spacer"></div>
     <div class="page-actions actions">
       ${saved ? `<button class="primary" id="cont">Continue · ${esc(DAY_NAMES[saved!.day]?.slice(0, 3) ?? '')} ${clock(saved!.minute)}</button>` : ''}
-      <button id="fresh-authored">Start a fresh authored Dilan</button>
-      <button id="return-shelf">Look for Dilan’s return from Hearsay</button><button id="held-return">Resume a locally held return</button><button id="return-fork">Explicitly fork a competing return</button><p id="return-status" class="soft small"></p>
+      <button id="fresh-authored">Play a fresh local week</button>
+      <button id="return-shelf">Continue people from this browser</button><button id="held-cast">Resume a held accepted chapter</button><p id="return-status" class="soft small"></p>
       <button class="${save ? '' : 'primary'}" id="new">${save ? 'A new week' : 'Wake her up'}</button>
       <div id="new-confirm" hidden><p>This tears out the week so far.</p><div class="confirm-actions"><button id="confirm-new">Yes, a new week</button><button id="cancel-new">No</button></div></div>
       ${credit()}
@@ -408,6 +410,22 @@ function title() {
       title();
     }
   });
+  document.getElementById('held-cast')?.addEventListener('click', async () => {
+    const attempt = ++loadGeneration;
+    try {
+      const held = await heldCanonicalWeek();
+      if (!held) throw Error('No accepted held chapter is available.');
+      if (attempt !== loadGeneration) return;
+      invalidateContinuity();
+      s = held;
+      await gateContinuity(recordingState(s));
+      writeSave();
+      enter();
+    } catch (e) {
+      toast = String(e);
+      title();
+    }
+  });
   document.getElementById('new')?.addEventListener('click', () => {
     if (!save) newWeek(urlSeed() ?? randomSeed());
     else {
@@ -426,7 +444,7 @@ function title() {
   document.getElementById('return-shelf')?.addEventListener('click', async () => {
     try {
       const attempt = ++loadGeneration;
-      const arrived = await returnedChapter(undefined, 'shared', false, () => attempt === loadGeneration);
+      const arrived = await freshCanonicalWeek(urlSeed() ?? randomSeed(), () => attempt === loadGeneration);
       if (attempt !== loadGeneration) return;
       if (!arrived)
         throw new Error('No supported return is on this browser’s shelf. Fresh play remains available.');
@@ -495,16 +513,23 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   const attempt = ++loadGeneration;
   invalidateContinuity();
   // Only creation may inspect the shelf. A loaded run never changes underneath play.
-  let arrival: GameState | null = null;
+  let next: GameState;
   try {
-    if (useShelf && version === GAME_VERSION)
-      arrival = await returnedChapter(undefined, 'shared', false, () => attempt === loadGeneration);
+    next =
+      useShelf && version === GAME_VERSION
+        ? await freshCanonicalWeek(seed, () => attempt === loadGeneration)
+        : newGame(seed, version);
   } catch (error) {
-    toast = error instanceof Error ? error.message : String(error);
+    if (attempt === loadGeneration) {
+      toast = error instanceof Error ? error.message : String(error);
+      title();
+    }
+    return;
   }
   if (attempt !== loadGeneration) return;
   clearSave();
-  s = arrival ?? newGame(seed, version);
+  s = next;
+  if (!useShelf) s.castScope = 'local';
   await gateContinuity(recordingState(s));
   writeSave();
   enter();
@@ -551,6 +576,10 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       if (attempt !== loadGeneration) return;
       s = r;
       s.fileHistory = true;
+      if (s.cast) {
+        s.castScope = 'file';
+        s.castHeadScopes = {};
+      }
       await gateContinuity(recordingState(s), Boolean(r.personaHead));
       writeSave();
       toast = note;
@@ -1089,7 +1118,7 @@ function ending() {
     ${
       s.returnChapter
         ? `<section><h2 class="notebook-text">Back from the garden</h2><p>${esc(s.log.findLast((line) => line.text.startsWith('Back from the garden.'))?.text ?? '')}</p><p>The previous week stays in this notebook. Another week continues from this new chapter.</p></section>`
-        : s.version === GAME_VERSION
+        : s.version === '0.5.0'
           ? `<section><h2 class="notebook-text">A short visit</h2><p>The route week is over. Dilan can visit Hatice’s tea garden in Istanbul. Aylin is still her sister; Mum, Ece and depot Murat remain her own relations, distinct from the garden’s namesakes.</p><p>She will explicitly set aside these unfinished purposes for the visit: ${esc(
               departureReleaseDescription(s).join(', ') || 'none',
             )}. The unfinished shelf stays at home for this visit. These purposes become new intentions on her return; their earlier progress stays in this week’s record. Dated alarm, dinner and call promises remain in the week’s record; unresolved promises block departure. No success is invented.</p><button id="depart">Set aside unfinished purposes and make the visit</button><button id="depart-fork">Explicitly fork this competing departure</button><p id="departure-status" role="status">${esc(continuityMessage())}</p><a href="https://hearsay.adamwhite.work/">Visit Hearsay</a></section>`
@@ -1229,10 +1258,11 @@ function backPage() {
   activePanel = { kind: 'menu', close };
   el.querySelector('#menu-recording')?.append(telemetryToggle(lab));
   el.querySelector('#menu-recording')?.append(continuityControls());
+  if (s?.cast) el.querySelector('#menu-recording')?.append(canonicalPersonControls(s, writeSave));
   const passport = document.createElement('div');
   passport.innerHTML =
     '<button id="passport-export">Download Dilan’s passport</button><button id="passport-import">Import a returned passport</button><button id="passport-fork">Explicitly fork the selected competing return</button><input type="file" id="passport-file" accept=".json" hidden><p id="passport-status" role="status"></p>';
-  el.querySelector('#menu-recording')?.append(passport);
+  if (!s?.cast) el.querySelector('#menu-recording')?.append(passport);
   passport.querySelector('#passport-export')?.addEventListener('click', async () => {
     try {
       if (!s) throw new Error('Play Dilan’s week first.');

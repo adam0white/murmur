@@ -14,7 +14,7 @@ import {
 import type { GameState } from '../src/sim/types.ts';
 
 function playedSaturday(seed = 31): GameState {
-  const s = newGame(seed);
+  const s = newGame(seed, '0.5.0');
   for (let i = 0; i < 2000 && s.phase !== 'end'; i++) {
     if (s.phase === 'evening') queueInput(s, { kind: 'next' });
     else {

@@ -1,6 +1,6 @@
 {
   "name": "murmur",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "description": "The Two Voices: you are one person's inner voice through an ordinary week. Every evening they look back.",
@@ -22,7 +22,7 @@
     "check:lane": "npm run check"
   },
   "dependencies": {
-    "@adam0white/human-framework": "2.15.0",
+    "@adam0white/human-framework": "2.18.0",
     "@adam0white/lab-client": "file:vendor/adam0white-lab-client-0.4.4.tgz",
     "@adam0white/lab-kit": "file:vendor/adam0white-lab-kit-0.5.4.tgz"
   },

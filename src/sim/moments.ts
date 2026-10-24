@@ -1,3 +1,4 @@
+import { CAST_MOMENTS, CAST_VERSION } from './canonical-cast.ts';
 /**
  * The week, as moments. Content only: scene lines, the pull's lines, and what Dilan could do. Every tempting
  * option carries a `temptation` tag and a norm from HF's own catalog, so HF notices it as a prompt; options the
@@ -212,7 +213,7 @@ const callMum: Opt = {
   done: (c) =>
     c.missedMum >= 2
       ? 'Mum picked up on the first ring. Neither of them mentioned the voice note.'
-      : c.version === '0.4.2' || c.version === '0.5.0'
+      : c.version === '0.4.2' || c.version === '0.5.0' || c.version === '0.6.0'
         ? byDay(c, [
             'Twenty minutes. Mum talked about the neighbour’s roof. Dilan laughed twice.',
             'Mum had bought too many tomatoes. Dilan was given instructions for three dinners.',
@@ -818,7 +819,7 @@ const wednesday: Moment[] = [
     at: at(19, 45),
     place: 'aylin',
     scene: (c) =>
-      (c.version === '0.4.2' || c.version === '0.5.0') && c.flags.route
+      (c.version === '0.4.2' || c.version === '0.5.0' || c.version === '0.6.0') && c.flags.route
         ? 'Aylin’s kitchen. She is fifteen minutes late after finishing the extra route. Aylin has saved her a plate. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”'
         : 'Aylin’s kitchen. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”',
     pull: {
@@ -1377,8 +1378,11 @@ export const MOMENTS: Moment[] = [
 export const LAST_DAY = 6;
 export const WEEK_TWO_LAST_DAY = 13;
 export const momentById = (id: string): Moment => {
-  const m = MOMENTS.find((x) => x.id === id);
+  const m = [...MOMENTS, ...CAST_MOMENTS].find((x) => x.id === id);
   if (!m) throw new Error(`no moment ${id}`);
   return m;
 };
-export const momentsOf = (day: number): Moment[] => MOMENTS.filter((m) => m.day === day);
+export const momentsOf = (day: number, version?: string): Moment[] => [
+  ...(version === CAST_VERSION ? CAST_MOMENTS.filter((m) => m.day === day) : []),
+  ...MOMENTS.filter((m) => m.day === day),
+];

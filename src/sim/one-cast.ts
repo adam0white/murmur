@@ -189,7 +189,7 @@ function checkedReturn(value: unknown): DilanTransfer {
   if (
     person.mappingVersion !== RETURN_MAPPING ||
     person.source.id !== 'dilan-delivery' ||
-    person.source.engine !== '2.14.1' ||
+    !['2.14.1', '2.17.0'].includes(person.source.engine) ||
     person.name !== 'Dilan'
   )
     throw new Error('This return is not Hearsay’s Dilan mapping.');

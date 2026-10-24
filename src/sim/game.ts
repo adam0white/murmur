@@ -11,6 +11,7 @@
 import {
   type Activity,
   type Affordance,
+  adoptGoal,
   begin,
   bodyForecast,
   type DecisionRecord,
@@ -28,6 +29,18 @@ import {
   snapshot,
   tick,
 } from '@adam0white/human-framework';
+import {
+  advanceCast,
+  CAST_VERSION,
+  castMoment,
+  castOptions,
+  castScene,
+  cloneCast,
+  finishCastEncounter,
+  freshCast,
+} from './canonical-cast.ts';
+import type { CastChapter } from './cast-chapter.ts';
+import { releaseCastSource } from './cast-source.ts';
 import { DAY0, dayStart, LABEL, makeDilan, PULL, REVIEW_AT, renewDailyPromises, WAKE, YOU } from './dilan.ts';
 import {
   configureListening,
@@ -59,7 +72,7 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = '0.5.0';
+export const GAME_VERSION = CAST_VERSION;
 export const LEGACY_VERSION = '0.2.1';
 export const isEdition = (version: string) => listens({ version }) || version === LEGACY_VERSION;
 export const DAY_NAMES = [
@@ -128,12 +141,25 @@ function blankStats(p: Person): DayStats {
   };
 }
 
-export function newGame(seed: number, version = GAME_VERSION): GameState {
+export function newGame(seed: number, version = GAME_VERSION, chapter?: CastChapter): GameState {
   if (!isEdition(version)) throw new Error(`Unknown Murmur edition: ${version}`);
-  const person = makeDilan(seed);
+  if (chapter?.resume) {
+    const resumed = restoreState(chapter.resume.source);
+    resumed.cast = cloneCast(chapter.initial);
+    resumed.person = resumed.cast.people.dilan;
+    resumed.castChapter = structuredClone(chapter);
+    return resumed;
+  }
+  if (chapter && (version !== CAST_VERSION || chapter.edition !== CAST_VERSION || chapter.seed !== seed))
+    throw Error('Wrong pinned cast chapter.');
+  const cast =
+    version === CAST_VERSION ? (chapter ? cloneCast(chapter.initial) : freshCast(seed)) : undefined;
+  const person = cast?.people.dilan ?? makeDilan(seed);
   if (listens({ version })) configureListening(person);
   const s: GameState = {
     version,
+    ...(cast ? { cast } : {}),
+    ...(chapter ? { castChapter: structuredClone(chapter) } : {}),
     seed,
     day: 1,
     phase: 'day',
@@ -141,7 +167,7 @@ export function newGame(seed: number, version = GAME_VERSION): GameState {
     person,
     inputs: [],
     applied: 0,
-    queue: momentsOf(1).map((m) => m.id),
+    queue: momentsOf(1, version).map((m) => m.id),
     card: null,
     answer: null,
     log: [],
@@ -187,11 +213,12 @@ export function ctxOf(s: GameState): Ctx {
 }
 
 /** The card's moment, if one is open. */
-export const openMoment = (s: GameState): Moment | null => (s.card ? momentById(s.card.moment) : null);
+export const openMoment = (s: GameState): Moment | null =>
+  s.card ? castMoment(s, momentById(s.card.moment)) : null;
 
 export function optionsOf(s: GameState, m: Moment): Opt[] {
   const c = ctxOf(s);
-  return typeof m.options === 'function' ? m.options(c) : m.options;
+  return castOptions(s, m, typeof m.options === 'function' ? m.options(c) : m.options);
 }
 
 function pendingId(p: Person, label: string): string | undefined {
@@ -208,7 +235,7 @@ function affordanceOf(s: GameState, o: Opt, m: Moment): Affordance {
     duration: o.duration,
     effort: o.effort ?? 0.05,
     advertises: o.advertises ?? {},
-    placeId: o.placeId ?? m.place,
+    placeId: s.cast && m.id === 'alarm-1' ? (s.cast.places.dilan ?? m.place) : (o.placeId ?? m.place),
   };
   if (o.focus !== undefined) aff.focus = o.focus;
   if (o.tags) aff.tags = [...o.tags];
@@ -335,7 +362,7 @@ export function cardView(s: GameState): CardView | null {
   const view: CardView = {
     id: m.id,
     day: m.day,
-    scene: text(m.scene, c),
+    scene: castScene(s, m, text(m.scene, c)),
     pullLine: card.borrowed && m.pull.borrow ? m.pull.borrow : text(m.pull.line, c),
     pullTo: m.pull.to,
     borrowed: card.borrowed,
@@ -376,6 +403,7 @@ function resolveLine(label: string): string {
 // ---------- inputs ----------
 
 export function queueInput(s: GameState, input: NewInput): void {
+  if (input.kind === 'cast-pause') releaseCastSource(cloneState(s), input.role);
   if (input.kind === 'one-cast-release') releaseOneCastDeparture(cloneState(s));
   s.inputs.push({ ...input, at: s.minute } as Input);
   applyPending(s);
@@ -391,13 +419,22 @@ function applyPending(s: GameState) {
 }
 
 function apply(s: GameState, inp: Input) {
+  if (inp.kind === 'cast-pause') {
+    releaseCastSource(s, inp.role);
+    say(
+      s,
+      'narrator',
+      `${inp.role} explicitly paused this chapter; unfinished purposes remain recorded in its full source.`,
+    );
+    return;
+  }
   if (inp.kind === 'one-cast-release') {
     s.oneCastDeparture = releaseOneCastDeparture(s);
     return;
   }
   if (inp.kind === 'say') {
     if (s.phase !== 'day' || !s.card) return;
-    const m = momentById(s.card.moment);
+    const m = castMoment(s, momentById(s.card.moment));
     if (!optionsOf(s, m).some((o) => o.id === inp.option)) return;
     resolve(s, { option: inp.option, insist: inp.insist === true });
     return;
@@ -420,6 +457,7 @@ function apply(s: GameState, inp: Input) {
 /** Advance one sim minute. */
 export function step(s: GameState): void {
   if (s.phase !== 'day') return;
+  advanceCast(s, s.minute);
   applyPending(s);
   if (s.phase !== 'day') return;
   if (s.card) {
@@ -427,7 +465,7 @@ export function step(s: GameState): void {
   } else {
     const c = ctxOf(s);
     while (s.queue.length > 0) {
-      const m = momentById(s.queue[0] as string);
+      const m = castMoment(s, momentById(s.queue[0] as string));
       if (m.when && !m.when(ctxOf(s))) {
         if (getsUpAlone(s, m)) {
           const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(ctxOf(s)) : m.at);
@@ -452,7 +490,7 @@ export function step(s: GameState): void {
       endDay(s);
       return;
     }
-    const m = momentById(id);
+    const m = castMoment(s, momentById(id));
     const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(c) : m.at);
     if (s.minute >= at && s.minute >= s.person.now) open(s, m);
   }
@@ -471,7 +509,7 @@ function open(s: GameState, m: Moment) {
   // The journal keeps what was asked, so a card that closed while the player was away still reads.
   const c = ctxOf(s);
   const v = cardView(s);
-  s.log.push({ at: s.minute, who: 'scene', text: text(m.scene, c) });
+  s.log.push({ at: s.minute, who: 'scene', text: castScene(s, m, text(m.scene, c)) });
   if (v) s.log.push({ at: s.minute, who: 'pull', text: v.pullLine });
   if (v?.recalled) {
     for (const t of s.thoughts ?? []) {
@@ -615,7 +653,11 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
   const turned = prompts.find((r) => r.outcome === 'turned');
   if (turned && !said) {
     const phrase = s.phrases.find((x) => x.id === turned.responseId);
-    if (phrase && ((s.version !== '0.4.2' && s.version !== '0.5.0') || chosen.phrase?.id === phrase.id)) {
+    if (
+      phrase &&
+      ((s.version !== '0.4.2' && s.version !== '0.5.0' && s.version !== '0.6.0') ||
+        chosen.phrase?.id === phrase.id)
+    ) {
       answer.turnedAlone = phrase.text;
       st.turnedAlone.push(phrase.text);
     }
@@ -654,11 +696,13 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
   s.answer = answer;
   s.chosen[m.id] = chosen.id;
   // Live it.
+  let encounterLine: string | undefined;
   if (begin(p, aff, rec)) {
     const a = p.activity as Activity;
     if (chosen.id === 'write' && m.id.startsWith('bed-')) enableReview(p, { style: 'accounting' });
     tick(p, a.endsAt);
     finish(p, outcomeOf(a, chosen, c));
+    encounterLine = finishCastEncounter(s, m, chosen);
     if (chosen.alsoDoes)
       hostAct(
         p,
@@ -666,7 +710,7 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
         p.now,
       );
   }
-  say(s, 'narrator', text(chosen.done, c));
+  say(s, 'narrator', encounterLine ?? text(chosen.done, c));
   if (answer.turnedAlone) say(s, 'dilan', `${answer.turnedAlone}.`);
   m.after?.(s, chosen.id);
   if (m.id.startsWith('bed-')) {
@@ -756,7 +800,12 @@ function routine(s: GameState): Block[] {
   const work = (from: number, to: number): Block => ({
     from,
     to,
-    aff: offer('dispatch', { effort: 0.22, focus: 0.6, placeId: 'depot', advertises: { competence: 0.05 } }),
+    aff: offer(s.cast?.assignments.dilan === 'local parcel round' ? 'deliver-parcel' : 'dispatch', {
+      effort: 0.22,
+      focus: 0.6,
+      placeId: s.cast?.assignments.dilan === 'local parcel round' ? 'delivery district' : 'depot',
+      advertises: { competence: 0.05 },
+    }),
     // Tea at the desk: she drinks through the shift without thinking about it.
     needs: { competence: 0.05, water: 0.5 },
   });
@@ -883,7 +932,7 @@ function nextDay(s: GameState) {
   s.day += 1;
   s.phase = 'day';
   s.minute = Math.max(wake, p.now);
-  s.queue = momentsOf(s.day).map((m) => m.id);
+  s.queue = momentsOf(s.day, s.version).map((m) => m.id);
   s.flags.late = false;
   s.flags.wroteTonight = false;
   s.stats = blankStats(p);
@@ -993,7 +1042,12 @@ export function voiceNote(s: GameState): string {
   else if (calls >= 1) parts.push('I know I didn’t ring every day. I meant to.');
   else parts.push('I know I didn’t ring. I kept meaning to.');
   if (s.chosen['dinner-3'] === 'truth') parts.push('You asked if I was eating. I’m trying.');
-  if ((s.flags.shelf ?? 0) >= 2) parts.push('I finished the shelf. It’s not straight.');
+  if (
+    s.chosen['shelf-visit-6'] === 'repair-with-aylin' &&
+    s.cast?.encounters.some((e) => e.person === 'aylin' && e.action === 'shelf')
+  )
+    parts.push('Aylin and I finished the shelf together. The uneven edge is still visible inside.');
+  else if ((s.flags.shelf ?? 0) >= 2) parts.push('I finished the shelf. It’s not straight.');
   else if ((s.flags.shelf ?? 0) === 1) parts.push('I started the shelf. Finally.');
   if (s.flags.ownedMistake) parts.push('I messed up at work and said so.');
   parts.push('Anyway. Love you. That’s it.');
@@ -1015,7 +1069,14 @@ function threadsOf(s: GameState): string[] {
     out.push('Murat stopped asking about the ring road. That was worse.');
   else if ((f.lateDays ?? 0) >= 2 && !f.lied)
     out.push('Murat’s note says late twice. In pen. It also says reliable.');
-  if (ch['shelf-4'] === 'aylin')
+  if (
+    ch['shelf-visit-6'] === 'repair-with-aylin' &&
+    s.cast?.encounters.some((e) => e.person === 'aylin' && e.action === 'shelf')
+  )
+    out.push('Dilan and Aylin finished the shelf together. The repaired support stays visible inside.');
+  else if (ch['shelf-visit-6'] === 'leave-shelf')
+    out.push('Aylin came for the agreed visit. They had cake and left the shelf unfinished.');
+  else if (ch['shelf-4'] === 'aylin')
     out.push('Aylin came round on Saturday for the shelf. There was still cake.');
   else if ((f.shelf ?? 0) === 0)
     out.push('The screws are still in their little bag. March is a long time ago now.');
@@ -1086,17 +1147,49 @@ function startWeekTwo(s: GameState) {
   }
   delete s.flags.bedAt;
   renewDailyPromises(s.person, 8);
+  if (s.castChapter?.resume && s.cast) {
+    for (const role of ['dilan', 'aylin', 'ece', 'murat'] as const) {
+      const p = s.cast.people[role];
+      for (const receipt of s.cast.pauses?.[role]?.purposes ?? []) {
+        const old =
+          p.agenda.goals.find((g) => g.id === receipt.id) ??
+          s.castChapter.resume.source.cast?.people[role].agenda.goals.find((g) => g.id === receipt.id);
+        if (old?.status !== 'abandoned' || old.progress !== receipt.progress) continue;
+        const resumed = adoptGoal(
+          p,
+          {
+            label: old.label,
+            serves: [...old.serves],
+            advancedBy: old.advancedBy.map((a) => ({ ...a })),
+            importance: old.importance,
+          },
+          p.now,
+        );
+        resumed.progress = receipt.progress;
+      }
+    }
+  }
 }
 
 // ---------- saves and replays ----------
 
 export function cloneState(s: GameState): GameState {
-  return { ...structuredClone({ ...s, person: null as unknown as Person }), person: snapshot(s.person) };
+  const result = {
+    ...structuredClone({ ...s, person: null as unknown as Person }),
+    person: snapshot(s.person),
+  };
+  if (result.cast) result.cast.people.dilan = result.person;
+  return result;
 }
 
 export function restoreState(json: GameState): GameState {
   if (!isEdition(json.version)) throw new Error(`Unknown Murmur edition: ${json.version}`);
-  return { ...structuredClone({ ...json, person: null as unknown as Person }), person: restore(json.person) };
+  const result = {
+    ...structuredClone({ ...json, person: null as unknown as Person }),
+    person: restore(json.person),
+  };
+  if (result.cast) result.cast.people.dilan = result.person;
+  return result;
 }
 
 /** Rebuild a run from its seed and input log. */
@@ -1105,11 +1198,21 @@ export function replay(
   inputs: readonly Input[],
   until?: number,
   version = LEGACY_VERSION,
+  chapter?: CastChapter,
 ): GameState {
-  const s = newGame(seed, version);
-  for (const inp of inputs) {
+  const s = newGame(seed, version, chapter);
+  const inherited = chapter?.resume?.source.inputs ?? [];
+  if (JSON.stringify(inputs.slice(0, inherited.length)) !== JSON.stringify(inherited))
+    throw Error('Native return input prefix changed.');
+  for (const inp of inputs.slice(inherited.length)) {
     // A 'next' belongs to the evening: run the day out first, even when it ended on the minute of the last answer.
-    while (s.phase === 'day' && (s.minute < inp.at || inp.kind === 'next' || inp.kind === 'one-cast-release'))
+    while (
+      s.phase === 'day' &&
+      (s.minute < inp.at ||
+        inp.kind === 'next' ||
+        inp.kind === 'one-cast-release' ||
+        inp.kind === 'cast-pause')
+    )
       step(s);
     s.inputs.push(inp);
     applyPending(s);
@@ -1145,7 +1248,7 @@ export function nextCardAt(s: GameState): number | null {
   if (s.phase !== 'day' || s.card) return null;
   const c = ctxOf(s);
   for (const id of s.queue) {
-    const m = momentById(id);
+    const m = castMoment(s, momentById(id));
     if (m.when && !m.when(c)) continue;
     const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(c) : m.at);
     return Math.max(at, s.person.now);

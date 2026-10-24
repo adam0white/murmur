@@ -1,3 +1,4 @@
+import { automaticCastCheckpoint, validateCanonicalRun } from './cast-chapter.ts';
 /** Murmur's authored crossing. Transport and recording remain separate from the deterministic week. */
 
 import { snapshot } from '@adam0white/human-framework';
@@ -7,7 +8,7 @@ import {
   type PersonaEnvelope,
   validatePersona,
 } from '@adam0white/lab-client';
-import { cloneState, fingerprint, GAME_VERSION, queueInput, replay, step } from '../sim/game.ts';
+import { cloneState, fingerprint, queueInput, replay, step } from '../sim/game.ts';
 import { createOneCastDeparture, installOneCastReturn } from '../sim/one-cast.ts';
 import type { GameState, OneCastRow } from '../sim/types.ts';
 import {
@@ -43,6 +44,15 @@ export async function initOneCast() {
   await shelf.ready;
 }
 export function recordingState(s: GameState | null) {
+  if (s?.cast)
+    return {
+      owner: s,
+      heads: Object.values(s.castHeads ?? {}).map((head) => ({
+        head,
+        scope: s.castHeadScopes?.[head.castId] ?? s.castScope ?? ('local' as const),
+      })),
+      invalidHistory: Boolean(s.fileHistory),
+    };
   return s
     ? {
         owner: s,
@@ -77,13 +87,14 @@ function requireReturnEnvelope(incoming: PersonaEnvelope): void {
     incoming.castRevision !== '1' ||
     incoming.source.game !== 'hearsay' ||
     !['4', '5'].includes(incoming.source.rules) ||
-    incoming.source.engine !== '2.14.1'
+    !['2.14.1', '2.17.0'].includes(incoming.source.engine)
   )
     throw new Error('This return is from an unsupported edition. Start a fresh week.');
 }
 /** Validate all pinned envelopes before restoring a run; never read the current shelf head. */
 export async function validateRun(json: GameState): Promise<GameState> {
   if (!json || !Array.isArray(json.inputs)) throw new Error('Not a notebook run.');
+  if (json.version === '0.6.0') return validateCanonicalRun(json);
   if (json.personaHead) await validatePersona(json.personaHead);
   let rebuilt: GameState;
   if (json.returnChapter) {
@@ -134,7 +145,7 @@ export async function validateRun(json: GameState): Promise<GameState> {
       head.castId !== CAST ||
       head.castRevision !== '1' ||
       head.source.game !== 'murmur' ||
-      head.source.rules !== GAME_VERSION
+      head.source.rules !== '0.5.0'
     )
       throw new Error('This notebook has an unrelated pinned person.');
     if (json.returnChapter) {
@@ -167,6 +178,7 @@ export async function validateRun(json: GameState): Promise<GameState> {
 }
 /** Source writes retain their accepted head and complete departure prefix in their own export. */
 export function checkpoint(s: GameState | null, save: () => void): Promise<void> {
+  if (s?.cast) return automaticCastCheckpoint(s, save);
   if (
     !s ||
     !shelf.enabled ||
@@ -174,7 +186,7 @@ export function checkpoint(s: GameState | null, save: () => void): Promise<void>
     s.phase !== 'end' ||
     s.oneCastDeparture.boundaryDay !== s.day ||
     s.returnChapter ||
-    s.version !== GAME_VERSION
+    s.version !== '0.5.0'
   )
     return Promise.resolve();
   if (checkpointTask) return checkpointTask;
@@ -195,7 +207,7 @@ export function checkpoint(s: GameState | null, save: () => void): Promise<void>
             castRevision: '1',
             branchId: prefix.personaHead?.branchId ?? crypto.randomUUID(),
             parentRevision: prefix.personaHead?.revision ?? null,
-            source: { game: 'murmur', build, engine: prefix.person.engine, rules: GAME_VERSION },
+            source: { game: 'murmur', build, engine: prefix.person.engine, rules: '0.5.0' },
             transfer: { ...transfer },
             limitations: transfer.person.limitations.slice(0, 64),
           });
@@ -243,7 +255,7 @@ export async function returnedChapter(
   const incoming =
     envelope ??
     (shelf.enabled ? await shelf.request<PersonaEnvelope | null>({ action: 'get', castId: CAST }) : null);
-  if (!incoming || incoming.source.game !== 'hearsay') return null;
+  if (incoming?.source.game !== 'hearsay') return null;
   await validatePersona(incoming);
   requireReturnEnvelope(incoming);
   const raw = localStorage.getItem(PREFIX + incoming.branchId);
@@ -277,7 +289,7 @@ export async function returnedChapter(
   };
   pendingReturn = { envelope: structuredClone(incoming), scope };
   const { revision: _incomingRevision, ...incomingBody } = incoming;
-  const host = { game: 'murmur', build, engine: '2.14.1', rules: GAME_VERSION };
+  const host = { game: 'murmur', build, engine: prefix.person.engine, rules: '0.5.0' };
   const metadata = {
     adapter: 'murmur-one-cast/1',
     mapping: 'hearsay-murmur/1',
@@ -320,7 +332,7 @@ export async function personaFile(s: GameState): Promise<PersonaEnvelope> {
     castRevision: '1',
     branchId: crypto.randomUUID(),
     parentRevision: null,
-    source: { game: 'murmur', build, engine: s.person.engine, rules: GAME_VERSION },
+    source: { game: 'murmur', build, engine: s.person.engine, rules: '0.5.0' },
     transfer: { ...transfer },
     limitations: transfer.person.limitations.slice(0, 64),
   });
@@ -344,7 +356,7 @@ export async function forkDeparture(s: GameState, save: () => void) {
     castRevision: '1',
     branchId: crypto.randomUUID(),
     parentRevision: null,
-    source: { game: 'murmur', build, engine: prefix.person.engine, rules: GAME_VERSION },
+    source: { game: 'murmur', build, engine: prefix.person.engine, rules: '0.5.0' },
     transfer: { ...transfer },
     limitations: transfer.person.limitations.slice(0, 64),
   });

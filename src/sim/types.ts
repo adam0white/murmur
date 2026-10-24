@@ -178,7 +178,8 @@ export type Input =
   | { kind: 'say'; at: number; option: string; insist?: boolean }
   | { kind: 'quiet'; at: number }
   | { kind: 'next'; at: number }
-  | { kind: 'one-cast-release'; at: number };
+  | { kind: 'one-cast-release'; at: number }
+  | { kind: 'cast-pause'; at: number; role: import('./canonical-cast.ts').CastRole };
 export type NewInput = Input extends infer I ? (I extends { at: number } ? Omit<I, 'at'> : never) : never;
 
 export interface Final {
@@ -213,6 +214,12 @@ export interface ReturnChapter {
   initialPerson: Person;
 }
 export interface GameState {
+  castHeadScopes?: Record<string, 'shared' | 'local' | 'file'>;
+  castSources?: Record<string, import('../ui/cast-chapter.ts').CastSourceRecord>;
+  castChapter?: import('./cast-chapter.ts').CastChapter;
+  castHeads?: Record<string, PersonaEnvelope>;
+  castScope?: 'shared' | 'local' | 'file';
+  cast?: import('./canonical-cast.ts').CastState;
   fileHistory?: boolean;
   oneCastDeparture?: DepartureReceipt;
   personaHead?: PersonaEnvelope;

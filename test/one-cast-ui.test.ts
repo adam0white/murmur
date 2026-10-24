@@ -9,15 +9,7 @@ import {
 } from '@adam0white/human-framework';
 import { createPersona, type PersonaEnvelope, validatePersona } from '@adam0white/lab-client';
 import { beforeEach, expect, it, vi } from 'vitest';
-import {
-  anotherWeek,
-  cloneState,
-  fingerprint,
-  GAME_VERSION,
-  newGame,
-  queueInput,
-  runToCard,
-} from '../src/sim/game.ts';
+import { anotherWeek, cloneState, fingerprint, newGame, queueInput, runToCard } from '../src/sim/game.ts';
 import { checkpointPerson, createOneCastDeparture } from '../src/sim/one-cast.ts';
 import type { GameState } from '../src/sim/types.ts';
 import { momentRecords } from '../src/ui/journal.ts';
@@ -72,7 +64,7 @@ beforeEach(() => {
   );
 });
 function playedDeparture(): GameState {
-  const state = newGame(31);
+  const state = newGame(31, '0.5.0');
   for (let n = 0; n < 2000 && state.phase !== 'end'; n++) {
     if (state.phase === 'evening') queueInput(state, { kind: 'next' });
     else {
@@ -190,7 +182,7 @@ it('validates an ordinary played source release and retains its exact accepted h
   const source = playedDeparture();
   await checkpoint(source, () => {});
   const rebuilt = await validateRun(cloneState(source));
-  expect(rebuilt.version).toBe(GAME_VERSION);
+  expect(rebuilt.version).toBe('0.5.0');
   expect(snapshot(rebuilt.person)).toEqual(snapshot(source.person));
   expect(rebuilt.oneCastDeparture).toEqual(source.oneCastDeparture);
   expect(rebuilt.personaHead).toEqual(source.personaHead);

@@ -881,7 +881,7 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
       expect(await page.locator('.toast').innerText()).toBe('Replayed. It matches the file.');
       expect(
         await page.evaluate(() => (window as unknown as { __murmur: { state: unknown } }).__murmur.state),
-      ).toEqual({ ...cloneState(state), fileHistory: true });
+      ).toEqual({ ...cloneState(state), fileHistory: true, castScope: 'file', castHeadScopes: {} });
     } finally {
       await page.close();
     }

@@ -21,7 +21,7 @@ function answer(s: GameState): void {
 
 describe('current edition replay boundaries', () => {
   it('starts fresh games on the explicitly versioned one-cast edition', () => {
-    expect(GAME_VERSION).toBe('0.5.0');
+    expect(GAME_VERSION).toBe('0.6.0');
     expect(newGame(7).version).toBe(GAME_VERSION);
     // Retained authored editions are selectable; no old HF snapshot compatibility is claimed.
     expect(newGame(7, '0.3.0').version).toBe('0.3.0');

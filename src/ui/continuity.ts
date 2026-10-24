@@ -32,11 +32,7 @@ let gatedFile = false;
 let known = false;
 let statusText = '';
 const panels = new Set<HTMLElement>();
-const keyOf = (s?: ContinuityRecordingState) =>
-  s?.heads
-    .map(({ head }) => head.branchId)
-    .sort()
-    .join(':') || null;
+const keyOf = (s?: ContinuityRecordingState) => (s?.heads.length ? 'murmur-continuing-cast' : null);
 /** Call before run replacement, validated load, reset, or a browser-person continuity change. */
 export function invalidateContinuity(): void {
   ++generation;
