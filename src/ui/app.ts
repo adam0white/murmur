@@ -52,6 +52,7 @@ import {
   returnedChapter,
   validateRun,
 } from './one-cast.ts';
+import { plainEnglish } from './plain-english.ts';
 import {
   answerThoughts,
   cardThought,
@@ -61,6 +62,8 @@ import {
 } from './presentation.ts';
 import { replyWords } from './reply.ts';
 import { notebookTally } from './tally.ts';
+
+const labMode = new URLSearchParams(location.search).get('lab') === '1';
 
 const SAVE = 'murmur-save-v1';
 /** Real seconds an open card lasts (its whole window). */
@@ -83,7 +86,16 @@ interface Save {
 
 const notice = telemetryNotice();
 if (notice) {
-  Object.assign(notice.style, { position: 'static', transform: 'none', margin: '0 auto' });
+  Object.assign(notice.style, {
+    position: 'static',
+    transform: 'none',
+    margin: '0 auto',
+    padding: '6px 12px',
+    border: '0',
+    background: 'transparent',
+    color: 'inherit',
+    font: '13px/1.4 system-ui',
+  });
 }
 
 const app = document.getElementById('app') as HTMLElement;
@@ -155,7 +167,7 @@ function clearSave() {
 // ---------- helpers ----------
 
 const esc = (x: string) =>
-  x.replace(
+  plainEnglish(x).replace(
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
   );
@@ -289,10 +301,10 @@ function infoPage() {
     screen === 'title'
       ? '<h2>Dilan</h2><p>Dilan is thirty-three. She delivers parcels through an Istanbul courier depot.</p><p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>'
       : screen === 'day'
-        ? '<h2>The two voices</h2><p>Tap a line to suggest it. Hold it to insist; it works only while she trusts you, and it costs trust.</p><p>Say nothing and she decides with only the pencil. The pencil is the other voice.</p><p>The small words under each line are her mood about it.</p><p>Your ink darkens as she trusts you; the pencil grows as she trusts it.</p><p>Her day slows while she decides and hurries between moments.</p><p class="desktop-only">Shift+Enter insists on the focused line.</p>'
+        ? '<h2>The two voices</h2><p>Tap a line to suggest it. Hold it to insist; it works only while she trusts you, and it costs trust.</p><p>Say nothing and she decides with only the pencil. The pencil is the other voice.</p><p>The words below each choice show how she feels about it.</p><p>Your ink darkens as she trusts you; the pencil grows as she trusts it.</p><p>Her day slows while she decides and hurries between moments.</p><p class="desktop-only">Shift+Enter insists on the focused line.</p>'
         : screen === 'evening'
           ? '<h2>Her page</h2><p>A tick is something she kept today; a struck line is something she missed.</p><p>Tally marks are things she means to keep.</p><p>“In the margin” holds phrases she is taking as her own; larger means more hers.</p>'
-          : '<h2>Saturday</h2><p>The two hands compare how much she trusted each voice, at the start and at the end.</p><p>The tally counts what you did: suggestions, holds, silences.</p><p>Another week continues with the same Dilan.</p>';
+          : '<h2>Saturday</h2><p>These lines compare how much she trusted each voice at the start and end of the week.</p><p>The tally counts what you did: suggestions, holds, silences.</p><p>Another week continues with the same Dilan.</p>';
   const panel = overlay(
     `<section class="info-panel" role="dialog" aria-modal="true" aria-label="Information"><button class="overlay-close" data-close aria-label="Close information">×</button>${content}</section>`,
     'info-wrap',
@@ -329,6 +341,7 @@ function cue(lean: Lean, pushed: Lean): string {
 }
 
 function urlSeed(): number | null {
+  if (!labMode) return null;
   const v = new URLSearchParams(location.search).get('seed');
   if (v === null || !/^\d+$/.test(v)) return null;
   return Number(v) >>> 0;
@@ -375,18 +388,22 @@ function title() {
     toast = 'This notebook is from an older version; start fresh.';
   }
   app.innerHTML = `${header()}<div class="page title"><div class="page-body">
-    <h1>The Two Voices</h1><p class="soft subtitle">an ordinary week, from the inside</p>
-    <p>Accompany Dilan from Monday to Saturday. Your words can change her choices and become her own.</p><p>${esc(castIntroduction())}</p>
+    <h1>Two Voices</h1>
+    <p>You are one of the voices in Dilan’s head. Suggest what she should do during her week, from Monday to Saturday. Your words can change her choices.</p>${labMode ? `<p>${esc(castIntroduction())}</p>` : ''}
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
-    </div><div class="other-ways-wrap"><button class="row" id="other-ways">Other ways in <span aria-hidden="true">▸</span></button></div>
-    <div class="title-spacer" id="title-spacer"></div>
+    </div>${labMode ? '<div class="other-ways-wrap"><button class="row" id="other-ways">Lab tools <span aria-hidden="true">▸</span></button></div>' : ''}
+    <footer class="title-spacer" id="title-spacer"></footer>
     <div class="page-actions actions">
-      ${saved ? `<button class="primary" id="cont">Continue · ${esc(DAY_NAMES[saved!.day]?.slice(0, 3) ?? '')} ${clock(saved!.minute)}</button>` : ''}
-      <button id="fresh-authored">Play a fresh local week</button>
-      <button id="return-shelf">Continue people from this browser</button><button id="held-cast">Resume a held accepted chapter</button><p id="return-status" class="soft small"></p>
-      <button class="${save ? '' : 'primary'}" id="new">${save ? 'A new week' : 'Wake her up'}</button>
-      <div id="new-confirm" hidden><p>This tears out the week so far.</p><div class="confirm-actions"><button id="confirm-new">Yes, a new week</button><button id="cancel-new">No</button></div></div>
-      ${credit()}
+      ${saved ? `<button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved!.day]?.slice(0, 3) ?? '')} ${clock(saved!.minute)}</button>` : ''}
+      ${
+        labMode
+          ? `<button id="fresh-authored">Play a fresh local week</button>
+      <button id="return-shelf">Continue people from this browser</button><button id="held-cast">Resume a held accepted chapter</button><p id="return-status" class="soft small"></p>`
+          : ''
+      }
+      <button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
+      <div id="new-confirm" hidden><p>Start a new game? This replaces your saved week.</p><div class="confirm-actions"><button id="confirm-new">Start new game</button><button id="cancel-new">Cancel</button></div></div>
+      ${labMode ? credit() : ''}
     </div></div>`;
   toast = '';
   bindHeader();
@@ -514,9 +531,10 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   invalidateContinuity();
   // Only creation may inspect the shelf. A loaded run never changes underneath play.
   let next: GameState;
+  const localDevelopment = ['localhost', '127.0.0.1'].includes(location.hostname);
   try {
     next =
-      useShelf && version === GAME_VERSION
+      useShelf && !localDevelopment && version === GAME_VERSION
         ? await freshCanonicalWeek(seed, () => attempt === loadGeneration)
         : newGame(seed, version);
   } catch (error) {
@@ -529,7 +547,7 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   if (attempt !== loadGeneration) return;
   clearSave();
   s = next;
-  if (!useShelf) s.castScope = 'local';
+  if (!useShelf || localDevelopment) s.castScope = 'local';
   await gateContinuity(recordingState(s));
   writeSave();
   enter();
@@ -800,7 +818,7 @@ function drawJournal(lines: LogLine[]) {
         l.who === 'pull'
           ? `<p class="jl pencil other-voice">${esc(l.text)}</p>`
           : l.who === 'dilan'
-            ? `<p class="jl notebook-text her">“${esc(l.text.replace(/\.$/, ''))}.”</p>`
+            ? `<p class="jl notebook-text her">“${esc(plainEnglish(l.text).replace(/\.$/, ''))}.”</p>`
             : `<p class="jl ${l.who === 'you' ? 'yours' : 'n'}"><span class="jt">${clock(l.at)}</span> ${esc(l.who === 'narrator' ? conversationWords(s, l.text) : l.text)}</p>`;
       entries.push({ key, html });
     }
@@ -885,7 +903,7 @@ function cardHtml(v: CardView): string {
   // Holding helps only while she trusts you enough; when a hold would land worse than a tap, say so in words.
   const pushSore = v.options.some((o) => RANK[o.pushed] < RANK[o.lean]);
   const hint = pushSore
-    ? 'She’s had enough of being pushed. A hold now lands worse than a word.'
+    ? 'She resists pressure now. Holding a choice works worse than tapping it.'
     : (v.hint ?? (first ? 'Tap one to say it.' : undefined));
   const pull = `<p class="pull notebook-text other-voice${v.borrowed ? ' borrowed' : ''}" style="${pencilStyle(tPull, 6)}">${esc(v.pullLine)}</p>`;
   const resolve = v.resolve
@@ -895,18 +913,18 @@ function cardHtml(v: CardView): string {
   const opts = v.options
     .map(
       (o) =>
-        `<button class="opt" data-o="${esc(o.id)}" aria-keyshortcuts="Shift+Enter" title="Tap to suggest; hold or Shift+Enter to insist."><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean notebook-text">${esc(o.mood ?? cue(o.lean, o.pushed))}</span>${first && RANK[o.pushed] > RANK[o.lean] ? '<span class="gesture">hold to insist · costs trust</span>' : ''}</button>`,
+        `<button class="opt" data-o="${esc(o.id)}" aria-keyshortcuts="Shift+Enter" title="Tap to suggest; hold or Shift+Enter to insist."><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean notebook-text">${esc(o.mood ?? cue(o.lean, o.pushed))}</span>${first && RANK[o.pushed] > RANK[o.lean] ? '<span class="gesture">Hold to insist. This costs trust.</span>' : ''}</button>`,
     )
     .join('');
   return `<div class="card ink-in">
     <div class="card-text">
       <p class="scene">${esc(v.scene)}</p>
       ${resolve}${forecast}${pull}${recalled ? `<p class="stayed notebook-text">“${esc(recalled)}” <span class="who">she thinks</span></p>` : ''}
-      ${first && !v.borrowed ? '<p class="caption notebook-text other-voice">the pencil is the other voice</p>' : ''}
+      ${first && !v.borrowed ? '<p class="caption notebook-text other-voice">The handwriting shows the other voice.</p>' : ''}
       ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
     </div>
-    <div class="opts card-actions">${first ? '<p class="caption right">the small words are her mood about each</p>' : ''}${opts}
-      <button class="hush" id="hush">say nothing</button>
+    <div class="opts card-actions">${first ? '<p class="caption right">Below each choice, you can see how she feels about it.</p>' : ''}${opts}
+      <button class="hush" id="hush">Say nothing</button>
     </div>
   </div>`;
 }
@@ -933,7 +951,7 @@ function drawStatus() {
             ? "She's about to decide"
             : "She's deciding"
           : hurry
-            ? 'Hurrying to the next moment'
+            ? 'Her day is moving quickly'
             : (performance.now() - answeredAt) / 1000 < READ_SECONDS
               ? "She's answering"
               : '';
@@ -1121,14 +1139,14 @@ function ending() {
         : s.version === '0.5.0'
           ? `<section><h2 class="notebook-text">A short visit</h2><p>The route week is over. Dilan can visit Hatice’s tea garden in Istanbul. Aylin is still her sister; Mum, Ece and depot Murat remain her own relations, distinct from the garden’s namesakes.</p><p>She will explicitly set aside these unfinished purposes for the visit: ${esc(
               departureReleaseDescription(s).join(', ') || 'none',
-            )}. The unfinished shelf stays at home for this visit. These purposes become new intentions on her return; their earlier progress stays in this week’s record. Dated alarm, dinner and call promises remain in the week’s record; unresolved promises block departure. No success is invented.</p><button id="depart">Set aside unfinished purposes and make the visit</button><button id="depart-fork">Explicitly fork this competing departure</button><p id="departure-status" role="status">${esc(continuityMessage())}</p><a href="https://hearsay.adamwhite.work/">Visit Hearsay</a></section>`
+            )}. The unfinished shelf stays at home for this visit. These purposes become new intentions on her return; their earlier progress stays in this week’s record. Dated alarm, dinner and call promises remain in the week’s record; unresolved promises block departure. No success is invented.</p><button id="depart">Set aside unfinished purposes and make the visit</button>${labMode ? '<button id="depart-fork">Explicitly fork this competing departure</button>' : ''}<p id="departure-status" role="status">${esc(continuityMessage())}</p><a href="https://hearsay.adamwhite.work/">Visit Hearsay</a></section>`
           : ''
     }
     <details class="final-tally"><summary>See the tally</summary><div id="notebook-tally">${notebookTally(s, true)}</div></details>
     ${canAnotherWeek(s) ? '<p class="notebook-text soft">Monday will come round again.</p>' : ''}</div>
     <div class="page-actions actions end-actions">
-      <div class="action-pair"><button id="send">Send word</button><button id="export">Download this run</button></div>
-      <button class="${canAnotherWeek(s) ? '' : 'primary'}" id="again">A new week</button>
+      <div class="action-pair"><button id="send">Feedback</button>${labMode ? '<button id="export">Download this run</button>' : ''}</div>
+      <button class="${canAnotherWeek(s) ? '' : 'primary'}" id="again">New game</button><div id="end-confirm" hidden><p>Start a new game? This replaces your saved week.</p><button id="end-confirm-new">Start new game</button><button id="end-cancel-new">Cancel</button></div>
       ${canAnotherWeek(s) ? '<button class="primary" id="another">Another week</button>' : ''}
     </div></div>`;
   bindHeader();
@@ -1139,8 +1157,7 @@ function ending() {
       if (!s) return;
       await releaseAndCheckpoint(s, writeSave);
       document.getElementById('departure-status')!.textContent =
-        continuityMessage() ||
-        'Departure recorded. Enable fictional continuity in the menu, or download her passport there.';
+        continuityMessage() || 'Her visit is saved. Continue to the tea garden to meet her there.';
     } catch (error) {
       document.getElementById('departure-status')!.textContent = String(error);
     }
@@ -1162,7 +1179,13 @@ function ending() {
     writeSave();
     enter();
   });
-  document.getElementById('again')?.addEventListener('click', () => newWeek(randomSeed()));
+  document.getElementById('again')?.addEventListener('click', () => {
+    document.getElementById('end-confirm')!.hidden = false;
+  });
+  document.getElementById('end-cancel-new')?.addEventListener('click', () => {
+    document.getElementById('end-confirm')!.hidden = true;
+  });
+  document.getElementById('end-confirm-new')?.addEventListener('click', () => newWeek(randomSeed()));
   document.getElementById('export')?.addEventListener('click', download);
   document.getElementById('send')?.addEventListener('click', () => feedback());
 }
@@ -1203,7 +1226,7 @@ function finalHtml(f: Final): string {
     }
     ${phrases ? `<div class="block margin-list"><p class="label">her own words now</p><div class="phrases">${phrases}</div></div>` : ''}
     ${unasked ? `<div class="block"><p class="label">what she did unasked</p>${unasked}</div>` : ''}
-    <div class="block hands"><p class="label">two hands</p>${handsHtml(f)}</div>`;
+    <div class="block hands"><p class="label">Trust in the two voices</p>${handsHtml(f)}</div>`;
 }
 
 /** Two lines whose size shows how the two voices changed over the week. Never a number. */
@@ -1213,16 +1236,16 @@ function handsHtml(f: Final): string {
     return d > 0.08 ? 'pencil' : d < -0.08 ? 'you' : 'even';
   };
   const line = (when: string, h: { you: number; pull: number }, then?: { you: number; pull: number }) => {
-    const pencil = `<span class="notebook-text other-voice pencil-inline" style="${pencilStyle(h.pull)}">the pencil</span>`;
+    const pencil = `<span class="notebook-text other-voice pencil-inline" style="${pencilStyle(h.pull)}">the other voice</span>`;
     const you = `<span class="ink" style="${inkStyle(h.you)}">you</span>`;
     const now = side(h);
     const still = then && side(then) === now ? ' still' : '';
     const rel =
       now === 'pencil'
-        ? `${pencil}${still} wrote bigger than ${you}`
+        ? `she${still} trusted ${pencil} more than ${you}`
         : now === 'you'
-          ? `${you}${still} wrote darker than ${pencil}`
-          : `${pencil} and ${you}${still} wrote about the same`;
+          ? `she${still} trusted ${you} more than ${pencil}`
+          : `she${still} trusted ${pencil} and ${you} about the same`;
     return `<p class="handline">${when}, ${rel}.</p>`;
   };
   const firstWeek = s?.past?.[0];
@@ -1241,14 +1264,15 @@ function backPage() {
     `<section class="backpage" role="dialog" aria-modal="true" aria-label="Game menu">
     <div class="menu-heading"><h2>Game menu${s && screen !== 'title' ? ` · ${esc(DAY_NAMES[s.day]?.slice(0, 3) ?? '')} ${clock(s.minute)}` : ''}</h2><button data-close aria-label="Close game menu">×</button></div>
     ${screen === 'day' ? '<p class="soft small">Her day waits while this is open.</p>' : ''}
-    <fieldset class="menu-speed"><legend>Pace between moments</legend>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>
-    <button class="row" id="bp-send">Send word <span aria-hidden="true">▸</span></button>
-    <button class="row phone-only" id="bp-fullscreen">Full screen</button>
-    ${screen !== 'title' ? '<button class="row" id="bp-title">To the title page</button>' : ''}
+    ${labMode ? `<fieldset class="menu-speed"><legend>Pace between moments</legend>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>` : ''}
+    <button class="row" id="bp-send">Feedback <span aria-hidden="true">▸</span></button>
+    <button class="row" id="bp-fullscreen">Full screen</button>
+    ${s ? '<button class="row" id="bp-new">New game</button><div id="bp-confirm" hidden><p>Start a new game? This replaces your saved week.</p><button id="bp-confirm-new">Start new game</button><button id="bp-cancel-new">Cancel</button></div>' : ''}
+    ${labMode && screen !== 'title' ? '<button class="row" id="bp-title">To the title page</button>' : ''}
     <a class="row" href="https://human.adamwhite.work/games/">All games</a>
-    <p class="soft small provenance">${s ? `Week ${weekOf(s.day)} · run ${s.seed} · edition ${s.version} · ` : ''}Dilan is from the <a href="https://human.adamwhite.work/">Human Framework ${FRAMEWORK_VERSION}</a></p>
+    ${labMode ? `<p class="soft small provenance">${s ? `Week ${weekOf(s.day)} · run ${s.seed} · edition ${s.version} · ` : ''}Dilan is from the <a href="https://human.adamwhite.work/">Human Framework ${FRAMEWORK_VERSION}</a></p>` : ''}
     <div class="menu-footer"><div id="menu-recording"></div><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a></div>
-    <button class="primary" id="bp-close">${screen === 'title' ? 'Close' : screen === 'day' ? 'Back to her day' : 'Back to her page'}</button>
+    <button class="primary" id="bp-close">${screen === 'title' ? 'Close' : 'Resume'}</button>
   </section>`,
     'backpage-wrap',
     () => {
@@ -1257,12 +1281,12 @@ function backPage() {
   );
   activePanel = { kind: 'menu', close };
   el.querySelector('#menu-recording')?.append(telemetryToggle(lab));
-  el.querySelector('#menu-recording')?.append(continuityControls());
-  if (s?.cast) el.querySelector('#menu-recording')?.append(canonicalPersonControls(s, writeSave));
+  if (labMode) el.querySelector('#menu-recording')?.append(continuityControls());
+  if (labMode && s?.cast) el.querySelector('#menu-recording')?.append(canonicalPersonControls(s, writeSave));
   const passport = document.createElement('div');
   passport.innerHTML =
     '<button id="passport-export">Download Dilan’s passport</button><button id="passport-import">Import a returned passport</button><button id="passport-fork">Explicitly fork the selected competing return</button><input type="file" id="passport-file" accept=".json" hidden><p id="passport-status" role="status"></p>';
-  if (!s?.cast) el.querySelector('#menu-recording')?.append(passport);
+  if (labMode && !s?.cast) el.querySelector('#menu-recording')?.append(passport);
   passport.querySelector('#passport-export')?.addEventListener('click', async () => {
     try {
       if (!s) throw new Error('Play Dilan’s week first.');
@@ -1316,6 +1340,16 @@ function backPage() {
     } catch (error) {
       passport.querySelector('#passport-status')!.textContent = String(error);
     }
+  });
+  el.querySelector('#bp-new')?.addEventListener('click', () => {
+    el.querySelector<HTMLElement>('#bp-confirm')!.hidden = false;
+  });
+  el.querySelector('#bp-cancel-new')?.addEventListener('click', () => {
+    el.querySelector<HTMLElement>('#bp-confirm')!.hidden = true;
+  });
+  el.querySelector('#bp-confirm-new')?.addEventListener('click', () => {
+    close();
+    void newWeek(randomSeed());
   });
   el.querySelector('#bp-close')?.addEventListener('click', close);
   el.querySelector('#bp-send')?.addEventListener('click', () => {

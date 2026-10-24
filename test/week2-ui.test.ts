@@ -45,7 +45,7 @@ afterAll(async () => {
 }, 30_000);
 
 async function importRun(page: Page, state: GameState) {
-  await page.goto(origin);
+  await page.goto(`${origin}?lab=1`);
   await page.evaluate(() => {
     window.__murmur.fast = true;
   });
@@ -107,7 +107,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         const canon = structuredClone(state.final);
         await importRun(page, state);
         expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(1);
-        expect(await page.getByRole('button', { name: 'A new week', exact: true }).count()).toBe(1);
+        expect(await page.getByRole('button', { name: 'New game', exact: true }).count()).toBe(1);
         await snapshot(page, `week-one-ending-${size}`);
         await page.getByRole('button', { name: 'Another week', exact: true }).click();
         await page.locator('#hush').waitFor();
@@ -155,7 +155,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
     it(`offers a played first week from the cover on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
       try {
-        await page.goto(`${origin}?seed=1003`);
+        await page.goto(`${origin}?lab=1&seed=1003`);
         await page.locator('#other-ways').click();
         await page.getByRole('button', { name: 'Begin at the second week', exact: true }).click();
         // Straight to Monday of the second week: no recap page of answers the player never gave.
@@ -179,7 +179,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         expect(await page.locator('.voicenote').count()).toBe(0);
         expect(await page.locator('.final-input').count()).toBe(0);
         expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(0);
-        expect(await page.getByRole('button', { name: 'A new week', exact: true }).count()).toBe(1);
+        expect(await page.getByRole('button', { name: 'New game', exact: true }).count()).toBe(1);
         expect(await page.locator('.first-week').innerText()).toContain(state.past?.[0]?.line);
         expect(await page.locator('.current-week .sday > .notebook-text').allTextContents()).toEqual([
           'Mon',

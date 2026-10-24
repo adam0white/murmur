@@ -11,3 +11,7 @@ A local accepted-batch journal preserves a recoverable owning chapter if selecti
 F491: the first-visit notice covers recording and linking across games. One recording switch controls both, including DNT/GPC opt-in. Recording-off feedback has one unticked share checkbox; unchecked sends only the note. Character analysis stays separate. No recording-epoch/person consent RPC gates publication.
 
 Technical delivery receipts, exact versions/hashes, review findings, CI/deployment and browser status are in ~/code/.lab-scratch/cast/murmur.md. Owner acceptance remains Adam’s play, due2026-11-03.
+
+## 2026-10-24 simplification
+
+Ordinary play uses automatic continuity and pace. Chapter, history, passport, seed, import/export and tester tools require exact `?lab=1`. The shared client0.4.6 and kit0.5.6 supply top-level central navigation and a once-per-origin fallback footer notice. Recording remains its own switch. A failed production chapter admission keeps the saved week. Display-only plain-English rewrites preserve simulation strings, legacy replay and rule difficulty. See docs/lab/plain-english.md. Delivery evidence and remaining acceptance are tracked in ~/code/.lab-scratch/simplify/workers/murmur.md; the earlier canonical handoff above still applies.

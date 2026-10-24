@@ -20,7 +20,7 @@ for (const width of [360, 1280]) {
     const height = width === 360 ? 690 : 800;
     const page = await browser.newPage({ viewport: { width, height } });
     try {
-      await page.goto(url);
+      await page.goto(`${url}?lab=1`);
       await page.evaluate(() => {
         window.__murmur.fast = true;
         window.__murmur.start(1);
@@ -51,7 +51,7 @@ for (const width of [360, 1280]) {
 it('releases feedback and reading holds when returning to the title page', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
-    await page.goto(url);
+    await page.goto(`${url}?lab=1`);
     await page.evaluate(() => {
       window.__murmur.fast = true;
       window.__murmur.start(1);
@@ -77,7 +77,7 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
         if (mode === 'off') localStorage.setItem('hf-lab-recording-off', '1');
         if (mode === 'privacy') Object.defineProperty(navigator, 'globalPrivacyControl', { get: () => true });
       }, mode);
-      await page.goto(url);
+      await page.goto(`${url}?lab=1`);
       await page.evaluate(async () => {
         const path = '/src/ui/lab.ts';
         const { lab } = await new Function('path', 'return import(path)')(path);
@@ -142,7 +142,7 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
 it('offers privacy beside the recording switch and yields journal room before scrolling long text', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
-    await page.goto(`${url}?seed=1`);
+    await page.goto(`${url}?lab=1&seed=1`);
     await page.locator('#menu').click();
     expect(await page.locator('.menu-footer').getByRole('link', { name: 'Lab privacy' }).count()).toBe(1);
     await page.locator('#bp-close').click();
@@ -166,7 +166,7 @@ it('refreshes Send when the shared recording preference changes after the form o
   const page = await browser.newPage();
   try {
     await page.addInitScript(() => localStorage.setItem('hf-lab-recording-off', '1'));
-    await page.goto(url);
+    await page.goto(`${url}?lab=1`);
     await page.locator('#menu').click();
     await page.locator('#bp-send').click();
     expect(await page.locator('#feedback-send').isDisabled()).toBe(false);
@@ -182,7 +182,7 @@ it('refreshes Send when the shared recording preference changes after the form o
 it('records a refusal once in plain words, including on a legacy run', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
-    await page.goto(url);
+    await page.goto(`${url}?lab=1`);
     await page.evaluate(() => {
       window.__murmur.fast = true;
       window.__murmur.start(9, '0.2.1');
@@ -190,7 +190,9 @@ it('records a refusal once in plain words, including on a legacy run', async () 
     await page.locator('#hush').waitFor();
     await page.evaluate(() => window.__murmur.say('up'));
     const journal = await page.locator('#journal').innerText();
-    expect(journal).toContain('You: “Up. Feet on the floor.” She chose “Five more.”');
+    expect(journal).toContain(
+      'You: “Get up and put your feet on the floor.” She chose “Sleep for five more minutes.”',
+    );
     expect(journal).not.toMatch(/pencil’s way|She didn’t\. She|She put yours off/);
   } finally {
     await page.close();
@@ -200,7 +202,7 @@ it('records a refusal once in plain words, including on a legacy run', async () 
 it('quotes an already quoted suggestion only once in the journal', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
-    await page.goto(url);
+    await page.goto(`${url}?lab=1`);
     await page.evaluate(() => {
       window.__murmur.fast = true;
       window.__murmur.start(1);
@@ -240,7 +242,7 @@ it('keeps an explicitly started run when the asynchronous bootstrap finishes lat
   });
   try {
     const requested = page.waitForRequest(identity);
-    await page.goto('https://murmur.adamwhite.work/', { waitUntil: 'domcontentloaded' });
+    await page.goto('https://murmur.adamwhite.work/?lab=1', { waitUntil: 'domcontentloaded' });
     await requested;
     await page.waitForFunction(() => Boolean(window.__murmur));
     await page.evaluate(() => {
@@ -262,7 +264,7 @@ it('opts into sharing through one unchecked checkbox and sends the note', async 
   const page = await browser.newPage();
   try {
     await page.addInitScript(() => localStorage.setItem('hf-lab-recording-off', '1'));
-    await page.goto(url);
+    await page.goto(`${url}?lab=1`);
     await page.evaluate(async () => {
       const { lab } = await new Function('return import("/src/ui/lab.ts")')();
       lab.setPersonaRecording('legacy-title-fixture');

@@ -4,6 +4,7 @@ import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
 import type { Input } from '../src/sim/types.ts';
+import { plainEnglish } from '../src/ui/plain-english.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -22,7 +23,7 @@ afterAll(async () => {
 }, 30_000);
 
 async function firstChoice(page: Page, version = '0.2.1') {
-  await page.goto(`${origin}?seed=1`);
+  await page.goto(`${origin}?lab=1&seed=1`);
   await page.evaluate(() => {
     const game = (window as unknown as { __murmur: { fast: boolean } }).__murmur;
     game.fast = true;
@@ -62,10 +63,10 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
   it('states purpose and influence before play, keeping the biography optional', async () => {
     const page = await browser.newPage();
     try {
-      await page.goto(origin);
+      await page.goto(`${origin}?lab=1`);
       await page.locator('.title .page-body > p').first().waitFor();
       const purpose = await page.locator('.title .page-body > p').allTextContents();
-      expect(purpose.join(' ')).toMatch(/from Monday to Saturday/);
+      expect(purpose.join(' ')).toMatch(/during her week/);
       expect(purpose.join(' ')).toMatch(/words can change her choices/);
       const more = page.locator('.info-panel');
       expect(await more.isVisible()).toBe(false);
@@ -74,7 +75,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       expect(await more.innerText()).toContain('She delivers parcels');
       await page.keyboard.press('Escape');
       expect(await more.isVisible()).toBe(false);
-      await page.goto(`${origin}?seed=1`);
+      await page.goto(`${origin}?lab=1&seed=1`);
       await page.locator('#new').click();
       const gap = await page.locator('.gap').innerText();
       expect(gap).toBe('Her alarm is about to go.');
@@ -84,7 +85,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       expect(story).toContain('Her alarm is about to go.');
       const instructions = (await page.locator('.caption,.hint,.gesture').allTextContents()).join(' ');
       expect(instructions).toContain('Tap one to say it.');
-      expect(instructions).toContain('hold to insist');
+      expect(instructions).toContain('Hold to insist');
     } finally {
       await page.close();
     }
@@ -230,7 +231,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     const page = await browser.newPage();
     try {
       await page.clock.install();
-      await page.goto(origin);
+      await page.goto(`${origin}?lab=1`);
       await page.locator('#other-ways').click();
       await page.locator('#file').setInputFiles({
         name: 'last-card.json',
@@ -312,7 +313,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     try {
       const before = replay(example.seed, example.inputs, example.minute);
       expect(cardView(before)?.id).toBe('ece-4');
-      await page.goto(origin);
+      await page.goto(`${origin}?lab=1`);
       await page.locator('#other-ways').click();
       await page.locator('#file').setInputFiles({
         name: 'before.json',
@@ -374,7 +375,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
   it('uses the shared menu names and downloads a replayable run', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
-      await page.goto(origin);
+      await page.goto(`${origin}?lab=1`);
       expect(await page.getByRole('link', { name: 'All games', exact: true }).isVisible()).toBe(true);
       await firstChoice(page);
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
@@ -382,7 +383,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       expect(await menu.locator('h2').innerText()).toContain('Game menu');
       await menu.locator('#bp-send').click();
       const pending = page.waitForEvent('download');
-      await page.getByRole('button', { name: 'Keep a copy of this run', exact: true }).click();
+      await page.getByRole('button', { name: 'Download this run', exact: true }).click();
       const download = await pending;
       const stream = await download.createReadStream();
       const chunks: Buffer[] = [];
@@ -433,7 +434,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
   ])('keeps menu and silence at least 44px and responses visible at $width×$height', async (viewport) => {
     const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
     try {
-      await page.goto(origin);
+      await page.goto(`${origin}?lab=1`);
       await documentTargets(page, viewport.height);
       await firstChoice(page);
       await documentTargets(page, viewport.height);
@@ -481,7 +482,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       await page.clock.runFor(1000);
       const up = page.locator('.opt[data-o="up"]');
       expect(await up.locator('.lean').innerText()).toBe('only with a push');
-      expect(await up.locator('.gesture').innerText()).toContain('hold to insist');
+      expect(await up.locator('.gesture').innerText()).toContain('Hold to insist');
       const box = await up.boundingBox();
       if (!box) throw new Error('No alarm suggestion');
       const touch = await page.context().newCDPSession(page);
@@ -577,7 +578,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       await page.clock.runFor(250);
       await touch.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
       await page.clock.runFor(700);
-      expect(await up.locator('.gesture').innerText()).toContain('hold to insist');
+      expect(await up.locator('.gesture').innerText()).toContain('Hold to insist');
       expect(
         await page.evaluate(
           () =>
@@ -612,8 +613,12 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
         await page.locator('[data-o="up"]').click();
         await page.locator('.journal .record-yours').waitFor();
         expect(await page.locator('.journal .record-yours').count()).toBe(1);
-        expect(await page.locator('.record-yours').innerText()).toContain('Up. Feet on the floor.');
-        expect(await page.locator('.record-yours').innerText()).toContain('She chose “Five more.”');
+        expect(await page.locator('.record-yours').innerText()).toContain(
+          'Get up and put your feet on the floor.',
+        );
+        expect(await page.locator('.record-yours').innerText()).toContain(
+          'She chose “Sleep for five more minutes.”',
+        );
         const after = await page.evaluate(
           () => (window as unknown as { __murmur: { state: unknown } }).__murmur.state,
         );
@@ -633,17 +638,21 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
         });
         await page.locator('.journal .record-yours').waitFor();
         expect(await page.locator('.journal .record-yours').count()).toBe(1);
-        expect(await page.locator('.record-yours').innerText()).toContain('Up. Feet on the floor.');
-        expect(await page.locator('.record-yours').innerText()).toContain('She chose “Five more.”');
+        expect(await page.locator('.record-yours').innerText()).toContain(
+          'Get up and put your feet on the floor.',
+        );
+        expect(await page.locator('.record-yours').innerText()).toContain(
+          'She chose “Sleep for five more minutes.”',
+        );
         await page.locator('#hurry').click();
         await page.locator('#hush').waitFor();
         await page.waitForTimeout(350);
         const record = page.locator('.journal .record-yours').first();
         const journal = page.locator('.journal');
         expect(await record.innerText()).toContain('You:');
-        expect(await record.innerText()).toContain('Up. Feet on the floor.');
+        expect(await record.innerText()).toContain('Get up and put your feet on the floor.');
         expect(await journal.innerText()).toContain('She chose');
-        expect(await journal.innerText()).toContain('Five more.');
+        expect(await journal.innerText()).toContain('Sleep for five more minutes.');
         expect(await page.locator('.journal').innerText()).toContain('slept through');
         await record.scrollIntoViewIfNeeded();
         const box = await record.boundingBox();
@@ -666,7 +675,7 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
     page.on('pageerror', (error) => errors.push(error.stack ?? error.message));
     try {
       await page.clock.install();
-      await page.goto(`${origin}?seed=1`);
+      await page.goto(`${origin}?lab=1&seed=1`);
       await page.locator('#new').click();
       await page.locator('#hush').waitFor();
       await page.clock.runFor(1350);
@@ -781,7 +790,7 @@ describe('edition persistence in the browser', { timeout: 30_000 }, () => {
   it('rejects an unknown imported edition', async () => {
     const page = await browser.newPage();
     try {
-      await page.goto(origin);
+      await page.goto(`${origin}?lab=1`);
       await page.locator('#other-ways').click();
       await page.locator('#file').setInputFiles({
         name: 'unknown.json',
@@ -825,11 +834,13 @@ describe('design round remembered words', { timeout: 30_000 }, () => {
         return null;
       });
       expect(stayed).toBeTruthy();
-      expect(await page.locator('.journal .stayed').innerText()).toContain(stayed);
+      expect(await page.locator('.journal .stayed').innerText()).toContain(plainEnglish(stayed ?? ''));
       await page.evaluate(() => {
         (window as unknown as { __murmur: { skipToCard(): void } }).__murmur.skipToCard();
       });
-      expect(await page.locator('.journal .stayed').first().innerText()).toContain(stayed);
+      expect(await page.locator('.journal .stayed').first().innerText()).toContain(
+        plainEnglish(stayed ?? ''),
+      );
       await page.evaluate(() => {
         const game = (
           window as unknown as {
@@ -868,7 +879,7 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
     }
     const page = await browser.newPage();
     try {
-      await page.goto(origin);
+      await page.goto(`${origin}?lab=1`);
       await page.locator('#other-ways').click();
       await page.locator('#file').setInputFiles({
         name: 'silent-week.json',
@@ -891,7 +902,7 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
 it('reserves first-visit notice height when mobile text wraps', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
   try {
-    await page.goto(origin);
+    await page.goto(`${origin}?lab=1`);
     const notice = page.locator('.lk-telemetry-notice');
     await notice.waitFor();
     // Mobile system fonts and user text sizing can wrap the longer automatic-linkage notice.

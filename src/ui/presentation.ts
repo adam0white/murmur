@@ -3,6 +3,7 @@ import { type CardView, DAY_NAMES } from '../sim/game.ts';
 import { momentById } from '../sim/moments.ts';
 import type { Answer, GameState } from '../sim/types.ts';
 import type { MomentRecord } from './journal.ts';
+import { plainEnglish } from './plain-english.ts';
 
 /** Authored options may already carry quotation marks. Add just one pair for display. */
 export function quotedWords(text: string, nested = false): string {
@@ -10,7 +11,8 @@ export function quotedWords(text: string, nested = false): string {
     (text.startsWith('“') && text.endsWith('”')) || (text.startsWith('"') && text.endsWith('"'))
       ? text.slice(1, -1)
       : text;
-  return nested ? `‘${bare}’` : `“${bare}”`;
+  const words = plainEnglish(bare);
+  return nested ? `‘${words}’` : `“${words}”`;
 }
 
 /** A little more of completed calls; the stored log and legacy editions stay exact. */
@@ -24,7 +26,7 @@ export function conversationWords(s: GameState, text: string): string {
     'Mum put the phone down to find her glasses. Dilan could hear her asking the empty room.':
       '“On your head?” Dilan asked. The room went quiet. “Well,” Mum said.',
   };
-  return extra[text] ? `${text} ${extra[text]}` : text;
+  return extra[text] ? `${plainEnglish(text)} ${extra[text]}` : text;
 }
 
 type Thought = NonNullable<GameState['thoughts']>[number];

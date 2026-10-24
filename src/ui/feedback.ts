@@ -36,7 +36,7 @@ export function showFeedback(options: {
   const wrap = document.createElement('div');
   wrap.className = 'feedback-wrap';
   wrap.innerHTML = `<section class="feedback" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
-    <div class="feedback-heading"><button id="feedback-back">← Back</button><h2 id="feedback-title">Send word</h2></div>
+    <div class="feedback-heading"><button id="feedback-back">← Back</button><h2 id="feedback-title">Feedback</h2></div>
     <div class="feedback-body">
       <p>Send a note about this game. Recorded play links across games on this device. You can switch recording off in the menu.</p>
       <div class="verdicts" role="group" aria-label="Would you keep playing?">
@@ -44,14 +44,14 @@ export function showFeedback(options: {
         <button type="button" class="chip" data-verdict="mixed" aria-pressed="false">Not sure</button>
         <button type="button" class="chip" data-verdict="quit" aria-pressed="false">I'd stop here</button>
       </div>
-      <label for="feedback-note">What happened in Dilan's week, what you wanted, what got in the way.</label>
-      <textarea id="feedback-note" rows="4" placeholder="What happened in Dilan's week, what you wanted, what got in the way."></textarea>
+      <label for="feedback-note">What happened? What did you want to do?</label>
+      <textarea id="feedback-note" rows="4" placeholder="What happened? What did you want to do?"></textarea>
       <details class="feedback-name"><summary>+ Your name or tester id</summary>
         <label for="feedback-name">Your name or tester id</label><input type="text" id="feedback-name" maxlength="60" autocomplete="off" value="${esc(remembered)}" />
         <p class="soft small">A name labels everything this device has sent, past and future. Leave it empty to stay unnamed.</p>
       </details>
-      <details class="feedback-preview"><summary>What is sent</summary><p>Your note, optional verdict and name. With recording off, no run or linked history is sent.</p><pre id="feedback-preview"></pre><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noreferrer">Lab privacy</a></details>
-      <button type="button" id="feedback-download">Keep a copy of this run</button>
+      <details class="feedback-preview"><summary>What is sent</summary><p>Your note, optional verdict and name. With recording off, no run or linked history is sent.</p>${new URLSearchParams(location.search).get('lab') === '1' ? '<pre id="feedback-preview"></pre>' : ''}<a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noreferrer">Lab privacy</a></details>
+      ${new URLSearchParams(location.search).get('lab') === '1' ? '<button type="button" id="feedback-download">Download this run</button>' : ''}
       <p role="status" id="feedback-status"></p>
     </div>
     <div class="feedback-actions page-actions"><button class="primary" id="feedback-send">Submit</button></div>
@@ -95,7 +95,8 @@ export function showFeedback(options: {
       name: name.value.trim() || undefined,
       run: feedbackRun(),
     };
-    wrap.querySelector('#feedback-preview')!.textContent = JSON.stringify(preview, null, 2);
+    const previewNode = wrap.querySelector('#feedback-preview');
+    if (previewNode) previewNode.textContent = JSON.stringify(preview, null, 2);
   };
   const syncPreference = refresh;
   wrap.addEventListener('input', refresh);

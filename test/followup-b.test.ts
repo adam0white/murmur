@@ -53,7 +53,7 @@ async function load(s: GameState, viewport = { width: 360, height: 690 }, base =
   await page.addInitScript(() => {
     window.requestAnimationFrame = () => 1;
   });
-  await page.goto(base);
+  await page.goto(`${base}?lab=1`);
   if (base === url) await page.locator('#other-ways').click();
   await page.locator('#file').setInputFiles({
     name: 'exact-run.json',
