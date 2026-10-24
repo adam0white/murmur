@@ -1,4 +1,4 @@
-import { feedbackPersonaControl, telemetryToggle } from '@adam0white/lab-kit';
+import { feedbackPersonaControl } from '@adam0white/lab-kit';
 import type { lab as gameLab } from './lab.ts';
 
 const NAME_KEY = 'hf-lab-feedback-name';
@@ -7,14 +7,6 @@ const esc = (text: string) =>
     /[&<>"']/g,
     (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char,
   );
-const recordingOff = () => {
-  try {
-    return localStorage.getItem('hf-lab-recording-off') === '1';
-  } catch {
-    return false;
-  }
-};
-
 export function showFeedback(options: {
   app: HTMLElement;
   lab: typeof gameLab;
@@ -59,18 +51,14 @@ export function showFeedback(options: {
         <p class="soft small">A name labels everything this device has sent, past and future. Leave it empty to stay unnamed.</p>
       </details>
       <details class="feedback-preview"><summary>What is sent</summary><p>Your note, optional verdict and name. With recording off, no run or linked history is sent.</p><pre id="feedback-preview"></pre><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noreferrer">Lab privacy</a></details>
-      <div class="feedback-recording" id="feedback-recording"><p>Recording is off. You can still send your note.</p><div id="feedback-toggle"></div></div>
-      <label class="feedback-consent" id="feedback-consent"><input type="checkbox" id="feedback-consent-check" /> Send this run with my note</label>
       <button type="button" id="feedback-download">Keep a copy of this run</button>
       <p role="status" id="feedback-status"></p>
     </div>
     <div class="feedback-actions page-actions"><button class="primary" id="feedback-send">Send</button></div>
   </section>`;
   app.append(wrap);
-  wrap.querySelector('#feedback-toggle')?.append(telemetryToggle(lab));
   const note = wrap.querySelector<HTMLTextAreaElement>('#feedback-note')!;
   const name = wrap.querySelector<HTMLInputElement>('#feedback-name')!;
-  const consent = wrap.querySelector<HTMLInputElement>('#feedback-consent-check')!;
   const send = wrap.querySelector<HTMLButtonElement>('#feedback-send')!;
   const status = wrap.querySelector<HTMLElement>('#feedback-status')!;
   const feedbackRun = () => {
@@ -100,10 +88,6 @@ export function showFeedback(options: {
     options.close();
   };
   const refresh = () => {
-    const off = recordingOff();
-    const privacy = lab.privacySignalOn && !lab.privacyOverride;
-    wrap.querySelector<HTMLElement>('#feedback-recording')!.hidden = !off;
-    wrap.querySelector<HTMLElement>('#feedback-consent')!.hidden = off || !privacy;
     send.disabled = !sent && sending;
     const preview = {
       note: note.value,
@@ -113,10 +97,7 @@ export function showFeedback(options: {
     };
     wrap.querySelector('#feedback-preview')!.textContent = JSON.stringify(preview, null, 2);
   };
-  const syncPreference = () => {
-    wrap.querySelector<HTMLInputElement>('#feedback-toggle input')!.checked = lab.eventsOn;
-    refresh();
-  };
+  const syncPreference = refresh;
   wrap.addEventListener('input', refresh);
   wrap.addEventListener('change', refresh);
   wrap.querySelector('#feedback-back')?.addEventListener('click', close);
@@ -159,17 +140,16 @@ export function showFeedback(options: {
     const submittedNote = [verdict ? `Verdict: ${verdict}` : '', note.value.trim()]
       .filter(Boolean)
       .join('\n\n');
-    const privacy = lab.privacySignalOn && !lab.privacyOverride;
     try {
-      if (!recordingOff() && privacy && consent.checked && lab.personaRecordingAllowed) {
-        await lab.sendRun(options.getRun(), { note: submittedNote, name: submittedName });
-      } else await lab.sendFeedback(submittedNote, { name: submittedName, run: feedbackRun() });
+      const noteOnly = !lab.telemetryOn || (lab.privacySignalOn && !lab.privacyOverride);
+      const receipt = await lab.sendFeedback(submittedNote, { name: submittedName, run: feedbackRun() });
+      const sentMessage = `${noteOnly ? 'Note and verdict queued without a run or history linkage' : 'Note and verdict queued. Run details depend on recording and availability; continuing-person history links only after explicit consent'} · ${receipt}`;
       try {
         if (submittedName) localStorage.setItem(NAME_KEY, submittedName);
         else localStorage.removeItem(NAME_KEY);
       } catch {}
       sent = true;
-      status.textContent = 'Sent. Thank you.';
+      status.textContent = sentMessage;
       send.textContent = 'Back to the game';
     } catch (error) {
       status.textContent = error instanceof Error ? error.message : 'Could not send. Try again.';
