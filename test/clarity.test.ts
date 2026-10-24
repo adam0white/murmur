@@ -71,7 +71,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       expect(await more.isVisible()).toBe(false);
       await page.getByRole('button', { name: 'Information', exact: true }).focus();
       await page.keyboard.press('Space');
-      expect(await more.innerText()).toContain('She dispatches vans');
+      expect(await more.innerText()).toContain('She delivers parcels');
       await page.keyboard.press('Escape');
       expect(await more.isVisible()).toBe(false);
       await page.goto(`${origin}?seed=1`);
@@ -906,3 +906,26 @@ it('reserves first-visit notice height when mobile text wraps', async () => {
     await page.close();
   }
 }, 30000);
+
+it('opens a fully opaque menu immediately with motion enabled and labels the run seed separately', async () => {
+  const page = await browser.newPage({
+    viewport: { width: 360, height: 690 },
+    colorScheme: 'dark',
+    reducedMotion: 'no-preference',
+  });
+  try {
+    await firstChoice(page, '0.6.0');
+    await page.getByRole('button', { name: 'Game menu', exact: true }).click();
+    const menu = page.getByRole('dialog', { name: 'Game menu' });
+    const paint = await menu.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return { opacity: style.opacity, background: style.backgroundColor, animation: style.animationName };
+    });
+    expect(paint.opacity).toBe('1');
+    expect(paint.background).toBe('rgb(41, 37, 30)');
+    expect(paint.animation).toBe('none');
+    expect(await menu.locator('.provenance').innerText()).toMatch(/Week 1 · run 1 · edition 0.6.0/);
+  } finally {
+    await page.close();
+  }
+}, 30_000);

@@ -287,7 +287,7 @@ function overlay(markup: string, className: string, onClose?: () => void) {
 function infoPage() {
   const content =
     screen === 'title'
-      ? '<h2>Dilan</h2><p>Dilan is thirty-three. She dispatches vans at a courier depot in the town she came back to.</p><p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>'
+      ? '<h2>Dilan</h2><p>Dilan is thirty-three. She delivers parcels through an Istanbul courier depot.</p><p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>'
       : screen === 'day'
         ? '<h2>The two voices</h2><p>Tap a line to suggest it. Hold it to insist; it works only while she trusts you, and it costs trust.</p><p>Say nothing and she decides with only the pencil. The pencil is the other voice.</p><p>The small words under each line are her mood about it.</p><p>Your ink darkens as she trusts you; the pencil grows as she trusts it.</p><p>Her day slows while she decides and hurries between moments.</p><p class="desktop-only">Shift+Enter insists on the focused line.</p>'
         : screen === 'evening'
@@ -1238,7 +1238,7 @@ function handsHtml(f: Final): string {
 function backPage() {
   lab.screen('back page');
   const { el, close } = overlay(
-    `<section class="backpage ink-in" role="dialog" aria-modal="true" aria-label="Game menu">
+    `<section class="backpage" role="dialog" aria-modal="true" aria-label="Game menu">
     <div class="menu-heading"><h2>Game menu${s && screen !== 'title' ? ` · ${esc(DAY_NAMES[s.day]?.slice(0, 3) ?? '')} ${clock(s.minute)}` : ''}</h2><button data-close aria-label="Close game menu">×</button></div>
     ${screen === 'day' ? '<p class="soft small">Her day waits while this is open.</p>' : ''}
     <fieldset class="menu-speed"><legend>Pace between moments</legend>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>
@@ -1246,7 +1246,7 @@ function backPage() {
     <button class="row phone-only" id="bp-fullscreen">Full screen</button>
     ${screen !== 'title' ? '<button class="row" id="bp-title">To the title page</button>' : ''}
     <a class="row" href="https://human.adamwhite.work/games/">All games</a>
-    <p class="soft small provenance">${s ? `Week ${s.seed} · edition ${s.version} · ` : ''}Dilan is from the <a href="https://human.adamwhite.work/">Human Framework ${FRAMEWORK_VERSION}</a></p>
+    <p class="soft small provenance">${s ? `Week ${weekOf(s.day)} · run ${s.seed} · edition ${s.version} · ` : ''}Dilan is from the <a href="https://human.adamwhite.work/">Human Framework ${FRAMEWORK_VERSION}</a></p>
     <div class="menu-footer"><div id="menu-recording"></div><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a></div>
     <button class="primary" id="bp-close">${screen === 'title' ? 'Close' : screen === 'day' ? 'Back to her day' : 'Back to her page'}</button>
   </section>`,
