@@ -906,19 +906,39 @@ it('keeps the shared first-visit footer compact and reserves enlarged text heigh
     const notice = page.locator('.lk-telemetry-notice');
     await notice.waitFor();
     await page.evaluate(() => document.fonts.ready);
+    expect(
+      await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize)),
+    ).toBeGreaterThanOrEqual(17);
+    expect(await notice.evaluate((el) => getComputedStyle(el).fontFamily)).toContain('Arial');
     expect(await notice.innerText()).toBe('We record and link play across games on this device.');
     expect(await notice.locator('button').count()).toBe(0);
     const compact = await notice.boundingBox();
     const wrapper = await page.locator('.title-spacer').boundingBox();
-    expect(compact!.height).toBeLessThanOrEqual(56);
+    expect(compact!.height).toBeLessThanOrEqual(40);
+    expect(wrapper!.height).toBeLessThanOrEqual(40);
+    expect(
+      await notice.evaluate((el) => {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        return range.getClientRects().length;
+      }),
+    ).toBe(1);
     expect(wrapper!.height).toBeLessThanOrEqual(compact!.height + 1);
     expect(await notice.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(
       14,
     );
     // The same shared node can wrap at larger type without clipping its full disclosure.
-    await notice.evaluate((el) => {
-      el.style.font = '28px/1.35 system-ui';
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '32px';
     });
+    expect(await notice.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThan(14);
+    expect(
+      await notice.evaluate((el) => {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        return range.getClientRects().length;
+      }),
+    ).toBeGreaterThan(1);
     expect(
       await notice.evaluate((el) => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight),
     ).toBe(true);

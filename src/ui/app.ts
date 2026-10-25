@@ -85,6 +85,12 @@ interface Save {
 }
 
 const notice = telemetryNotice();
+// Keep the notice readable and on one line across host platforms; larger root text still wraps.
+if (notice) {
+  notice.style.fontSize = 'max(14px, 0.8rem)';
+  notice.style.fontFamily = 'Arial, "Liberation Sans", sans-serif';
+  notice.style.paddingInline = '2px';
+}
 
 const app = document.getElementById('app') as HTMLElement;
 let s: GameState | null = null;
