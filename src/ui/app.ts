@@ -85,18 +85,6 @@ interface Save {
 }
 
 const notice = telemetryNotice();
-if (notice) {
-  Object.assign(notice.style, {
-    position: 'static',
-    transform: 'none',
-    margin: '0 auto',
-    padding: '6px 12px',
-    border: '0',
-    background: 'transparent',
-    color: 'inherit',
-    font: '13px/1.4 system-ui',
-  });
-}
 
 const app = document.getElementById('app') as HTMLElement;
 let s: GameState | null = null;

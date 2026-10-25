@@ -899,16 +899,29 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
   });
 });
 
-it('reserves first-visit notice height when mobile text wraps', async () => {
+it('keeps the shared first-visit footer compact and reserves enlarged text height', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
   try {
     await page.goto(`${origin}?lab=1`);
     const notice = page.locator('.lk-telemetry-notice');
     await notice.waitFor();
-    // Mobile system fonts and user text sizing can wrap the longer automatic-linkage notice.
+    await page.evaluate(() => document.fonts.ready);
+    expect(await notice.innerText()).toBe('We record and link play across games on this device.');
+    expect(await notice.locator('button').count()).toBe(0);
+    const compact = await notice.boundingBox();
+    const wrapper = await page.locator('.title-spacer').boundingBox();
+    expect(compact!.height).toBeLessThanOrEqual(56);
+    expect(wrapper!.height).toBeLessThanOrEqual(compact!.height + 1);
+    expect(await notice.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(
+      14,
+    );
+    // The same shared node can wrap at larger type without clipping its full disclosure.
     await notice.evaluate((el) => {
-      el.style.font = '16px/1.4 system-ui';
+      el.style.font = '28px/1.35 system-ui';
     });
+    expect(
+      await notice.evaluate((el) => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight),
+    ).toBe(true);
     await documentTargets(page, 690);
     const noticeBox = await notice.boundingBox();
     const spacer = await page.locator('.title-spacer').boundingBox();
