@@ -123,7 +123,9 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
         expect(await page.locator('#feedback-send').isDisabled()).toBe(false);
       }
       await page.locator('#feedback-send').click();
-      expect(await page.locator('#feedback-status').innerText()).toContain('queued');
+      expect(await page.locator('#feedback-status').innerText()).toBe(
+        'Sent. Your note is stored. Reference stub.',
+      );
       const calls = await page.evaluate(() => Reflect.get(window, 'feedbackCalls'));
       expect(calls).toHaveLength(1);
       expect(calls[0][0]).toBe('feedback');

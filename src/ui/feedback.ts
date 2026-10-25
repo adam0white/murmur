@@ -143,13 +143,12 @@ export function showFeedback(options: {
       .join('\n\n');
     try {
       const sharePlay = feedbackSharePlay(personaChoice);
-      const noteOnly = !lab.telemetryOn && !sharePlay;
       const receipt = await lab.sendFeedback(submittedNote, {
         name: submittedName,
         run: feedbackRun(),
         sharePlay,
       });
-      const sentMessage = `${noteOnly ? 'Your note and verdict are queued. No saved game or linked play history was included.' : 'Your note and verdict are queued with any available saved game and linked play history.'} Receipt: ${receipt}`;
+      const sentMessage = `Sent. Your note is stored. Reference ${receipt}.`;
       try {
         if (submittedName) localStorage.setItem(NAME_KEY, submittedName);
         else localStorage.removeItem(NAME_KEY);
