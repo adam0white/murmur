@@ -56,3 +56,25 @@ it('keeps inherited journal answers once when a native chapter resumes', async (
     resumed.answer,
   ]);
 });
+
+it('renders an inherited refused reply using its original pinned source chapter', async () => {
+  const { replyWords } = await import('../src/ui/reply.ts');
+  const source = newGame(7);
+  runToCard(source);
+  queueInput(source, { kind: 'say', option: 'up' });
+  const answer = source.answer;
+  if (!source.cast || !answer) throw Error('Missing answer');
+  expect(answer.said).not.toBe(answer.chosen);
+  runToCard(source);
+  const chapter = {
+    edition: '0.6.0' as const,
+    seed: source.seed,
+    inputs: [],
+    claims: [],
+    initial: structuredClone(source.cast),
+    mapping: 'murmur-calendar/1' as const,
+    resume: { source: cloneState(source), departure: {} as never },
+  };
+  const resumed = newGame(7, '0.6.0', chapter);
+  expect(replyWords(resumed, answer)).toBe(replyWords(source, answer));
+});

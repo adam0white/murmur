@@ -155,6 +155,8 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
       (input.insist === true) === (a.insisted === true),
   );
   if (index >= 0) {
+    const source = s.castChapter?.resume?.source;
+    if (source && index < source.inputs.length) return replyWords(source, a);
     const before = replay(
       s.seed,
       s.inputs.slice(0, index),

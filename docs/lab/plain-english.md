@@ -19,4 +19,6 @@ Do not set the flag while restoring a save. Current exports still require the fu
 Lesson: a native return already contains its source inputs. Journal reconstruction must read the source
 records with their original pinned chapter, then process only the receiving suffix. Requeuing the inherited
 inputs loses the source answers. Treat `cast-pause` as a completed-day boundary, as the simulation replay does.
-The regression covers a resumed journal and the existing native-return fixture.
+The regression covers a resumed journal and the existing native-return fixture. An inherited refused reply
+also needs its original source chapter when reconstructing the decision before that answer. A receiving
+chapter cannot replay an input prefix shorter than its inherited source. A separate regression covers this reply.
