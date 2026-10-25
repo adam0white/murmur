@@ -1,15 +1,13 @@
 import { readFileSync } from 'node:fs';
-import { admitPersona, createPerson, projectPersona, promise, snapshot } from '@adam0white/human-framework';
+import { promise, snapshot } from '@adam0white/human-framework';
 import { canonicalPersona } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
 import { fingerprint, newGame, queueInput, replay, runToCard } from '../src/sim/game.ts';
 import {
-  checkpointPerson,
   createOneCastDeparture,
   type DilanTransfer,
   installOneCastReturn,
   prepareOneCastReturn,
-  RETURN_MAPPING,
   releaseOneCastDeparture,
 } from '../src/sim/one-cast.ts';
 import type { GameState } from '../src/sim/types.ts';

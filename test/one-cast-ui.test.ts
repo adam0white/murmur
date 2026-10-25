@@ -1,17 +1,8 @@
 import { readFileSync } from 'node:fs';
-import {
-  admitPersona,
-  begin,
-  createPerson,
-  decide,
-  finish,
-  projectPersona,
-  snapshot,
-} from '@adam0white/human-framework';
+import { snapshot } from '@adam0white/human-framework';
 import { createPersona, type PersonaEnvelope, validatePersona } from '@adam0white/lab-client';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { anotherWeek, cloneState, fingerprint, newGame, queueInput, runToCard } from '../src/sim/game.ts';
-import { checkpointPerson, createOneCastDeparture } from '../src/sim/one-cast.ts';
 import type { GameState } from '../src/sim/types.ts';
 import { momentRecords } from '../src/ui/journal.ts';
 

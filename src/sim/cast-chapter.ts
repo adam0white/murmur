@@ -95,10 +95,11 @@ function admit(input: LifePreparation, opening: Person): Person {
     !(
       parent.source.engine === '2.17.0' ||
       parent.source.engine === '2.21.0' ||
-      ((own ||
-        (d.game === 'neighbours' && d.role === 'noor') ||
-        (d.game === 'hearsay' && d.role === 'dilan')) &&
-        parent.source.engine === ENGINE_VERSION)
+      (own && parent.source.engine === ENGINE_VERSION) ||
+      (((d.game === 'neighbours' && d.role === 'noor') ||
+        (d.game === 'hearsay' && d.role === 'dilan') ||
+        (d.game === 'goodhands' && d.role === 'aylin')) &&
+        parent.source.engine === '2.23.0')
     ) ||
     parent.transfer.castPassport !== d.passport ||
     parent.transfer.sourceRole !== d.role
