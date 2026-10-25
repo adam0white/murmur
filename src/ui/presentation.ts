@@ -14,6 +14,14 @@ export function spokenAction(label: string): string {
     'check the returns herself': 'check the returns myself',
     'tell Aylin she is unsure': 'tell Aylin I’m unsure',
     'tell Ece she cannot stay': 'tell Ece I can’t stay',
+    'Name the crooked support. Ask Aylin for a short practical visit.':
+      'name the uneven shelf support and ask Aylin for a short visit',
+    'Stay for dinner. Ask what Aylin wants to do on her own evening.':
+      'stay for dinner and ask Aylin about her own evening',
+    'Ask Ece where she takes a break away from the depot.':
+      'ask Ece where she takes a break away from the depot',
+    'Decline the extra route. Ask Murat to open the allocation record with you.':
+      'decline the extra route and ask Murat to look at the delivery assignment record with me',
   };
   return firstPerson[label] ?? label;
 }

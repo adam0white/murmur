@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
+import {
+  cardView,
+  cloneState,
+  newGame,
+  optionsOf,
+  queueInput,
+  replay,
+  runToCard,
+  step,
+} from '../src/sim/game.ts';
+import { momentById } from '../src/sim/moments.ts';
 import type { GameState } from '../src/sim/types.ts';
 import { momentRecords } from '../src/ui/journal.ts';
 import {
@@ -187,4 +197,29 @@ it('adds a line from the call after it completes without changing the recorded c
   expect(conversationWords(s, line.text)).toContain('“He says he can patch it himself,” Mum said.');
   expect(JSON.stringify(s)).toBe(before);
   expect(conversationWords(newGame(1, '0.4.1'), line.text)).toBe(line.text);
+});
+
+it('fits canonical choice labels into retained first-person speech', () => {
+  const s = newGame(7);
+  for (const moment of ['shelf-4', 'dinner-3', 'lunch-2', 'route-3']) {
+    const choice = required(optionsOf(s, momentById(moment)).find((o) => o.id.startsWith('reveal-')));
+    const ink = String(choice.ink);
+    s.thoughts = [{ moment, at: s.minute, action: choice.action, ink, label: choice.label }];
+    const lines = answerThoughts(
+      s,
+      {
+        moment,
+        at: s.minute,
+        chosen: 'none',
+        borrowed: false,
+        pullWon: false,
+        stayed: 'remembered',
+      },
+      [],
+    );
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain(ink);
+    expect(lines[0]).toMatch(/I could still [a-z]/);
+    expect(lines[0]).not.toMatch(/[.!?] another time\./);
+  }
 });
