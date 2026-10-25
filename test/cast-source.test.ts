@@ -9,6 +9,7 @@ import { prepareCastChapter } from '../src/sim/cast-chapter.ts';
 import { createCastSource } from '../src/sim/cast-source.ts';
 import { cloneState, newGame, queueInput, runToCard } from '../src/sim/game.ts';
 import type { GameState } from '../src/sim/types.ts';
+import { momentRecords } from '../src/ui/journal.ts';
 
 it('observes a played native boundary without clearing state to make a passport', async () => {
   const s = newGame(17, '0.6.0');
@@ -172,6 +173,7 @@ describe('exact native return', () => {
     });
     const afterVisit = newGame(returnChapter.seed, '0.6.0', returnChapter);
     expect(afterVisit.flags.shelf).toBe(2);
+    expect(momentRecords(afterVisit)).toEqual(momentRecords(source));
     expect(afterVisit.cast?.discoveries).toEqual(source.cast?.discoveries);
     await expect(
       prepareCastChapter([preparePersonaLife(remote, 0)], 17, {

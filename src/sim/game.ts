@@ -141,7 +141,12 @@ function blankStats(p: Person): DayStats {
   };
 }
 
-export function newGame(seed: number, version = GAME_VERSION, chapter?: CastChapter): GameState {
+export function newGame(
+  seed: number,
+  version = GAME_VERSION,
+  chapter?: CastChapter,
+  plainEnglish = true,
+): GameState {
   if (!isEdition(version)) throw new Error(`Unknown Murmur edition: ${version}`);
   if (chapter?.resume) {
     const resumed = restoreState(chapter.resume.source);
@@ -153,8 +158,12 @@ export function newGame(seed: number, version = GAME_VERSION, chapter?: CastChap
   if (chapter && (version !== CAST_VERSION || chapter.edition !== CAST_VERSION || chapter.seed !== seed))
     throw Error('Wrong pinned cast chapter.');
   const cast =
-    version === CAST_VERSION ? (chapter ? cloneCast(chapter.initial) : freshCast(seed)) : undefined;
-  const person = cast?.people.dilan ?? makeDilan(seed);
+    version === CAST_VERSION
+      ? chapter
+        ? cloneCast(chapter.initial)
+        : freshCast(seed, plainEnglish)
+      : undefined;
+  const person = cast?.people.dilan ?? makeDilan(seed, plainEnglish);
   if (listens({ version })) configureListening(person);
   const s: GameState = {
     version,
@@ -1126,7 +1135,14 @@ export function canAnotherWeek(s: GameState): boolean {
 export function anotherWeek(s: GameState): GameState {
   if (!canAnotherWeek(s)) throw new Error('This run cannot continue into another week.');
   if (!hasWeekTwo(s)) {
-    const rebuilt = replay(s.seed, s.inputs, s.minute, '0.4.1');
+    const rebuilt = replay(
+      s.seed,
+      s.inputs,
+      s.minute,
+      '0.4.1',
+      undefined,
+      s.person.lexicon?.plainEnglish ?? false,
+    );
     // The last answer may end the day without advancing the host clock.
     while (rebuilt.phase === 'day') step(rebuilt);
     if (fingerprint(rebuilt) !== fingerprint(s)) throw new Error('Week-one replay does not match this run.');
@@ -1203,8 +1219,9 @@ export function replay(
   until?: number,
   version = LEGACY_VERSION,
   chapter?: CastChapter,
+  plainEnglish = true,
 ): GameState {
-  const s = newGame(seed, version, chapter);
+  const s = newGame(seed, version, chapter, plainEnglish);
   const inherited = chapter?.resume?.source.inputs ?? [];
   if (JSON.stringify(inputs.slice(0, inherited.length)) !== JSON.stringify(inherited))
     throw Error('Native return input prefix changed.');

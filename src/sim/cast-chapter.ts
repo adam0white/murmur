@@ -4,6 +4,7 @@
 import {
   admitCalendarPersona,
   DEFAULT_NORMS,
+  FRAMEWORK_VERSION,
   type Person,
   snapshot,
   validateCalendarPersona,
@@ -91,7 +92,7 @@ function admit(input: LifePreparation, opening: Person): Person {
     !d ||
     parent.source.game !== d.game ||
     parent.source.rules !== d.rules ||
-    parent.source.engine !== '2.17.0' ||
+    !['2.17.0', FRAMEWORK_VERSION].includes(parent.source.engine) ||
     parent.transfer.castPassport !== d.passport ||
     parent.transfer.sourceRole !== d.role
   )
@@ -237,7 +238,14 @@ export async function prepareCastChapter(
         'This source chapter is not an owned first-Saturday return. Continue or export it; choose a fresh local story explicitly.',
       );
     if (source.castChapter) await validateCastChapter(source.castChapter, source.seed);
-    const replayed = replay(source.seed, source.inputs, source.minute, source.version, source.castChapter);
+    const replayed = replay(
+      source.seed,
+      source.inputs,
+      source.minute,
+      source.version,
+      source.castChapter,
+      source.person.lexicon?.plainEnglish ?? false,
+    );
     if (replayed.phase === 'day') step(replayed);
     const clean = (s: GameState) => {
       const c = cloneState(s);
@@ -368,7 +376,7 @@ export async function validateCastChapter(chapter: CastChapter, seed: number): P
       claim.castRevision !== input.parent.castRevision ||
       claim.source.game !== 'murmur' ||
       claim.source.rules !== CAST_VERSION ||
-      claim.source.engine !== '2.17.0' ||
+      !['2.17.0', FRAMEWORK_VERSION].includes(claim.source.engine) ||
       !same(claim.transfer, { ...input.parent.transfer, life: input.life })
     )
       throw Error('Pinned whole-cast claim does not match its exact parent.');

@@ -39,8 +39,10 @@ export interface MomentRecord {
  * Call once when rendering a changed journal, then index by sceneAt.
  */
 export function momentRecords(s: GameState): MomentRecord[] {
-  const history = newGame(s.seed, s.version);
-  const records: MomentRecord[] = [];
+  const history = newGame(s.seed, s.version, s.castChapter, s.person.lexicon?.plainEnglish ?? false);
+  const source = s.castChapter?.resume?.source;
+  const inherited = source?.inputs.length ?? 0;
+  const records: MomentRecord[] = source ? momentRecords(source) : [];
   const advance = (action: () => void, quiet: 'explicit' | 'timeout' | null) => {
     const card = history.card;
     const m = openMoment(history);
@@ -79,13 +81,16 @@ export function momentRecords(s: GameState): MomentRecord[] {
     if (history.card && history.minute >= history.card.closesAt) advance(() => step(history), 'timeout');
     else step(history);
   };
-  for (const [index, input] of s.inputs.slice(0, s.applied).entries()) {
-    if (s.returnChapter && index === s.returnChapter.prefixInputs.length)
+  for (const [index, input] of s.inputs.slice(inherited, s.applied).entries()) {
+    if (s.returnChapter && index + inherited === s.returnChapter.prefixInputs.length)
       history.person = restore(s.returnChapter.initialPerson);
     // This is replay's evening rule: next can share the last answer's minute.
     while (
       history.phase === 'day' &&
-      (history.minute < input.at || input.kind === 'next' || input.kind === 'one-cast-release')
+      (history.minute < input.at ||
+        input.kind === 'next' ||
+        input.kind === 'one-cast-release' ||
+        input.kind === 'cast-pause')
     )
       minute();
     advance(() => queueInput(history, input), input.kind === 'quiet' ? 'explicit' : null);

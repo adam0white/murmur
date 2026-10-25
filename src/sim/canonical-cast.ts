@@ -34,15 +34,16 @@ export interface CastState {
   places: Partial<Record<CastRole, string>>;
   extraWork: Partial<Record<CastRole, boolean>>;
 }
-export function freshCast(seed: number): CastState {
+export function freshCast(seed: number, plainEnglish = true): CastState {
   const people = {} as CastState['people'];
   for (const c of CAST) {
     const role = roleOf(c.castId);
     const now = DAY0 + WAKE - 1;
     const p =
       role === 'dilan'
-        ? makeDilan(seed)
+        ? makeDilan(seed, plainEnglish)
         : createPerson({
+            lexicon: { plainEnglish },
             id: role,
             name: c.name,
             seed: seed ^ (c.age * 7919),

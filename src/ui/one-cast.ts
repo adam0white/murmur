@@ -1,7 +1,7 @@
 import { automaticCastCheckpoint, validateCanonicalRun } from './cast-chapter.ts';
 /** Murmur's authored crossing. Transport and recording remain separate from the deterministic week. */
 
-import { snapshot } from '@adam0white/human-framework';
+import { FRAMEWORK_VERSION, snapshot } from '@adam0white/human-framework';
 import {
   canonicalPersona,
   createPersona,
@@ -87,7 +87,7 @@ function requireReturnEnvelope(incoming: PersonaEnvelope): void {
     incoming.castRevision !== '1' ||
     incoming.source.game !== 'hearsay' ||
     !['4', '5'].includes(incoming.source.rules) ||
-    !['2.14.1', '2.17.0'].includes(incoming.source.engine)
+    !['2.14.1', '2.17.0', FRAMEWORK_VERSION].includes(incoming.source.engine)
   )
     throw new Error('This return is from an unsupported edition. Start a fresh week.');
 }
@@ -102,7 +102,14 @@ export async function validateRun(json: GameState): Promise<GameState> {
     await validatePersona(chapter.envelope);
     requireReturnEnvelope(chapter.envelope);
     await validatePersona(chapter.departure);
-    const prefix = replay(json.seed, chapter.prefixInputs, chapter.prefixMinute, json.version);
+    const prefix = replay(
+      json.seed,
+      chapter.prefixInputs,
+      chapter.prefixMinute,
+      json.version,
+      undefined,
+      json.person.lexicon?.plainEnglish ?? false,
+    );
     if (prefix.phase === 'day') step(prefix);
     if (!prefix.oneCastDeparture) throw new Error('Return departure was not replayed.');
     if (
@@ -132,7 +139,15 @@ export async function validateRun(json: GameState): Promise<GameState> {
       queueInput(rebuilt, input);
     }
     while (rebuilt.phase === 'day' && rebuilt.minute < json.minute) step(rebuilt);
-  } else rebuilt = replay(json.seed, json.inputs, json.minute, json.version);
+  } else
+    rebuilt = replay(
+      json.seed,
+      json.inputs,
+      json.minute,
+      json.version,
+      undefined,
+      json.person.lexicon?.plainEnglish ?? false,
+    );
   if (json.phase !== 'day' && rebuilt.phase === 'day' && rebuilt.minute === json.minute) step(rebuilt);
   if (
     fingerprint(rebuilt) !== fingerprint(json) ||
@@ -165,6 +180,8 @@ export async function validateRun(json: GameState): Promise<GameState> {
         json.inputs.slice(0, departureIndex + 1),
         release.at,
         json.version,
+        undefined,
+        json.person.lexicon?.plainEnglish ?? false,
       );
       if (canonicalPersona(head.transfer) !== canonicalPersona(await createOneCastDeparture(departurePrefix)))
         throw new Error('Source checkpoint differs from the replayed departure prefix.');

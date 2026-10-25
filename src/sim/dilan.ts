@@ -26,9 +26,10 @@ function jitter(seed: number, salt: number): number {
   return ((x % 1000) / 1000 - 0.5) * 0.12;
 }
 
-export function makeDilan(seed: number): Person {
+export function makeDilan(seed: number, plainEnglish = true): Person {
   const now = dayStart(1) + WAKE - 1;
   const p = createPerson({
+    lexicon: { plainEnglish },
     id: 'dilan',
     name: 'Dilan',
     seed: seed ^ 0xd11a,

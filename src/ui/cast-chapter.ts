@@ -1,4 +1,6 @@
 /** Current canonical UI transport. Only explicit new chapters claim; files never acquire ownership by loading. */
+
+import { FRAMEWORK_VERSION } from '@adam0white/human-framework';
 import {
   anchorPersonaLife,
   canonicalCast,
@@ -20,7 +22,7 @@ import type { GameState } from '../sim/types.ts';
 import { departureGuardCurrent, publishPersona, recordingEpochGuard, shelf } from './continuity.ts';
 
 declare const __MURMUR_BUILD__: string;
-const source = { game: 'murmur', build: __MURMUR_BUILD__, engine: '2.17.0', rules: CAST_VERSION };
+const source = { game: 'murmur', build: __MURMUR_BUILD__, engine: FRAMEWORK_VERSION, rules: CAST_VERSION };
 export interface CastSourceRecord {
   head: PersonaEnvelope;
   inputCount: number;
@@ -157,7 +159,14 @@ export async function validateCanonicalRun(json: GameState): Promise<GameState> 
   if (json.version !== CAST_VERSION || !json.cast)
     throw Error('This notebook uses an older cast edition. Start fresh.');
   if (json.castChapter) await validateCastChapter(json.castChapter, json.seed);
-  const rebuilt = replay(json.seed, json.inputs, json.minute, json.version, json.castChapter);
+  const rebuilt = replay(
+    json.seed,
+    json.inputs,
+    json.minute,
+    json.version,
+    json.castChapter,
+    json.person.lexicon?.plainEnglish ?? false,
+  );
   if (json.phase !== 'day' && rebuilt.phase === 'day') step(rebuilt);
   if (canonicalPersona(simulationOnly(rebuilt)) !== canonicalPersona(simulationOnly(json)))
     throw Error('The pinned cast notebook does not replay exactly.');
@@ -176,7 +185,7 @@ export async function validateCanonicalRun(json: GameState): Promise<GameState> 
       !Number.isSafeInteger(record.clockMs) ||
       head.source.game !== 'murmur' ||
       head.source.rules !== CAST_VERSION ||
-      head.source.engine !== '2.17.0' ||
+      !['2.17.0', FRAMEWORK_VERSION].includes(head.source.engine) ||
       head.castRevision !== canonicalCast(id).revision
     )
       throw Error('Invalid native source receipt.');
@@ -202,6 +211,7 @@ export async function validateCanonicalRun(json: GameState): Promise<GameState> 
       record.minute,
       json.version,
       json.castChapter,
+      json.person.lexicon?.plainEnglish ?? false,
     );
     if (prefix.phase === 'day' && prefix.queue.length === 0) step(prefix);
     if (head.terminal) {

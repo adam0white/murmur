@@ -350,7 +350,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.locator('.journal .n').filter({ hasText: completion?.text }).waitFor();
       expect(await page.locator('.journal').innerText()).toContain(completion?.text);
       expect(await latest.locator('.record-reply').last().innerText()).toContain(
-        'Not now. After I say next week. I could have listened to ‘Tell Ece she can watch you next week.’ When the next moment comes, try a different suggestion, or say nothing.',
+        'I cannot do it now. After I finish this task (say next week), I will do it. I could have listened to ‘Tell Ece she can watch you next week.’ When the next moment comes, try a different suggestion, or say nothing.',
       );
       expect(await page.locator('.gap').count()).toBe(0);
       for (const el of [latest.locator('.record-reply').last(), page.locator('.journal .n').last()]) {

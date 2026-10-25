@@ -155,7 +155,14 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
       (input.insist === true) === (a.insisted === true),
   );
   if (index >= 0) {
-    const before = replay(s.seed, s.inputs.slice(0, index), a.at, s.version);
+    const before = replay(
+      s.seed,
+      s.inputs.slice(0, index),
+      a.at,
+      s.version,
+      s.castChapter,
+      s.person.lexicon?.plainEnglish ?? false,
+    );
     if (listens(s)) {
       const chosen = optionsOf(before, momentById(a.moment)).find((o) => o.id === a.chosen);
       if (!chosen) return a.says;

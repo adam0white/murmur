@@ -117,7 +117,7 @@ describe('Dilan source and return chapter', () => {
         disclosed: false,
       },
     ]);
-    expect(transfer.person.episodes[0]?.summary).toBe('take the evening route: completed');
+    expect(transfer.person.episodes[0]?.summary).toBe('I completed this action: take the evening route.');
     expect(transfer.person.commitments).toEqual([]);
     const digest = await crypto.subtle.digest(
       'SHA-256',

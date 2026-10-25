@@ -383,7 +383,9 @@ function title() {
   try {
     saved =
       save?.state ??
-      (save ? replay(save.seed, save.inputs, undefined, save.version ?? LEGACY_VERSION) : null);
+      (save
+        ? replay(save.seed, save.inputs, undefined, save.version ?? LEGACY_VERSION, undefined, false)
+        : null);
   } catch (error) {
     recordFailure(error, 'We could not open your saved week. Your saved week is still here.', title);
   }
@@ -591,7 +593,9 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       if (!isEdition(version) || (ex.version && ex.state?.version && ex.version !== ex.state.version))
         throw new Error('unknown or conflicting edition');
       const until = ex.state?.minute;
-      const r = ex.state ? await validateRun(ex.state) : replay(ex.seed, ex.inputs, until, version);
+      const r = ex.state
+        ? await validateRun(ex.state)
+        : replay(ex.seed, ex.inputs, until, version, undefined, false);
       // A timeout can end a day without advancing its minute. Include that boundary.
       if (ex.state && ex.state.phase !== 'day' && r.phase === 'day' && r.minute === until) step(r);
       let note = 'The saved run was replayed.';

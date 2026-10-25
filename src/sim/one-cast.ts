@@ -4,6 +4,7 @@ import {
   abandonGoal,
   admitPersona,
   adoptGoal,
+  FRAMEWORK_VERSION,
   type Person,
   type PersonaProjectionSnapshot,
   projectPersona,
@@ -189,7 +190,7 @@ function checkedReturn(value: unknown): DilanTransfer {
   if (
     person.mappingVersion !== RETURN_MAPPING ||
     person.source.id !== 'dilan-delivery' ||
-    !['2.14.1', '2.17.0'].includes(person.source.engine) ||
+    !['2.14.1', '2.17.0', FRAMEWORK_VERSION].includes(person.source.engine) ||
     person.name !== 'Dilan'
   )
     throw new Error('This return is not Hearsay’s Dilan mapping.');
