@@ -433,7 +433,7 @@ const monday: Moment[] = [
     place: 'depot',
     scene: (c) => {
       if (ownColumns(c))
-        return 'Ece’s morning photo of her columns is on Dilan’s phone. “I can deal with your returned parcels too.”';
+        return 'Ece’s morning photo of her delivery board is on Dilan’s phone. “I can deal with your returned parcels too.”';
       if (c.flags.eceBlamed || had(c, 'Ece still thinks it was her scanner.'))
         return 'Ece checks the scanner before offering. “I can deal with the returned parcels, if you trust this scanner.”';
       if (
@@ -451,7 +451,7 @@ const monday: Moment[] = [
     options: [
       {
         id: 'let',
-        ink: 'Let her do them.',
+        ink: 'Let Ece handle the returned parcels.',
         label: 'leave the returns with Ece',
         action: 'accept-help',
         duration: 3,
@@ -461,7 +461,7 @@ const monday: Moment[] = [
       },
       {
         id: 'redo',
-        ink: 'Do them yourself.',
+        ink: 'Handle the returned parcels yourself.',
         label: 'check the returns herself',
         action: 'redo-returns',
         duration: 25,
@@ -523,7 +523,7 @@ const monday: Moment[] = [
 const ADVICE: Record<string, string> = {
   plain: 'Just say it plainly. The parcel is late, and it’ll be there by four.',
   ten: 'It’s ten minutes. Ring him back before he rings you.',
-  walk: 'Walk away from it. Let it ring out.',
+  walk: 'Leave the phone. Do not answer the call.',
   feet: 'Put your feet on the floor and deliver it yourself.',
 };
 const OWN_ADVICE = 'Tell him when it will arrive.';
@@ -725,7 +725,7 @@ const wednesday: Moment[] = [
     place: 'depot',
     scene: (c) =>
       c.flags.w2?.practice === 'tomorrow'
-        ? 'Ece has kept their twenty minutes clear. “Can we go over late deliveries?” The room is full.'
+        ? 'Ece has set aside twenty minutes to practise with Dilan. “Can we go over late deliveries?” The room is full.'
         : 'Ece brings a slip for a late delivery to the delivery board. Murat is close enough to hear them.',
     pull: { to: 'public', line: bentWords },
     options: [
@@ -860,7 +860,7 @@ function adviceResult(c: Ctx): string {
     return 'Ece gave the customer a time. He stopped ringing. “I used your words,” she says, pleased.';
   if (c.flags.w2?.adviceId === 'feet')
     return 'Ece delivered the parcel herself during her lunch break. Her own deliveries ran late. “I used your words,” she says.';
-  return 'Ece let it ring out. He rang Murat instead. “I used your words,” she says, not pleased.';
+  return 'Ece did not answer the call. He rang Murat instead. “I used your words,” she says, not pleased.';
 }
 
 const thursday: Moment[] = [
@@ -966,7 +966,7 @@ const thursday: Moment[] = [
         ? 'The shelf is still in pieces at home.'
         : c.flags.gym
           ? 'The gym bag is by the door at home.'
-          : 'Mum has asked for a call when she gets in.';
+          : 'Mum has asked Dilan to call when she gets home.';
       return c.flags.w2?.practice === 'thursday'
         ? `Ece waits at the depot for them to practise.\n${own}`
         : `Dilan is home and can still choose how to spend her evening.\n${own}`;
@@ -1365,7 +1365,7 @@ export function weekTwoThreads(s: GameState): string[] {
 export function weekTwoLine(s: GameState): string {
   const chosen = s.chosen['ece-13'] ?? s.flags.w2?.saturday;
   if (chosen === 'offer')
-    return '“Let me try Monday first.” Dilan read it twice. She was glad, and a little put out, and glad.';
+    return '“Let me try Monday first.” Dilan read it twice. She was glad, and a little annoyed, and glad.';
   if (chosen === 'answer')
     return 'She sent it, and took her tea to the window, and nobody needed her for an hour.';
   return 'She left the phone face down. Whatever Ece needed could stay with Ece for the weekend.';

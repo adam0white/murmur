@@ -350,7 +350,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.locator('.journal .n').filter({ hasText: completion?.text }).waitFor();
       expect(await page.locator('.journal').innerText()).toContain(completion?.text);
       expect(await latest.locator('.record-reply').last().innerText()).toContain(
-        'I cannot do it now. After I finish this task (say next week), I will do it. I could have listened to ‘Tell Ece she can watch you next week.’ When the next moment comes, try a different suggestion, or say nothing.',
+        'I cannot do it now. After I finish this task (say next week), I will do it. I could have listened to ‘Tell Ece she can watch you next week.’ When the next moment comes, try a different suggestion, or say nothing,” she says.',
       );
       expect(await page.locator('.gap').count()).toBe(0);
       for (const el of [latest.locator('.record-reply').last(), page.locator('.journal .n').last()]) {
@@ -834,11 +834,15 @@ describe('design round remembered words', { timeout: 30_000 }, () => {
         return null;
       });
       expect(stayed).toBeTruthy();
-      expect(await page.locator('.journal .stayed').innerText()).toContain(stayed ?? '');
+      expect(await page.locator('.journal .stayed').innerText()).toContain(
+        (stayed ?? '').replace(/\.$/, ','),
+      );
       await page.evaluate(() => {
         (window as unknown as { __murmur: { skipToCard(): void } }).__murmur.skipToCard();
       });
-      expect(await page.locator('.journal .stayed').first().innerText()).toContain(stayed ?? '');
+      expect(await page.locator('.journal .stayed').first().innerText()).toContain(
+        (stayed ?? '').replace(/\.$/, ','),
+      );
       await page.evaluate(() => {
         const game = (
           window as unknown as {

@@ -7,6 +7,15 @@ import type { MomentRecord } from './journal.ts';
 /** Labels belong to recorded simulation state; only speech uses Dilan's first person. */
 export function spokenAction(label: string): string {
   const firstPerson: Record<string, string> = {
+    'own up': 'tell the truth',
+    'send her the pin': 'send Ece the map location',
+    'say next week': 'tell Ece she can watch me next week',
+    'stick up for Murat': 'speak up for Murat',
+    'put something on': 'watch a show',
+    'promise Ece practice and Friday’s close':
+      'promise to practise with Ece tomorrow and help close the depot on Friday',
+    'promise Ece Thursday and Friday’s close':
+      'promise to practise with Ece on Thursday and help close the depot on Friday',
     'say it was her': 'say it was me',
     'keep her head down': 'keep my head down',
     'eat at her desk': 'eat at my desk',
@@ -34,6 +43,12 @@ export function quotedWords(text: string, nested = false): string {
       : text;
   const words = bare;
   return nested ? `‘${words}’` : `“${words}”`;
+}
+
+/** Terminal punctuation belongs before the speech tag; quoted choices keep their own quotes. */
+export function attributedWords(text: string): string {
+  const words = text.trim().replace(/\.([’']?)$/u, '$1');
+  return `“${words}${/[!?]([’']?)$/u.test(words) ? '' : ','}”`;
 }
 
 /** A little more of completed calls; the stored log and legacy editions stay exact. */
@@ -69,12 +84,12 @@ export function cardThought(s: GameState, view: CardView): string | undefined {
 function retainedWords(t: Thought): string {
   const specific: Record<string, string> = {
     'get-up': 'I’m not ready to get up yet. I heard you, though.',
-    'call-mum': 'I could make time to call Mum. I haven’t dismissed that.',
+    'call-mum': 'I could make time to call Mum. I haven’t forgotten the idea.',
     reply: 'Aylin’s message is still there. I could tell her when I’ll be free.',
     help: 'I could make time for Ece. I haven’t forgotten what you asked.',
     defend: 'I could have spoken up when they laughed. You gave me the words.',
     walk: 'You suggested water and a walk. I wanted coffee, but I can see why you said it.',
-    'own-up': 'Telling the truth would mean answering for it. I’m not ready to dismiss that.',
+    'own-up': 'If I tell the truth, I will have to answer for it. Still, I can’t forget the idea.',
     write: 'The notebook is beside the bed. I could put the phone down for it.',
     'lights-out': 'I could sleep before watching another video. That would be a different end to the day.',
   };

@@ -341,7 +341,7 @@ describe('week-two content contract', () => {
         { id: 'plain', text: 'Just say it plainly', practice: 0.3 },
       ],
     });
-    expect(text(moment('words-9').scene, c)).toContain('“Walk away from it. Let it ring out.”');
+    expect(text(moment('words-9').scene, c)).toContain('“Leave the phone. Do not answer the call.”');
     const stand = options(moment('words-9'), c).find((o) => o.id === 'stand');
     const gives = stand?.gives;
     expect(typeof gives === 'function' ? gives(c).competence : undefined).toBeLessThan(0);

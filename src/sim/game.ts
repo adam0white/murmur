@@ -41,7 +41,18 @@ import {
 } from './canonical-cast.ts';
 import type { CastChapter } from './cast-chapter.ts';
 import { releaseCastSource } from './cast-source.ts';
-import { DAY0, dayStart, LABEL, makeDilan, PULL, REVIEW_AT, renewDailyPromises, WAKE, YOU } from './dilan.ts';
+import {
+  DAY0,
+  dayStart,
+  LABEL,
+  makeDilan,
+  PULL,
+  promiseReview,
+  REVIEW_AT,
+  renewDailyPromises,
+  WAKE,
+  YOU,
+} from './dilan.ts';
 import {
   configureListening,
   keepSuggestion,
@@ -981,7 +992,10 @@ function pageOf(s: GameState): Page {
         .slice(-2)
         .map((t) => `When you said “${t.ink}”, I didn’t follow your suggestion. I kept thinking about it.`);
   }
-  const line = today ? reviewLine(p) : undefined;
+  const line =
+    today && p.review?.style !== 'none'
+      ? (promiseReview(r.kept, r.missed, p.review?.style === 'ruminating') ?? reviewLine(p))
+      : undefined;
   if (line) page.review = line;
   return page;
 }
@@ -1034,7 +1048,7 @@ function herLine(s: GameState): string {
       if (ch['dinner-3'] === 'truth') return 'Mum held my hand under the table like I was nine.';
       if (ch['dinner-3'] === 'home') return 'I left before Aylin blew out the candles.';
       if (f.route) return 'At dinner, my legs still ached from driving the van.';
-      return 'Aylin is thirty. That can’t be right.';
+      return 'It is Aylin’s birthday. I can’t believe another year has passed.';
     case 4:
       if ((f.shelf ?? 0) >= 1) return 'The shelf has sides now.';
       if (f.eceBlamed) return 'Ece apologised for something I did.';

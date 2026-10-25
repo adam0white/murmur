@@ -19,6 +19,30 @@ export const LABEL = {
   aylin: 'my word to Aylin',
 } as const;
 
+/** Describe actual review outcomes without turning semantic commitment labels into sentences. */
+export function promiseReview(kept: string[], missed: string[], ruminating: boolean): string | undefined {
+  const actions: Record<string, string> = {
+    [LABEL.alarm]: 'get up when the alarm rang',
+    [LABEL.mum]: 'make time to talk to Mum',
+    [LABEL.aylin]: 'stay for dinner with Aylin',
+    'my board practice with Ece': 'practise routing deliveries with Ece',
+    'my word to Ece': 'help Ece close the depot',
+  };
+  const labels = missed.length ? missed : kept;
+  if (!labels.length || labels.some((label) => !actions[label])) return;
+  if (missed.length) {
+    return `${labels.map((label) => `I didn’t ${actions[label]}.`).join(' ')} ${ruminating ? 'I keep thinking about it.' : 'Next time I’ll be ready.'}`;
+  }
+  const completed: Record<string, string> = {
+    [LABEL.alarm]: 'got up when the alarm rang',
+    [LABEL.mum]: 'made time to talk to Mum',
+    [LABEL.aylin]: 'stayed for dinner with Aylin',
+    'my board practice with Ece': 'practised routing deliveries with Ece',
+    'my word to Ece': 'helped Ece close the depot',
+  };
+  return labels.map((label) => `Today I ${completed[label]}.`).join(' ');
+}
+
 /** A small, seed-fixed difference between runs (±0.06): no two weeks start from quite the same Dilan. */
 function jitter(seed: number, salt: number): number {
   let x = (seed * 2654435761 + salt * 40503) >>> 0;

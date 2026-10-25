@@ -188,7 +188,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
           'Thu',
           'Fri',
         ]);
-        expect(await page.locator('.hands').innerText()).toContain('A fortnight ago');
+        expect(await page.locator('.hands').innerText()).toContain('Two weeks ago');
         expect(await page.locator('.hands').innerText()).toContain('On Monday');
         const first = await page.locator('.first-week').boundingBox();
         const current = await page.locator('.current-week').boundingBox();

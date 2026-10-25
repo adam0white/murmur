@@ -54,6 +54,7 @@ import {
 } from './one-cast.ts';
 import {
   answerThoughts,
+  attributedWords,
   cardThought,
   conversationWords,
   finalInputWords,
@@ -299,7 +300,7 @@ function overlay(markup: string, className: string, onClose?: () => void) {
 function infoPage() {
   const content =
     screen === 'title'
-      ? '<h2>Dilan</h2><p>Dilan is thirty-three. She delivers parcels through an Istanbul courier depot.</p><p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>'
+      ? '<h2>Dilan</h2><p>Dilan is thirty-three. She delivers parcels from a courier depot in Istanbul.</p><p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>'
       : screen === 'day'
         ? '<h2>The two voices</h2><p>Tap a choice to suggest it. Press and hold a choice to insist. Insisting works only while she trusts you, and it costs trust.</p><p>Choose “Say nothing” to let her decide without your advice. The pencil handwriting shows the other voice.</p><p>The words below each choice show how she feels about it.</p><p>Your handwriting gets darker as she trusts you more. The pencil handwriting gets larger as she trusts the other voice more.</p><p>Time passes slowly while she decides. It passes faster between choices.</p><p class="desktop-only">Press Shift+Enter to insist on the selected choice.</p>'
         : screen === 'evening'
@@ -803,7 +804,7 @@ function recordHtml(record: MomentRecord): string {
     : `You said nothing${record.quiet === 'timeout' ? ' because time ran out' : ''}. She chose ${esc(quotedWords(record.chosen.ink))}`;
   const a = record.answer;
   const reply = s ? replyWords(s, a) : undefined;
-  return `<p class="record-yours">${yours}</p>${reply ? `<p class="record-reply her notebook-text">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She learned the words “${esc(a.learned)}.” She remembered them.</p>` : ''}`;
+  return `<p class="record-yours">${yours}</p>${reply ? `<p class="record-reply her notebook-text">${esc(attributedWords(reply))} <span class="who">she says.</span></p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She learned the words “${esc(a.learned)}.” She remembered them.</p>` : ''}`;
 }
 
 function drawJournal(lines: LogLine[]) {
@@ -941,7 +942,7 @@ function cardHtml(v: CardView): string {
   return `<div class="card ink-in">
     <div class="card-text">
       <p class="scene">${esc(v.scene)}</p>
-      ${resolve}${forecast}${pull}${recalled ? `<p class="stayed notebook-text">“${esc(recalled)}” <span class="who">she thinks</span></p>` : ''}
+      ${resolve}${forecast}${pull}${recalled ? `<p class="stayed notebook-text">${esc(attributedWords(recalled))} <span class="who">she thinks.</span></p>` : ''}
       ${first && !v.borrowed ? '<p class="caption notebook-text other-voice">The pencil handwriting shows the other voice.</p>' : ''}
       ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
     </div>
@@ -990,7 +991,10 @@ function gapHtml(a: Answer | null): string {
 /** These are her reported thoughts, not a promise to agree next time. */
 function thoughtHtml(answer: Answer): string {
   return (s ? answerThoughts(s, answer, records()) : [])
-    .map((line) => `<p class="stayed notebook-text">“${esc(line)}” <span class="who">she thinks</span></p>`)
+    .map(
+      (line) =>
+        `<p class="stayed notebook-text">${esc(attributedWords(line))} <span class="who">she thinks.</span></p>`,
+    )
     .join('');
 }
 
@@ -1165,7 +1169,7 @@ function ending() {
           : ''
     }
     <details class="final-tally"><summary>See the tally</summary><div id="notebook-tally">${notebookTally(s, true)}</div></details>
-    ${canAnotherWeek(s) ? '<p class="notebook-text soft">Monday will come round again.</p>' : ''}</div>
+    ${canAnotherWeek(s) ? '<p class="notebook-text soft">Monday will come again.</p>' : ''}</div>
     <div class="page-actions actions end-actions">
       <div class="action-pair"><button id="send">Feedback</button>${labMode ? '<button id="export">Download this run</button>' : ''}</div>
       <button class="${canAnotherWeek(s) ? '' : 'primary'}" id="again">New game</button><div id="end-confirm" hidden><p>Start a new game? This replaces your saved week.</p><button id="end-confirm-new">Start new game</button><button id="end-cancel-new">Cancel</button></div>
@@ -1234,7 +1238,7 @@ function finalHtml(f: Final): string {
     .join('');
   const unasked = f.unasked.map((x) => `<p class="notebook-text her">${esc(x)}.</p>`).join('');
   const finalInput = s && !secondWeek ? finalInputWords(s, records()) : undefined;
-  const sentWord = f.sent === 'send' ? 'sent' : f.sent === 'call' ? 'rang instead' : 'deleted';
+  const sentWord = f.sent === 'send' ? 'sent' : f.sent === 'call' ? 'called her instead' : 'deleted';
   return `<h2 class="notebook-text dayhead">Saturday</h2>
     ${rule(61)}
     ${f.note ? `<div class="voicenote"><p class="label">voice note to Mum, ${sentWord}</p><p class="note">“${esc(f.note)}”</p></div>` : ''}
@@ -1272,7 +1276,7 @@ function handsHtml(f: Final): string {
   };
   const firstWeek = s?.past?.[0];
   return (
-    (firstWeek ? line('A fortnight ago', firstWeek.hands.start) : '') +
+    (firstWeek ? line('Two weeks ago', firstWeek.hands.start) : '') +
     line('On Monday', f.hands.start) +
     line('By Saturday', f.hands.end, f.hands.start)
   );

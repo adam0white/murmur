@@ -56,3 +56,9 @@ Technical done for this task is the signed main commit, exact green CI, the norm
 Fresh people use published HF2.21.0 with persisted `lexicon.plainEnglish:true`; client0.4.7 and kit0.5.8 remain exact. Replay keeps the saved narration choice and pinned chapter inputs. Journal reconstruction reads a native return's inherited source records once, then its receiving suffix. Current exports still require exact pinned-state replay; older files may refuse with the existing plain start-fresh message. The dependency override dedupes the client's older packaged HF dependency.
 
 Rules, replay, rendered text, review and delivery receipts are in `~/code/.lab-scratch/hfadopt/murmur-report.md`. Adam's fiction acceptance remains2026-11-03. See `docs/lab/plain-english.md` for the replay lesson and regression.
+
+## 2026-10-25 plain-English second reading pass
+
+Replies and thoughts now use punctuated speech tags. Story sources clarify delivery work, returned parcels, family calls and retained advice. The birthday reflection no longer contradicts Aylin’s canonical age. Evening prose describes the structured kept/missed actions; talking to Mum covers phone calls and in-person dinner. Semantic action and commitment labels remain stable.
+
+Technical done is signed main, exact green CI, normal deployment and a matching clean live release. Adam’s fiction acceptance remains 2026-11-03. Seeded rules, current-export replay, ten-minute rendered capture, phone layout and independent Codex review receipts are in `~/code/.lab-scratch/plain3/murmur-report.md`.

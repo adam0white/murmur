@@ -75,7 +75,7 @@ export function freshCast(seed: number, plainEnglish = true): CastState {
 }
 const clues: Record<
   CastRole,
-  { moment: string; ink: string; action: string; duration: number; line: string }
+  { moment: string; ink: string; label?: string; action: string; duration: number; line: string }
 > = {
   dilan: {
     moment: 'shelf-4',
@@ -100,7 +100,8 @@ const clues: Record<
   },
   murat: {
     moment: 'route-3',
-    ink: 'Decline the extra route. Ask Murat to open the allocation record with you.',
+    ink: 'Decline the extra route. Ask Murat to show who got each delivery.',
+    label: 'Decline the extra route. Ask Murat to open the allocation record with you.',
     action: 'review-route',
     duration: 20,
     line: 'Murat opened the scheduling file. After Dilan questioned a target, he had given her the difficult delivery stops. He had then recorded the delays as her fault. He admitted that he had assigned the stops. The workers still needed a corrected record; one private admission had not corrected it.',
@@ -116,7 +117,7 @@ export function castOptions(s: GameState, m: Moment, base: Opt[]): Opt[] {
     {
       id: `reveal-${role}`,
       ink: c.ink,
-      label: c.ink,
+      label: c.label ?? c.ink,
       action: c.action,
       duration: c.duration,
       advertises: { belonging: 0.25, meaning: 0.2 },
@@ -232,9 +233,9 @@ export function castScene(s: GameState, m: Moment, base: string): string {
   if (m.id === 'alarm-1' && c.places.dilan && c.places.dilan !== 'home')
     return `Dilan is at ${c.places.dilan === 'public-garden' ? 'the public garden beside the depot' : 'the depot break room'} before her shift. Her phone alarm rings. She can stand up or stay resting. Her next job is ${c.assignments.dilan ?? 'the usual delivery route'}.`;
   if (m.id === 'lunch-2' && c.assignments.ece)
-    return `${base} Ece’s current work is ${c.assignments.ece === 'courier round' ? 'a delivery route' : c.assignments.ece}. She is still studying logistics.`;
+    return `${base} Ece is working on ${c.assignments.ece === 'courier round' ? 'a delivery route' : c.assignments.ece}. She is still studying logistics.`;
   if (m.id === 'dinner-3' && c.assignments.aylin)
-    return `${base} Aylin has come from ${c.assignments.aylin === 'school kitchen' ? 'the school kitchen' : c.assignments.aylin}. She is here for a family meal.`;
+    return `${base} Aylin has come straight from ${c.assignments.aylin === 'school kitchen' ? 'the school kitchen' : c.assignments.aylin} for a family meal.`;
   return base;
 }
 

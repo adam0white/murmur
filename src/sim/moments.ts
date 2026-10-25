@@ -236,7 +236,7 @@ const scrollBus: Opt = {
   tags: T,
   norms: [{ normId: 'keep-promise', relation: 'violates' }],
   placeId: 'phone',
-  done: 'She scrolled to her stop, and two stops past it.',
+  done: 'She kept scrolling and missed her stop by two stops.',
 };
 const textMum: Opt = {
   id: 'text',
@@ -684,7 +684,7 @@ const wednesday: Moment[] = [
     place: 'phone',
     scene: (c) =>
       c.missedMum >= 2
-        ? 'Mum sends a voice note: “No need to call back, love. I know you’re busy.”'
+        ? 'Mum sends a voice note: “No need to call back, Dilan. I know you’re busy.”'
         : 'Aylin sends a message: “Dinner is at half past seven tonight. You don’t need to bring anything. Mum is bringing everything.”',
     pull: {
       to: 'read',

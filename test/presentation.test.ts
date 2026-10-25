@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { LABEL, promiseReview } from '../src/sim/dilan.ts';
 import {
   cardView,
   cloneState,
@@ -14,6 +15,7 @@ import type { GameState } from '../src/sim/types.ts';
 import { momentRecords } from '../src/ui/journal.ts';
 import {
   answerThoughts,
+  attributedWords,
   cardThought,
   conversationWords,
   finalInputWords,
@@ -222,4 +224,42 @@ it('fits canonical choice labels into retained first-person speech', () => {
     expect(lines[0]).toMatch(/I could still [a-z]/);
     expect(lines[0]).not.toMatch(/[.!?] another time\./);
   }
+});
+
+// Replies and thoughts share this punctuation rule, including nested quoted choices.
+it('punctuates speech before an attribution', () => {
+  expect(attributedWords('I will call Mum.')).toBe('“I will call Mum,”');
+  expect(attributedWords('Will she answer?')).toBe('“Will she answer?”');
+  expect(attributedWords('Stop!')).toBe('“Stop!”');
+  expect(attributedWords('I heard you')).toBe('“I heard you,”');
+  expect(attributedWords('I chose ‘Call Mum.’')).toBe('“I chose ‘Call Mum’,”');
+});
+
+it('describes missed promises as actions and leaves unknown commitments to HF', () => {
+  expect(promiseReview([], [LABEL.alarm, LABEL.mum], false)).toBe(
+    'I didn’t get up when the alarm rang. I didn’t make time to talk to Mum. Next time I’ll be ready.',
+  );
+  expect(promiseReview([LABEL.mum], [LABEL.alarm], true)).not.toContain('Today I made time to talk to Mum.');
+  expect(promiseReview([LABEL.mum], [], false)).toBe('Today I made time to talk to Mum.');
+  expect(promiseReview([], ['an imported promise'], false)).toBeUndefined();
+});
+
+it('gives deferred and alternative choices complete sentences without changing the recorded answer', () => {
+  const s = newGame(42);
+  let checked = 0;
+  while (s.day === 1 && s.phase === 'day') {
+    runToCard(s);
+    const view = cardView(s);
+    if (!view) continue;
+    queueInput(s, { kind: 'say', option: required(view.options.at(-1)).id });
+    const answer = required(s.answer);
+    if (answer.verdict !== 'deferred' && answer.verdict !== 'modified') continue;
+    const before = JSON.stringify(s);
+    const words = required(replyWords(s, answer));
+    expect(words).not.toMatch(/this:|this task \(/);
+    expect(words).not.toContain('Friday’s close');
+    expect(JSON.stringify(s)).toBe(before);
+    checked++;
+  }
+  expect(checked).toBeGreaterThan(0);
 });

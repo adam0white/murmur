@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cardView, cloneState, newGame, queueInput, runToCard } from '../src/sim/game.ts';
 import type { GameState } from '../src/sim/types.ts';
 import { momentRecords } from '../src/ui/journal.ts';
-import { answerThoughts, cardThought, finalInputWords } from '../src/ui/presentation.ts';
+import { answerThoughts, attributedWords, cardThought, finalInputWords } from '../src/ui/presentation.ts';
 
 function required<T>(value: T | null | undefined): T {
   if (value == null) throw new Error('Required test state is absent');
@@ -103,13 +103,13 @@ describe('follow-up b rendered exact runs', { timeout: 30_000 }, () => {
     nextAlarm(s);
     const recall = required(cardThought(s, required(cardView(s))));
     page = await load(s);
-    expect(await visibleText(page, '.card .stayed')).toContain(recall);
+    expect(await visibleText(page, '.card .stayed')).toContain(attributedWords(recall));
     await page.locator('#hush').click();
     expect(await page.locator('.journal .stayed').last().count()).toBe(1);
-    expect(await page.locator('.journal .stayed').last().innerText()).not.toContain(recall);
+    expect(await page.locator('.journal .stayed').last().innerText()).not.toContain(attributedWords(recall));
     queueInput(s, { kind: 'quiet' });
     expect(await page.locator('.journal .stayed').last().innerText()).toContain(
-      answerThoughts(s, required(s.answer), momentRecords(s))[0],
+      attributedWords(required(answerThoughts(s, required(s.answer), momentRecords(s))[0])),
     );
     await page.close();
     nextAlarm(s);

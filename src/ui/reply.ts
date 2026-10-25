@@ -211,7 +211,10 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
                   : a.moment.startsWith('note-')
                     ? `I haven’t got an answer for ${a.moment === 'note-3' && c.missedMum >= 2 ? 'Mum' : 'Aylin'} yet.`
                     : undefined;
-      return reason ? `${reason} I’m going to ${spokenAction(chosen.label)}.` : a.says;
+      if (reason) return `${reason} I’m going to ${spokenAction(chosen.label)}.`;
+      if (a.verdict === 'deferred') return `I’m going to ${spokenAction(chosen.label)}.`;
+      if (a.verdict === 'modified') return `I’m going to ${spokenAction(chosen.label)} instead.`;
+      return a.says;
     }
     // resolve() advances her body to the input minute before deciding. Forecast that same state.
     if (before.person.now < a.at) tick(before.person, a.at);
