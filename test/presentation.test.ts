@@ -69,7 +69,9 @@ describe('follow-up b presentation, with exact edition state', () => {
     expect(answer.chosen).toBe('up');
     expect(answerThoughts(s, answer, momentRecords(s))).toEqual([]);
     while (!momentRecords(s).find((r) => r.moment === answer.moment)?.completed) step(s);
-    expect(answerThoughts(s, answer, momentRecords(s))).toEqual(['I got up this time. Feet on the floor.']);
+    expect(answerThoughts(s, answer, momentRecords(s))).toEqual([
+      'I got up and put my feet on the floor this time.',
+    ]);
   });
 
   it('varies retained words and refusals by the actual action and situation', () => {
@@ -118,7 +120,7 @@ describe('follow-up b presentation, with exact edition state', () => {
     runToCard(s);
     queueInput(s, { kind: 'say', option: 'up', insist: true });
     const before = JSON.stringify(cloneState(s));
-    expect(keptWords(s)).toBe('Feet on the floor');
+    expect(keptWords(s)).toBe('Put your feet on the floor');
     expect(JSON.stringify(cloneState(s))).toBe(before);
   });
 
@@ -156,7 +158,7 @@ describe('follow-up b presentation, with exact edition state', () => {
         const s = cloneState(base);
         queueInput(s, { kind: 'say', option, insist });
         const words = finalInputWords(s, momentRecords(s));
-        expect(words).toMatch(insist ? /pressed/ : /suggested/);
+        expect(words).toMatch(insist ? /insisted/ : /suggested/);
         expect(words).toContain(
           required(s.answer).chosen === option ? (insist ? 'went along' : 'chose') : 'chose',
         );

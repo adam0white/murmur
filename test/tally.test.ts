@@ -26,7 +26,7 @@ it('counts only player process inputs at a clear ending, without changing state'
   const before = cloneState(s);
   expect(notebookTally(s, false)).toBe('');
   expect(notebookTally(s, true)).toContain(
-    'Total: 3 recorded choices = 1 plain suggestions + 1 holds + 1 chosen silences.',
+    'Total: 3 recorded choices = 1 suggestion + 1 time you insisted + 1 time you chose to say nothing.',
   );
   expect(cloneState(s)).toEqual(before);
 });
@@ -41,6 +41,6 @@ it('excludes the first week from the second ending, including a prepared first w
     { kind: 'quiet', at: dayStart(8) },
   ];
   expect(notebookTally(s, true)).toContain(
-    'Total: 1 recorded choices = 0 plain suggestions + 0 holds + 1 chosen silences.',
+    'Total: 1 recorded choice = 0 suggestions + 0 times you insisted + 1 time you chose to say nothing.',
   );
 });

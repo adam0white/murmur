@@ -395,8 +395,8 @@ export function cardView(s: GameState): CardView | null {
 }
 
 function resolveLine(label: string): string {
-  if (label === LABEL.alarm) return 'I said I’d get up when it goes.';
-  if (label === LABEL.mum) return 'I said I’d ring her. Ten minutes.';
+  if (label === LABEL.alarm) return 'I said I’d get up when the alarm rings.';
+  if (label === LABEL.mum) return 'I said I’d call Mum for ten minutes.';
   return `I said I’d keep ${label}.`;
 }
 
@@ -542,7 +542,7 @@ function getUpAlone(s: GameState, m: Moment) {
   s.flags.late = false;
   s.chosen[m.id] = up.id;
   s.stats.gotUpAlone = true;
-  s.stats.turnedAlone.push(s.phrases.find((ph) => ph.id === 'feet')?.text ?? 'Feet on the floor');
+  s.stats.turnedAlone.push(s.phrases.find((ph) => ph.id === 'feet')?.text ?? 'Put your feet on the floor');
   say(s, 'narrator', upAloneLine);
   m.after?.(s, up.id);
   // Do not mark the phrase reinforced: no player said it again today.
@@ -551,10 +551,11 @@ function getUpAlone(s: GameState, m: Moment) {
 
 /** Her reason when she turns your word down and HF gave her no words: tiredness, the easier way, or plain no. */
 function reasonOf(c: Ctx, v: Verdict, pullWay: boolean): string {
-  if (v === 'deferred') return c.tired ? 'Later. I’m too tired now.' : 'Later. Not now.';
+  if (v === 'deferred')
+    return c.tired ? 'I’ll do it later. I’m too tired now.' : 'I’ll do it later. I’m not ready now.';
   if (c.tired) return 'I’m too tired for that.';
   if (pullWay) return 'The other way is easier.';
-  return 'No. Not that one.';
+  return 'No, I don’t want that one.';
 }
 
 function resolve(s: GameState, said: { option: string; insist: boolean } | null) {
@@ -937,7 +938,7 @@ function nextDay(s: GameState) {
   s.flags.wroteTonight = false;
   s.stats = blankStats(p);
   s.answer = null;
-  if (coffee) say(s, 'narrator', 'She lay awake past midnight. The third coffee.');
+  if (coffee) say(s, 'narrator', 'She lay awake past midnight because of the third coffee.');
   else if (minuteOfDay(bed) > 23 * 60 || minuteOfDay(bed) < 4 * 60)
     say(s, 'narrator', `She fell asleep around ${clock(bed)}.`);
 }
@@ -967,7 +968,9 @@ function pageOf(s: GameState): Page {
   if (listens(s)) {
     const thoughts = (s.thoughts ?? []).filter((t) => t.at >= dayStart(s.day));
     if (thoughts.length)
-      page.stayed = thoughts.slice(-2).map((t) => `When you said “${t.ink}”, I didn’t. It stayed with me.`);
+      page.stayed = thoughts
+        .slice(-2)
+        .map((t) => `When you said “${t.ink}”, I didn’t follow your suggestion. I kept thinking about it.`);
   }
   const line = today ? reviewLine(p) : undefined;
   if (line) page.review = line;
@@ -988,45 +991,45 @@ function aboutYou(s: GameState): string {
   const dYou = trustOf(p, YOU) - st.trustYouAtStart;
   if (st.borrowedHeard > 0) return 'Some of what I heard today wasn’t you.';
   if (st.insisted >= 3) return 'You pushed me a lot today. I did it. I didn’t like it.';
-  if (st.insisted >= 1 && dYou < -0.02) return 'You pushed. Next time ask me first.';
+  if (st.insisted >= 1 && dYou < -0.02) return 'You pushed me. Next time, ask me first.';
   if (st.said === 0)
     return st.turnedAlone.length > 0
-      ? 'You were quiet today. I did one myself.'
-      : 'You were quiet today. I managed. Sort of.';
+      ? 'You were quiet today. I made one of those choices myself.'
+      : 'You were quiet today. I managed, I think.';
   if (st.refused >= 2) return 'I didn’t listen to you much today.';
   if (dYou > 0.02) return 'You were right more than you were wrong.';
   if (dYou < -0.02)
     return s.day % 2 === 0
-      ? 'Some of what you said today didn’t sit right.'
+      ? 'Some of what you said today felt wrong to me.'
       : 'I listened to you, and I’m not sure I should have.';
   if (st.said >= 6) return 'You had something to say about everything.';
-  return 'You were there. Mostly I heard you.';
+  return 'You were there. I heard most of what you said.';
 }
 
 function herLine(s: GameState): string {
-  if (weekOf(s.day) === 2) return weekTwo.weekTwoHerLine(s) || `${DAY_NAMES[s.day]}, done.`;
+  if (weekOf(s.day) === 2) return weekTwo.weekTwoHerLine(s) || `${DAY_NAMES[s.day]} is over.`;
   const f = s.flags;
   const ch = s.chosen;
   switch (s.day) {
     case 1:
       if (f.lied === 1) return 'Murat knows it wasn’t the ring road.';
-      if (f.gossiped === 1) return 'Ece’s face when she came back in.';
+      if (f.gossiped === 1) return 'I keep thinking about Ece’s face when she came back in.';
       if (ch['bus-1'] === 'call')
         return 'Mum’s neighbour is putting on a new roof. I know far too much about it.';
-      return 'Monday, done.';
+      return 'Monday is over.';
     case 2:
-      if (ch['mistake-2'] === 'own') return 'I said it was me, and nothing fell down.';
+      if (ch['mistake-2'] === 'own') return 'I said it was my mistake, and nothing terrible happened.';
       if (f.eceBlamed) return 'They think it was Ece.';
-      return 'Tuesday.';
+      return 'It is Tuesday.';
     case 3:
       if (ch['dinner-3'] === 'truth') return 'Mum held my hand under the table like I was nine.';
-      if (ch['dinner-3'] === 'home') return 'I left before the candles.';
-      if (f.route) return 'I could still feel the van in my legs at dinner.';
+      if (ch['dinner-3'] === 'home') return 'I left before Aylin blew out the candles.';
+      if (f.route) return 'At dinner, my legs still ached from driving the van.';
       return 'Aylin is thirty. That can’t be right.';
     case 4:
       if ((f.shelf ?? 0) >= 1) return 'The shelf has sides now.';
       if (f.eceBlamed) return 'Ece apologised for something I did.';
-      return 'Thursday nearly got me.';
+      return 'I almost couldn’t manage everything on Thursday.';
     default:
       if ((f.shelf ?? 0) >= 2) return 'There is a shelf. I made it.';
       if (f.bowling) return 'I am apparently good at bowling.';
@@ -1039,8 +1042,8 @@ export function voiceNote(s: GameState): string {
   const calls = s.flags.calls ?? 0;
   const parts: string[] = ['Mum, it’s me.'];
   if (calls >= 3) parts.push('I know I rang most days. I liked it.');
-  else if (calls >= 1) parts.push('I know I didn’t ring every day. I meant to.');
-  else parts.push('I know I didn’t ring. I kept meaning to.');
+  else if (calls >= 1) parts.push('I know I didn’t call every day. I meant to call.');
+  else parts.push('I know I didn’t call. I kept meaning to call.');
   if (s.chosen['dinner-3'] === 'truth') parts.push('You asked if I was eating. I’m trying.');
   if (
     s.chosen['shelf-visit-6'] === 'repair-with-aylin' &&
@@ -1048,9 +1051,9 @@ export function voiceNote(s: GameState): string {
   )
     parts.push('Aylin and I finished the shelf together. The uneven edge is still visible inside.');
   else if ((s.flags.shelf ?? 0) >= 2) parts.push('I finished the shelf. It’s not straight.');
-  else if ((s.flags.shelf ?? 0) === 1) parts.push('I started the shelf. Finally.');
-  if (s.flags.ownedMistake) parts.push('I messed up at work and said so.');
-  parts.push('Anyway. Love you. That’s it.');
+  else if ((s.flags.shelf ?? 0) === 1) parts.push('I finally started building the shelf.');
+  if (s.flags.ownedMistake) parts.push('I made a mistake at work and said so.');
+  parts.push('Anyway, I love you. That’s all I wanted to say.');
   return parts.join(' ');
 }
 
@@ -1061,14 +1064,15 @@ function threadsOf(s: GameState): string[] {
   const out: string[] = [];
   if (ch['shadow-4'] === 'stay')
     out.push('Ece has her own columns now. She sends Dilan a photo of them every morning.');
-  else if (ch['shadow-4'] === 'go') out.push('Ece never asked to shadow her again. She asked Murat.');
+  else if (ch['shadow-4'] === 'go')
+    out.push('Ece never asked to watch Dilan work again. She asked Murat instead.');
   else if (f.eceBlamed && ch['ece-4'] !== 'tell') out.push('Ece still thinks it was her scanner.');
   else if (ch['ece-1'] === 'talk')
-    out.push('Ece knows the new estate now. She knows who talked her round it.');
+    out.push('Ece knows the new housing estate now. She knows who guided her through it.');
   if ((f.lied ?? 0) > 0 && (f.lateDays ?? 0) >= 2)
-    out.push('Murat stopped asking about the ring road. That was worse.');
+    out.push('Murat stopped asking about the ring road. His silence felt worse than his questions.');
   else if ((f.lateDays ?? 0) >= 2 && !f.lied)
-    out.push('Murat’s note says late twice. In pen. It also says reliable.');
+    out.push('Murat wrote in pen that she was late twice. He also wrote that she was reliable.');
   if (
     ch['shelf-visit-6'] === 'repair-with-aylin' &&
     s.cast?.encounters.some((e) => e.person === 'aylin' && e.action === 'shelf')
@@ -1077,12 +1081,12 @@ function threadsOf(s: GameState): string[] {
   else if (ch['shelf-visit-6'] === 'leave-shelf')
     out.push('Aylin came for the agreed visit. They had cake and left the shelf unfinished.');
   else if (ch['shelf-4'] === 'aylin')
-    out.push('Aylin came round on Saturday for the shelf. There was still cake.');
+    out.push('Aylin came to help with the shelf on Saturday. There was still cake.');
   else if ((f.shelf ?? 0) === 0)
     out.push('The screws are still in their little bag. March is a long time ago now.');
-  if (ch['gymgo-5'] === 'gym') out.push('The gym bag is by the door again. On purpose.');
+  if (ch['gymgo-5'] === 'gym') out.push('She put the gym bag by the door again on purpose.');
   if (f.sent === 'send' || f.sent === 'call')
-    out.push('She changed the lock screen. The beach can stay in the album.');
+    out.push('She changed the lock screen. The beach photo can stay in the album.');
   else out.push('The beach photo is still the lock screen.');
   return out;
 }

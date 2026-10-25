@@ -113,7 +113,7 @@ export function releaseOneCastDeparture(s: GameState): DepartureReceipt {
     s.log.push({
       at: s.minute,
       who: 'dilan',
-      text: `For this short visit I am setting aside “${purposeDescription(purpose.label)}”. It is unfinished; this is no claim that I achieved it.`,
+      text: `For this short visit, I am setting aside “${purposeDescription(purpose.label)}”. I have not finished it.`,
     });
   }
   s.log.push({
@@ -121,8 +121,8 @@ export function releaseOneCastDeparture(s: GameState): DepartureReceipt {
     who: 'dilan',
     text:
       shelf && shelf.status !== 'achieved'
-        ? 'The route week is over. I am setting the unfinished shelf aside for this visit. It is still here; I will take it up as a new intention when I return.'
-        : 'The route week is over. The dated promises stay in this week’s record. I can make a short visit now.',
+        ? 'My week of deliveries is over. I am leaving the unfinished shelf here for this visit. I will plan to work on it again when I return.'
+        : 'My week of deliveries is over. My promises with dates stay in this week’s record. I can make a short visit now.',
   });
   return receipt;
 }
@@ -308,8 +308,8 @@ export function installOneCastReturn(prefix: GameState, transfer: unknown): Game
     at: s.minute,
     who: 'dilan',
     text: accepted
-      ? 'Back from the garden. Hatice and I had a short exchange. The week before it is still mine.'
-      : 'Back from the garden. I did not stay for the exchange. The week before it is still mine.',
+      ? 'I am back from the garden. Hatice and I talked briefly. I still remember the week before my visit.'
+      : 'I am back from the garden. I did not stay to talk. I still remember the week before my visit.',
   });
   return s;
 }

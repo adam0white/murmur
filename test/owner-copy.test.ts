@@ -34,7 +34,7 @@ describe('owner copy regressions', () => {
     const scene = momentById('dinner-3').scene;
     const words = typeof scene === 'function' ? scene(c) : scene;
     expect(words).toMatch(/fifteen minutes late/);
-    expect(words).toMatch(/saved.*plate/);
+    expect(words).toMatch(/saved.*dinner/);
     expect(words).toMatch(/route/);
   });
 

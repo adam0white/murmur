@@ -2,24 +2,10 @@ import { tick } from '@adam0white/human-framework';
 import { cardView, ctxOf, insistCarries, listens, optionsOf, replay } from '../sim/game.ts';
 import { momentById } from '../sim/moments.ts';
 import type { Answer, GameState } from '../sim/types.ts';
-import { quotedWords } from './presentation.ts';
+import { quotedWords, spokenAction } from './presentation.ts';
 
 const willing = (lean: string) => lean === 'yes' || lean === 'if pushed';
 const nextMoment = 'When the next moment comes, try a different suggestion, or say nothing.';
-
-/** Labels belong to recorded simulation state; only speech uses Dilan's first person. */
-function spokenAction(label: string): string {
-  const firstPerson: Record<string, string> = {
-    'say it was her': 'say it was me',
-    'keep her head down': 'keep my head down',
-    'eat at her desk': 'eat at my desk',
-    'say she’s busy': 'say I’m busy',
-    'check the returns herself': 'check the returns myself',
-    'tell Aylin she is unsure': 'tell Aylin I’m unsure',
-    'tell Ece she cannot stay': 'tell Ece I can’t stay',
-  };
-  return firstPerson[label] ?? label;
-}
 
 /** Replace generic assent only; pressure, refusal and bodily limits keep their own words. */
 function assentWords(s: GameState, a: Answer): string | undefined {
@@ -35,86 +21,87 @@ function assentWords(s: GameState, a: Answer): string | undefined {
   const words: Record<string, Record<string, string[]>> = {
     alarm: {
       up: [
-        'Feet down. Before I start bargaining.',
-        'Yes. Out of bed this time.',
+        'I’ll get up before I start bargaining.',
+        'Yes, I’m getting out of bed this time.',
         'I’m getting up. Leave the phone there.',
-        'Up, then. The floor is cold.',
-        'Friday. Feet on the floor.',
+        'I’ll get up, then. The floor is cold.',
+        'It’s Friday. I’ll put my feet on the floor.',
       ],
       snooze: [
-        'Five minutes. I’m staying here.',
-        'Not yet. One more alarm.',
+        'I’m staying here for five more minutes.',
+        'I’m not ready yet. I’ll wait for one more alarm.',
         'I’m pulling the cover back up.',
-        'Five more. Then I’ll face it.',
+        'I’ll sleep for five more minutes. Then I’ll face the day.',
         'It’s Friday. I want these five minutes.',
       ],
     },
     slump: {
       coffee: [
-        'Coffee, then. The board is still red.',
+        'I’ll have coffee, then. The delivery board still shows late deliveries.',
         'I’m putting the kettle on.',
         'I want the coffee today.',
-        'One cup before I face the board again.',
-        'Coffee. Two hours left.',
+        'I’ll have one cup before I face the delivery board again.',
+        'I’ll have coffee. My shift ends in two hours.',
       ],
       walk: [
-        'Water first. Then outside for a minute.',
+        'I’ll drink some water, then go outside for a minute.',
         'I could use some air.',
-        'Yes. Away from this screen for a minute.',
+        'Yes, I’ll step away from this screen for a minute.',
         'I’m taking the water with me.',
-        'A short walk. Then the last drops.',
+        'I’ll take a short walk, then finish routing the last deliveries.',
       ],
     },
     bus: {
       scroll: [
         'I’m opening the videos.',
-        'Something easy for the ride home.',
+        'I want something easy to watch on the ride home.',
         'I want to look at something else.',
         'I’m scrolling until my stop.',
-        'Friday. I want the bus ride to myself.',
+        'It’s Friday. I want the bus ride to myself.',
       ],
       text: [
-        'I’ll text Mum. Tomorrow, promise.',
-        'A message, then. I’m not calling now.',
+        'I’ll text Mum and promise to call tomorrow.',
+        'I’ll send a message, then. I’m not calling now.',
         'I’ll tell Mum I’ll ring tomorrow.',
         'I can send her a message from here.',
         'I’m texting her before the weekend.',
       ],
       call: [
-        'Ten minutes. I can ring Mum.',
+        'I have ten minutes. I can call Mum.',
         'I’m calling her before I open anything else.',
-        'Yes. I want to hear Mum.',
+        'Yes, I want to hear Mum.',
         'I’ll ring while I have the bus ride.',
-        'Mum first. The videos can wait.',
+        'I’ll call Mum first. The videos can wait.',
       ],
     },
     bed: {
       write: [
         'I’ll get the notebook out.',
-        'A few lines before I sleep.',
+        'I’ll write a few lines before I sleep.',
         'I want to put today on paper.',
-        'Yes. Write it down while I remember.',
-        'The notebook. There’s a week to put down.',
+        'Yes, I’ll write it down while I remember.',
+        'I’ll open the notebook. I have a week to write about.',
       ],
       scroll: [
-        'One video. I’m not ready for sleep.',
+        'I’ll watch one video. I’m not ready for sleep.',
         'I’m keeping the phone a little longer.',
         'I want to watch something before sleep.',
-        'A video before I turn out the light.',
-        'It’s nearly the weekend. One more.',
+        'I’ll watch a video before I turn out the light.',
+        'It’s nearly the weekend. I’ll watch one more video.',
       ],
       sleep: [
-        'Phone down. I’m done for tonight.',
-        'Yes. Turn out the light.',
+        'I’ll put the phone down. I’m done for tonight.',
+        'Yes, I’ll turn out the light.',
         'I need this night’s sleep.',
-        'No more screen. I’m going to sleep.',
+        'I’ll stop looking at the screen. I’m going to sleep.',
         'The week can wait until morning.',
       ],
     },
   };
   const routineWords = words[routine ?? '']?.[a.chosen];
   if (routineWords && day >= 1 && day <= 5) return routineWords[day - 1];
-  if (a.moment === 'note-1' && a.chosen === 'reply') return 'I’ll tell Aylin: tonight, on the bus.';
+  if (a.moment === 'note-1' && a.chosen === 'reply')
+    return 'I’ll tell Aylin I’ll call Mum tonight on the bus.';
   return a.says;
 }
 
@@ -123,26 +110,26 @@ function mightHear(before: GameState, a: Answer): string {
   const c = ctxOf(before);
   if (a.moment.startsWith('alarm-') && a.said === 'up') {
     const tired = c.tired ? 'I’m still tired. ' : '';
-    return `${tired}Next time the alarm goes, press and hold. I might get my feet down before I start bargaining.`;
+    return `${tired}Next time the alarm goes, press and hold. I might get out of bed before I start bargaining.`;
   }
   if (a.moment === 'note-1' && a.said === 'reply') {
-    return 'I could tell Aylin I’ll call on the bus. Another time, hold that suggestion a little longer.';
+    return 'I could tell Aylin I’ll call on the bus. Next time, hold that choice a little longer.';
   }
   if (a.moment.startsWith('late-') && a.said === 'truth') {
-    return 'I might tell Murat I overslept next time. Hold that suggestion before I start on the ring road.';
+    return 'I might tell Murat I overslept next time. Hold that choice before I blame the ring road.';
   }
   if (a.moment === 'ece-1' && a.said === 'talk') {
     return c.flags.late
-      ? 'I’m already late, but Ece’s stuck too. Next time, hold the suggestion. I might stay on the phone.'
-      : 'Ece could use someone on the phone. Another time, hold that suggestion. I might make time for her.';
+      ? 'I’m already late, but Ece’s stuck too. Next time, hold that choice. I might stay on the phone.'
+      : 'Ece could use someone on the phone. Next time, hold that choice. I might make time for her.';
   }
   if (a.moment === 'lunch-1' && a.said === 'defend') {
-    return 'Another time they start on Ece, I could speak up. Hold that suggestion before I join in.';
+    return 'I could speak up next time they mock Ece. Hold that choice before I join in.';
   }
   if (a.moment.startsWith('bus-') && a.said === 'call') {
-    return 'I might call Mum on the next bus. Hold the suggestion before I open those videos.';
+    return 'I might call Mum on the next bus. Hold that choice before I open those videos.';
   }
-  return 'Another time, press and hold that suggestion. I might be ready to hear it.';
+  return 'Next time, press and hold that choice. I might be ready to hear it.';
 }
 
 /** Her reply plus a way forward. Reconstruct the decision without changing the run or its export. */
@@ -228,7 +215,7 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
         recovery = mightHear(before, a);
       } else {
         const other = view.options.find((option) => option.id !== a.said && willing(option.lean));
-        if (other) recovery = `I could have heard ${quotedWords(other.ink, true)} ${nextMoment}`;
+        if (other) recovery = `I could have listened to ${quotedWords(other.ink, true)} ${nextMoment}`;
       }
     }
   }

@@ -48,17 +48,17 @@ describe('owner replay regressions', () => {
     const s = replay(run1.seed, run1.inputs);
     expect(cardView(s)?.id).toBe('slump-2');
     expect(s.chosen['slump-1']).toBe('walk');
-    expect(cardView(s)?.pullLine).toBe('Coffee. Get the board green.');
+    expect(cardView(s)?.pullLine).toBe('Have a coffee and finish routing the deliveries.');
   });
 
   it('can recall yesterday’s coffee, without claiming the lost sleep was fine', () => {
     const s = replay(run2.seed, run2.inputs);
     expect(s.chosen['slump-1']).toBe('coffee'); // She declined the owner’s walk.
-    expect(cardView(s)?.pullLine).toBe('Coffee. Same as yesterday.');
+    expect(cardView(s)?.pullLine).toBe('Have a coffee, as you did yesterday.');
     delete s.chosen['slump-1'];
-    expect(cardView(s)?.pullLine).toBe('Coffee. Get the board green.');
+    expect(cardView(s)?.pullLine).toBe('Have a coffee and finish routing the deliveries.');
     s.chosen['slump-4'] = 'coffee'; // Another day is not yesterday.
-    expect(cardView(s)?.pullLine).toBe('Coffee. Get the board green.');
+    expect(cardView(s)?.pullLine).toBe('Have a coffee and finish routing the deliveries.');
   });
 
   it.each(['say', 'quiet', 'expiry'] as const)(

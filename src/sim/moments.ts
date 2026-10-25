@@ -16,7 +16,7 @@ const at = (h: number, m = 0) => h * 60 + m;
 
 const getUp: Opt = {
   id: 'up',
-  ink: 'Up. Feet on the floor.',
+  ink: 'Get up and put your feet on the floor.',
   label: 'get up',
   action: 'get-up',
   duration: 15,
@@ -25,12 +25,12 @@ const getUp: Opt = {
   gives: { competence: 0.15, autonomy: 0.1 },
   norms: [{ normId: 'punctuality', relation: 'fulfills' }],
   placeId: 'bed',
-  phrase: { id: 'feet', kind: 'redirect', text: 'Feet on the floor' },
+  phrase: { id: 'feet', kind: 'redirect', text: 'Put your feet on the floor' },
   done: 'She was up before the second alarm.',
 };
 const snooze: Opt = {
   id: 'snooze',
-  ink: 'Five more.',
+  ink: 'Sleep for five more minutes.',
   label: 'sleep five more minutes',
   action: 'snooze',
   duration: 30,
@@ -51,8 +51,10 @@ function alarm(day: number, scene: (c: Ctx) => string, extra: Partial<Moment> = 
     pull: {
       to: 'snooze',
       line: (c) =>
-        c.tired ? 'Five more. You were up till all hours.' : 'Five more. The alarm is more of a suggestion.',
-      borrow: 'You said rest matters. Five more.',
+        c.tired
+          ? 'Sleep for five more minutes. You stayed up very late.'
+          : 'Sleep for five more minutes. You don’t have to obey the alarm.',
+      borrow: 'You said rest matters. Sleep for five more minutes.',
     },
     options: [getUp, snooze],
     after: (s, chosen) => {
@@ -71,9 +73,9 @@ function late(day: number): Moment {
     when: (c) => c.flags.late === true,
     scene: (c) =>
       c.flags.lied !== undefined && c.flags.lied < c.day
-        ? '08:25. Murat doesn’t look up. “Ring road again?”'
-        : '08:25. Murat looks at the clock, then at her. “Traffic?”',
-    pull: { to: 'lie', line: 'Say the ring road. Everyone says the ring road.', strength: 1 },
+        ? 'It is 08:25. Murat doesn’t look up. “Was it the ring road again?”'
+        : 'It is 08:25. Murat looks at the clock, then at her. “Did traffic hold you up?”',
+    pull: { to: 'lie', line: 'Say the ring road delayed you. Everyone uses that excuse.', strength: 1 },
     options: [
       {
         id: 'truth',
@@ -90,12 +92,12 @@ function late(day: number): Moment {
         phrase: { id: 'plain', kind: 'leave', text: 'Just say it plainly' },
         done: (c) =>
           (c.flags.lateDays ?? 0) >= 2
-            ? '“Overslept.” Murat sighed. “That’s twice. I have to put it down, Dilan.” He did, in pen.'
-            : '“Overslept. Sorry.” Murat shrugged. “Happens. Board’s yours.”',
+            ? '“I overslept.” Murat sighed. “That’s twice. I have to record it, Dilan.” He wrote it down in pen.'
+            : '“I overslept. I’m sorry.” Murat shrugged. “It happens. The delivery board is yours.”',
       },
       {
         id: 'lie',
-        ink: 'The ring road.',
+        ink: 'Say the ring road delayed you.',
         label: 'blame the ring road',
         action: 'lie',
         duration: 2,
@@ -108,8 +110,8 @@ function late(day: number): Moment {
         placeId: 'depot',
         done: (c) =>
           c.flags.lied === undefined
-            ? '“The ring road was solid.” Murat nodded. Nobody checked. It worked, which was almost worse.'
-            : '“The ring road again.” Murat didn’t look up. “It’s very unlucky, that road.”',
+            ? '“Traffic on the ring road was stuck.” Murat nodded. Nobody checked. The lie worked, and that felt almost worse.'
+            : '“It was the ring road again.” Murat didn’t look up. “It’s very unlucky, that road.”',
       },
     ],
     after: (s, chosen) => {
@@ -128,30 +130,30 @@ function slump(day: number): Moment {
     scene: (c) =>
       c.tired
         ? byDay(c, [
-            '15:20. The delivery board is red with late drops. Her eyes keep closing on the screen.',
-            '15:20. The board again. The same red. Her eyes sting.',
-            '15:20. The board is red. Her head is full of sand.',
-            '15:20. Red again. She reads the same postcode three times.',
-            '15:20. Friday red. She yawns so hard her jaw clicks.',
+            'It is 15:20. Red marks on the delivery board show late deliveries. Her eyes keep closing as she looks at the screen.',
+            'It is 15:20. The delivery board still shows late deliveries. Her eyes sting.',
+            'It is 15:20. The delivery board shows late deliveries. She feels tired and cannot think clearly.',
+            'It is 15:20. The delivery board shows late deliveries again. She reads the same postcode three times.',
+            'It is 15:20 on Friday. The delivery board shows late deliveries. She yawns so hard her jaw clicks.',
           ])
         : byDay(c, [
-            '15:20. The board is red with late drops. The kettle is right there.',
-            '15:20. The board again. The same red. The kettle again.',
-            '15:20. The afternoon dip. Somebody has left biscuits by the kettle.',
-            '15:20. The board goes red on schedule. So does she.',
-            '15:20. Friday afternoon. Red board, warm kettle, two hours to go.',
+            'It is 15:20. Red marks on the delivery board show late deliveries. The kettle is nearby.',
+            'It is 15:20. The delivery board still shows late deliveries. The kettle is nearby again.',
+            'It is 15:20. She feels tired this afternoon. Somebody has left biscuits by the kettle.',
+            'It is 15:20. The delivery board turns red with late deliveries again. Her face turns red too.',
+            'It is 15:20 on Friday. The delivery board shows late deliveries. The kettle is warm. Her shift ends in two hours.',
           ]),
     pull: {
       to: 'coffee',
       line: (c) =>
         byDay(c, [
-          'Third coffee. You’ve earned it.',
+          'Have a third coffee. You’ve earned it.',
           c.chosen[`slump-${c.day - 1}`] === 'coffee'
-            ? 'Coffee. Same as yesterday.'
-            : 'Coffee. Get the board green.',
-          'Coffee. Today of all days.',
-          'Coffee. Who sleeps anyway.',
-          'Coffee. It’s Friday. Nobody counts on Friday.',
+            ? 'Have a coffee, as you did yesterday.'
+            : 'Have a coffee and finish routing the deliveries.',
+          'Have a coffee. You need one today.',
+          'Have a coffee. Who needs sleep anyway?',
+          'Have a coffee. It’s Friday. Nobody counts cups on Friday.',
         ]),
       borrow: 'You said rest matters. Coffee is rest, basically.',
     },
@@ -167,16 +169,16 @@ function slump(day: number): Moment {
         placeId: 'depot',
         done: (c) =>
           byDay(c, [
-            'The third coffee. The board was green by five.',
-            'Coffee. The board went green. Her hands buzzed a little.',
-            'Coffee, and a biscuit nobody claimed. Green by five.',
-            'Coffee. She cleared the board and felt like a wire.',
-            'Coffee. Green by five. Friday’s problem now is tonight.',
+            'She had a third coffee. She finished routing the deliveries by five.',
+            'She had coffee and finished routing the deliveries. Her hands felt a little jittery.',
+            'She had coffee and a biscuit nobody claimed. She finished routing the deliveries by five.',
+            'She had coffee and finished routing the deliveries. She felt tense and restless.',
+            'She had coffee and finished routing the deliveries by five. Now she is worried about Friday evening.',
           ]),
       },
       {
         id: 'walk',
-        ink: 'Water, and a lap of the yard.',
+        ink: 'Drink some water and walk around the yard.',
         label: 'walk round the yard',
         action: 'walk',
         duration: 12,
@@ -187,8 +189,8 @@ function slump(day: number): Moment {
         placeId: 'yard',
         done: (c) =>
           c.tired
-            ? 'A lap of the yard. She came back and fell asleep in front of the board. Murat saw.'
-            : 'A lap of the yard. The parked vans looked like sleeping animals. The board went green by five.',
+            ? 'She walked around the yard. She came back and fell asleep in front of the delivery board. Murat saw her.'
+            : 'She walked around the yard. The vans were parked quietly. She finished routing the deliveries by five.',
       },
     ],
     after: (s, chosen) => {
@@ -215,13 +217,13 @@ const callMum: Opt = {
       ? 'Mum picked up on the first ring. Neither of them mentioned the voice note.'
       : c.version === '0.4.2' || c.version === '0.5.0' || c.version === '0.6.0'
         ? byDay(c, [
-            'Twenty minutes. Mum talked about the neighbour’s roof. Dilan laughed twice.',
-            'Mum had bought too many tomatoes. Dilan was given instructions for three dinners.',
+            'They talked for twenty minutes. Mum told her about the neighbour’s roof. Dilan laughed twice.',
+            'Mum had bought too many tomatoes. She gave Dilan instructions for three dinners.',
             'Mum wanted to know whether she needed to bring anything tonight. The cake was already in its box.',
-            'Mum put the phone down to find her glasses. Dilan could hear her asking the empty room.',
+            'Mum put the phone down to find her glasses. Dilan could hear her asking where they were, though nobody else was there.',
             'Mum asked about the bowling. Dilan promised to report anything worth reporting.',
           ])
-        : 'Twenty minutes. Mum talked about the neighbour’s roof. Dilan laughed twice.',
+        : 'They talked for twenty minutes. Mum told her about the neighbour’s roof. Dilan laughed twice.',
 };
 const scrollBus: Opt = {
   id: 'scroll',
@@ -238,14 +240,14 @@ const scrollBus: Opt = {
 };
 const textMum: Opt = {
   id: 'text',
-  ink: 'Text her: tomorrow, promise.',
+  ink: 'Text Mum and promise to call tomorrow.',
   label: 'text Mum instead',
   action: 'text-mum',
   duration: 3,
   advertises: { belonging: 0.05 },
   gives: { belonging: 0.1 },
   placeId: 'phone',
-  done: '“Tomorrow, promise.” Mum sent back a flower.',
+  done: '“I’ll call tomorrow, I promise.” Mum sent back a flower.',
 };
 
 function bus(day: number, extra: Partial<Moment> = {}): Moment {
@@ -256,24 +258,24 @@ function bus(day: number, extra: Partial<Moment> = {}): Moment {
     place: 'bus',
     scene: (c) =>
       c.missedMum >= 2
-        ? 'The bus home. Mum’s voice note is still at the top of her messages.'
+        ? 'Dilan is on the bus home. Mum’s voice note is still at the top of her messages.'
         : byDay(c, [
-            'The bus home. Mum’s number is right there. So is everything else.',
-            'The bus home. The same seat. Mum’s number, one tap away.',
-            'The bus home. Rain on the window. Mum’s number.',
-            'The bus home. A man opposite is on the phone to his mum, loudly. It’s a sign, or it isn’t.',
-            'The bus home. Friday. Mum’s number, and every video in the world.',
+            'Dilan is on the bus home. She can call Mum or look at other things on her phone.',
+            'Dilan is on the bus home, in the same seat. She can call Mum with one tap.',
+            'Dilan is on the bus home. Rain runs down the window. Mum’s number is on her phone.',
+            'Dilan is on the bus home. A man opposite is talking loudly to his mum on the phone. It might be a sign that she should call hers too. Or it might not.',
+            'Dilan is on the bus home on Friday. She can call Mum or watch videos.',
           ]),
     pull: {
       to: 'scroll',
       line: (c) =>
         c.missedMum >= 2
-          ? 'She said no need. Take her at her word.'
+          ? 'She said you don’t need to call. Believe her.'
           : byDay(c, [
-              'You’ll call her when you’re human again.',
-              'You called yesterday. Or the day before. Recently.',
+              'You’ll call her when you feel less tired.',
+              'You called yesterday. Or you called the day before. It was recently, anyway.',
               'She’ll only ask if you’re eating.',
-              'Tomorrow. You’ll have more to say tomorrow.',
+              'Call tomorrow. You’ll have more to say then.',
               'It’s Friday. She’ll be watching her programme.',
             ]),
       borrow: 'You told me to be kind to myself. Call her tomorrow.',
@@ -294,23 +296,23 @@ function bed(day: number, extra: Partial<Moment> = {}): Moment {
     place: 'bed',
     scene: (c) =>
       byDay(c, [
-        '21:30. Bed. The phone is warm in her hand. The beach photo is still the lock screen.',
-        '21:30. Bed. The beach photo lights up when she touches the phone. Someone is cropped out of it.',
-        'Bed, late. Cake crumbs in the bag. The beach photo, still.',
-        '21:30. Bed. The notebook from March is under the phone, which is under her thumb.',
-        '22:00. Bed. The week is nearly done with her.',
+        'It is 21:30. Dilan is in bed. The phone is warm in her hand. The beach photo is still on its lock screen.',
+        'It is 21:30. Dilan is in bed. The beach photo lights up when she touches the phone. Someone is cropped out of it.',
+        'Dilan is in bed late. There are cake crumbs in her bag. The beach photo is still on her phone.',
+        'It is 21:30. Dilan is in bed. She is using her phone. The notebook she bought in March is underneath it.',
+        'It is 22:00. Dilan is in bed. Her week is almost over.',
       ]),
     pull: {
       to: 'scroll',
       line: (c) =>
         byDay(c, [
-          'One more video. Then sleep. Honestly.',
-          'Just one. You were good today. Ish.',
+          'Watch one more video, then go to sleep. Honestly.',
+          'Watch just one video. You did well today, more or less.',
           'You can’t write tonight, you’re full of cake.',
-          'One video for each thing that went wrong. That’s fair.',
+          'Watch one video for each thing that went wrong. That’s fair.',
           'It’s nearly the weekend. Videos are basically the weekend.',
         ]),
-      borrow: 'You said switch off. Videos are switching off.',
+      borrow: 'You said to relax. Watching videos is relaxing.',
       strength: 0.45,
     },
     options: [
@@ -328,15 +330,15 @@ function bed(day: number, extra: Partial<Moment> = {}): Moment {
         done: (c) =>
           byDay(c, [
             'She wrote half a page in the notebook she bought in March.',
-            'A page. Her handwriting was worse than she remembered, and more hers.',
-            'Three lines. One of them was about the cake.',
-            'A page and a bit. She drew a box round one sentence.',
+            'She wrote a page. Her handwriting was worse than she remembered, but it felt more like her own.',
+            'She wrote three lines. One of them was about the cake.',
+            'She wrote a little more than a page. She drew a box around one sentence.',
             'She filled the page and turned it over.',
           ]),
       },
       {
         id: 'scroll',
-        ink: 'One more video.',
+        ink: 'Watch one more video.',
         label: 'watch one more video',
         action: 'scroll',
         duration: 75,
@@ -346,15 +348,15 @@ function bed(day: number, extra: Partial<Moment> = {}): Moment {
         done: (c) =>
           byDay(c, [
             'It was not one more video.',
-            'A man restoring a rusty knife. Then another man, another knife.',
-            'She watched a stranger’s whole house tour. It had a better shelf.',
-            'Forty minutes of other people’s holidays.',
+            'She watched a man restore a rusty knife. Then she watched another man restore another knife.',
+            'She watched a video showing a stranger’s whole house. It had a better shelf.',
+            'She watched videos of other people’s holidays for forty minutes.',
             'It was not one more video. It was never going to be.',
           ]),
       },
       {
         id: 'sleep',
-        ink: 'Phone on the floor. Sleep.',
+        ink: 'Put the phone on the floor and go to sleep.',
         label: 'put the phone away',
         action: 'lights-out',
         duration: 5,
@@ -379,18 +381,18 @@ const lunchFood = { food: 0.5, water: 0.3 };
 // ---------- Monday ----------
 
 const monday: Moment[] = [
-  alarm(1, () => '06:40, Monday. The alarm. The half-built shelf watches from the corner.'),
+  alarm(1, () => 'It is 06:40 on Monday. Her alarm rings. The unfinished shelf is in the corner.'),
   {
     id: 'note-1',
     day: 1,
     at: at(7, 15),
     place: 'phone',
-    scene: 'A voice note from Aylin: “Mum’s asking again. Just ring her. It’s ten minutes.”',
-    pull: { to: 'read', line: 'Later. Nobody does Mum before tea.' },
+    scene: 'Aylin sends a voice note: “Mum’s asking again. Just ring her. It’s ten minutes.”',
+    pull: { to: 'read', line: 'Call Mum later. Nobody calls her before having tea.' },
     options: [
       {
         id: 'reply',
-        ink: 'Tell Aylin: tonight, on the bus.',
+        ink: 'Tell Aylin you will call Mum tonight on the bus.',
         label: 'answer Aylin',
         action: 'reply',
         duration: 3,
@@ -403,7 +405,7 @@ const monday: Moment[] = [
       },
       {
         id: 'read',
-        ink: 'Leave it on read.',
+        ink: 'Read the message without replying.',
         label: 'leave it for later',
         action: 'scroll',
         duration: 15,
@@ -412,7 +414,7 @@ const monday: Moment[] = [
         tags: T,
         norms: [{ normId: 'kindness-to-parents', relation: 'violates' }],
         placeId: 'phone',
-        done: 'She left it on read and watched four videos about other people’s kitchens.',
+        done: 'She read the message without replying and watched four videos about other people’s kitchens.',
       },
     ],
   },
@@ -422,8 +424,9 @@ const monday: Moment[] = [
     day: 1,
     at: at(10, 40),
     place: 'depot',
-    scene: 'Ece, the new driver, calls from her van. Lost in the new estate. Trying not to cry.',
-    pull: { to: 'pin', line: 'Send her the map pin. You have forty drops to route.' },
+    scene:
+      'Ece, the new driver, calls from her van. She is lost in the new housing estate and is trying not to cry.',
+    pull: { to: 'pin', line: 'Send her the map location. You have forty deliveries to route.' },
     options: [
       {
         id: 'talk',
@@ -439,19 +442,19 @@ const monday: Moment[] = [
         placeId: 'depot',
         done: (c) =>
           c.flags.late
-            ? 'Fifteen minutes, street by street. Ece made her drop. Dilan’s deliveries were still late.'
-            : 'Fifteen minutes, street by street. Ece made her drop.',
+            ? 'Dilan guided Ece street by street for fifteen minutes. Ece delivered the parcel. Dilan’s deliveries were still late.'
+            : 'Dilan guided Ece street by street for fifteen minutes. Ece delivered the parcel.',
       },
       {
         id: 'pin',
-        ink: 'Send the pin.',
+        ink: 'Send her the map location.',
         label: 'send her the pin',
         action: 'pin',
         duration: 2,
         advertises: { competence: 0.15 },
         gives: (c) => (c.flags.late ? { competence: 0.25 } : { competence: 0.05, meaning: -0.1 }),
         placeId: 'depot',
-        done: 'She sent the pin and went back to the board.',
+        done: 'She sent Ece the map location and went back to the delivery board.',
       },
     ],
     after: (s, chosen) => {
@@ -463,7 +466,7 @@ const monday: Moment[] = [
     day: 1,
     at: at(12, 40),
     place: 'canteen',
-    scene: 'Lunch. Murat is doing an impression of Ece crying in her van. People are laughing.',
+    scene: 'It is lunchtime. Murat is doing an impression of Ece crying in her van. People are laughing.',
     pull: { to: 'laugh', line: 'Laugh. It’s a bit funny. You’re one of them now.', strength: 1 },
     options: [
       {
@@ -477,7 +480,7 @@ const monday: Moment[] = [
         tags: T,
         norms: [{ normId: 'backbiting', relation: 'violates' }],
         placeId: 'canteen',
-        done: 'She laughed. The impression got a second act.',
+        done: 'She laughed. Murat continued his impression of Ece.',
       },
       {
         id: 'outside',
@@ -502,7 +505,7 @@ const monday: Moment[] = [
         gives: { esteem: 0.15, meaning: 0.2, ...lunchFood },
         norms: [{ normId: 'backbiting', relation: 'fulfills' }],
         placeId: 'canteen',
-        done: '“She found it, didn’t she?” It went quiet. Then Murat laughed at himself.',
+        done: '“She found it, didn’t she?” Everyone went quiet. Then Murat laughed at himself.',
       },
     ],
     after: (s, chosen) => {
@@ -519,7 +522,10 @@ const monday: Moment[] = [
 const tuesday: Moment[] = [
   alarm(
     2,
-    (c) => (c.tired ? '06:40, Tuesday. She slept late. It shows.' : '06:40, Tuesday. Grey light. The shelf.'),
+    (c) =>
+      c.tired
+        ? 'It is 06:40 on Tuesday. She stayed up late and looks tired.'
+        : 'It is 06:40 on Tuesday. Grey light falls on the unfinished shelf.',
     {
       hint: 'Press and hold an option to insist.',
     },
@@ -530,8 +536,9 @@ const tuesday: Moment[] = [
     at: at(8, 10),
     place: 'depot',
     when: (c) => c.flags.lied === 1 && c.flags.late !== true,
-    scene: 'Murat, by the kettle: “Ring road was clear yesterday, my cousin says. Clear as anything.”',
-    pull: { to: 'again', line: 'Say it cleared up after. Roads do that.' },
+    scene:
+      'Murat stands by the kettle. “My cousin says the ring road was clear yesterday. It was completely clear.”',
+    pull: { to: 'again', line: 'Say the traffic cleared later. Traffic does that.' },
     options: [
       {
         id: 'own',
@@ -547,7 +554,7 @@ const tuesday: Moment[] = [
       },
       {
         id: 'again',
-        ink: 'It cleared up after.',
+        ink: 'The traffic cleared later.',
         label: 'say it cleared up after',
         action: 'lie',
         duration: 2,
@@ -556,7 +563,7 @@ const tuesday: Moment[] = [
         tags: T,
         norms: [{ normId: 'lying', relation: 'violates' }],
         placeId: 'depot',
-        done: '“Must have cleared up after.” Murat poured his tea and said nothing at all.',
+        done: '“The traffic must have cleared later.” Murat poured his tea and said nothing at all.',
       },
     ],
   },
@@ -567,7 +574,7 @@ const tuesday: Moment[] = [
     at: at(11, 10),
     place: 'depot',
     scene:
-      'The eleven o’clock drops went to the wrong depot. Her routing error. Murat asks the room who did it.',
+      'The eleven o’clock deliveries went to the wrong depot because Dilan routed them incorrectly. Murat asks who made the mistake.',
     pull: { to: 'system', line: 'Say the system did it. It does that.', strength: 1 },
     options: [
       {
@@ -598,14 +605,14 @@ const tuesday: Moment[] = [
       },
       {
         id: 'quiet',
-        ink: 'Keep your head down.',
+        ink: 'Stay quiet about the mistake.',
         label: 'keep her head down',
         action: 'quiet',
         duration: 3,
         advertises: { safety: 0.1 },
         gives: {},
         placeId: 'depot',
-        done: 'She kept her eyes on the board. Somebody said it was probably the new girl.',
+        done: 'She kept her eyes on the delivery board. Somebody said it was probably the new girl.',
       },
     ],
     after: (s, chosen) => {
@@ -620,8 +627,8 @@ const tuesday: Moment[] = [
     place: 'canteen',
     scene: (c) =>
       c.flags.gossiped
-        ? 'Lunch. Ece eats alone at the end of the long table.'
-        : 'Lunch. Ece waves her over. There is a seat.',
+        ? 'It is lunchtime. Ece eats alone at the end of the long table.'
+        : 'It is lunchtime. Ece waves her over. There is a seat.',
     pull: { to: 'desk', line: 'Eat at your desk. You’re behind, and she’s not your problem.' },
     options: [
       {
@@ -638,7 +645,7 @@ const tuesday: Moment[] = [
         placeId: 'canteen',
         done: (c) =>
           c.flags.late
-            ? 'Ece talked about football. The afternoon drops went out forty minutes late.'
+            ? 'Ece talked about football. The afternoon deliveries went out forty minutes late.'
             : 'Ece talked about her son’s football. Dilan learned the offside rule, again.',
       },
       {
@@ -653,7 +660,7 @@ const tuesday: Moment[] = [
             ? { competence: 0.3, ...lunchFood }
             : { competence: 0.1, belonging: -0.1, ...lunchFood },
         placeId: 'depot',
-        done: 'A sandwich over the keyboard. The afternoon drops were routed by one.',
+        done: 'She ate a sandwich at her keyboard. She finished routing the afternoon deliveries by one.',
       },
     ],
   },
@@ -666,7 +673,9 @@ const tuesday: Moment[] = [
 
 const wednesday: Moment[] = [
   alarm(3, (c) =>
-    c.tired ? '06:40, Wednesday. Heavy. Aylin’s birthday.' : '06:40, Wednesday. Aylin’s birthday.',
+    c.tired
+      ? 'It is 06:40 on Wednesday. She feels tired. Today is Aylin’s birthday.'
+      : 'It is 06:40 on Wednesday. Today is Aylin’s birthday.',
   ),
   {
     id: 'note-3',
@@ -675,12 +684,12 @@ const wednesday: Moment[] = [
     place: 'phone',
     scene: (c) =>
       c.missedMum >= 2
-        ? 'A voice note from Mum: “No need to call back, love. I know you’re busy.”'
-        : 'Aylin: “Tonight, half seven. Bring nothing. Mum is bringing everything.”',
+        ? 'Mum sends a voice note: “No need to call back, love. I know you’re busy.”'
+        : 'Aylin sends a message: “Dinner is at half past seven tonight. You don’t need to bring anything. Mum is bringing everything.”',
     pull: {
       to: 'read',
       line: (c) =>
-        c.missedMum >= 2 ? 'See? She’s fine. She said so.' : 'Thumbs up. Done. Back to bed for a bit.',
+        c.missedMum >= 2 ? 'See? She’s fine. She said so.' : 'Send a thumbs-up and go back to bed for a bit.',
     },
     options: (c) => [
       c.missedMum >= 2
@@ -692,14 +701,14 @@ const wednesday: Moment[] = [
           }
         : {
             id: 'reply',
-            ink: 'Say: wouldn’t miss it.',
+            ink: 'Tell Aylin you will be at her birthday dinner.',
             label: 'answer Aylin',
             action: 'reply',
             duration: 3,
             gives: { belonging: 0.2 },
             norms: [{ normId: 'keep-promise', relation: 'fulfills' }],
             placeId: 'phone',
-            done: '“Wouldn’t miss it.” Aylin sent eleven balloons.',
+            done: '“I wouldn’t miss it.” Aylin sent eleven balloons.',
           },
       {
         id: 'read',
@@ -712,7 +721,7 @@ const wednesday: Moment[] = [
         tags: T,
         norms: [{ normId: 'kindness-to-parents', relation: 'violates' }],
         placeId: 'phone',
-        done: 'She left it. The kettle boiled twice.',
+        done: 'She left the message without replying. The kettle boiled twice.',
       },
     ],
   },
@@ -724,9 +733,9 @@ const wednesday: Moment[] = [
     place: 'canteen',
     scene: (c) =>
       c.flags.eceBlamed
-        ? 'Lunch. They’re saying Ece’s scanner sent yesterday’s drops astray. Ece is off sick.'
-        : 'Lunch. Murat, loudly: Ece is off sick “again”. Somebody does the van impression.',
-    pull: { to: 'laugh', line: 'Laugh. You’re in now. Don’t spoil it.', strength: 1 },
+        ? 'It is lunchtime. They’re saying Ece’s scanner sent yesterday’s deliveries to the wrong depot. Ece is off sick.'
+        : 'It is lunchtime. Murat says loudly that Ece is off sick “again”. Somebody imitates her crying in the van.',
+    pull: { to: 'laugh', line: 'Laugh. They accept you now. Don’t spoil it.', strength: 1 },
     options: [
       {
         id: 'laugh',
@@ -739,7 +748,7 @@ const wednesday: Moment[] = [
         tags: T,
         norms: [{ normId: 'backbiting', relation: 'violates' }],
         placeId: 'canteen',
-        done: 'She laughed with them. It tasted like the canteen soup.',
+        done: 'She laughed with them. She felt as bad as the canteen soup tasted.',
       },
       {
         id: 'outside',
@@ -751,7 +760,7 @@ const wednesday: Moment[] = [
         gives: { rest: 0.1, autonomy: 0.15, ...lunchFood },
         placeId: 'yard',
         phrase: { id: 'walk', kind: 'redirect', text: 'Walk away from it' },
-        done: 'The loading dock again. One pigeon seemed to know her now.',
+        done: 'She ate on the loading dock again. One pigeon seemed to know her now.',
       },
       {
         id: 'defend',
@@ -781,8 +790,8 @@ const wednesday: Moment[] = [
     at: at(16, 50),
     place: 'depot',
     scene:
-      'Murat: “Ece’s off. Can you take her evening route? Double time.” Aylin’s dinner is at half seven.',
-    pull: { to: 'route', line: 'Take it. Double time. Aylin will save you a plate.' },
+      'Murat asks, “Ece’s off. Can you take her evening route? You’ll get double pay.” Aylin’s dinner is at half past seven.',
+    pull: { to: 'route', line: 'Take the route. You will earn double pay. Aylin will save you some dinner.' },
     options: [
       {
         id: 'route',
@@ -795,7 +804,7 @@ const wednesday: Moment[] = [
         gives: (c) => (c.tired ? { competence: 0.05, esteem: 0.05 } : { competence: 0.2, esteem: 0.2 }),
         followedBy: [{ label: 'Aylin’s dinner', duration: 90, effort: 0.25 }],
         placeId: 'van',
-        done: 'Thirty-one drops in the dark. She parked the van at 19:20, legs humming.',
+        done: 'She made thirty-one deliveries in the dark. She parked the van at 19:20. Her legs ached.',
       },
       {
         id: 'no',
@@ -820,17 +829,16 @@ const wednesday: Moment[] = [
     place: 'aylin',
     scene: (c) =>
       (c.version === '0.4.2' || c.version === '0.5.0' || c.version === '0.6.0') && c.flags.route
-        ? 'Aylin’s kitchen. She is fifteen minutes late after finishing the extra route. Aylin has saved her a plate. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”'
-        : 'Aylin’s kitchen. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”',
+        ? 'Dilan is in Aylin’s kitchen. She is fifteen minutes late after finishing the extra route. Aylin has saved her some dinner. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”'
+        : 'Dilan is in Aylin’s kitchen. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”',
     pull: {
       to: 'yes',
-      line: (c) =>
-        c.flags.route ? 'Say yes, then go home. You’re dead on your feet.' : 'Say yes. It’s easier.',
+      line: (c) => (c.flags.route ? 'Say yes, then go home. You’re very tired.' : 'Say yes. It’s easier.'),
     },
     options: (c) => [
       {
         id: 'truth',
-        ink: 'Tell her: not really.',
+        ink: 'Tell Mum you are not really eating properly.',
         label: 'tell Mum the truth',
         action: 'dinner',
         duration: 90,
@@ -841,7 +849,7 @@ const wednesday: Moment[] = [
         alsoDoes: { action: 'call-mum', duration: 5 },
         placeId: 'aylin',
         phrase: { id: 'plain', kind: 'leave', text: 'Just say it plainly' },
-        done: '“Not really.” Mum put down the knife and sat with her. Aylin pretended not to listen.',
+        done: '“I’m not, really.” Mum put down the knife and sat with her. Aylin pretended not to listen.',
       },
       {
         id: 'yes',
@@ -882,7 +890,9 @@ const wednesday: Moment[] = [
 
 const thursday: Moment[] = [
   alarm(4, (c) =>
-    c.tired ? '06:40, Thursday. Cake for breakfast is a choice.' : '06:40, Thursday. Cake for breakfast.',
+    c.tired
+      ? 'It is 06:40 on Thursday. She could have cake for breakfast.'
+      : 'It is 06:40 on Thursday. There is cake for breakfast.',
   ),
   late(4),
   {
@@ -892,12 +902,12 @@ const thursday: Moment[] = [
     place: 'depot',
     scene: (c) =>
       c.flags.eceBlamed
-        ? 'Ece is back. Someone told her Tuesday’s wrong drops were her scanner. She’s apologising to Murat.'
+        ? 'Ece is back. Someone told her that her scanner sent Tuesday’s deliveries to the wrong depot. She’s apologising to Murat.'
         : 'Ece is back. She asks if she can watch Dilan work the delivery board after her shift.',
     pull: {
       to: 'let',
-      line: 'It blew over. Leave it.',
-      borrow: 'You said look after yourself first. Leave it.',
+      line: 'Nobody is talking about the mistake now. Leave it.',
+      borrow: 'You said to look after yourself first. Leave it alone.',
     },
     options: (c) =>
       c.flags.eceBlamed
@@ -913,11 +923,11 @@ const thursday: Moment[] = [
               norms: [{ normId: 'lying', relation: 'fulfills' }],
               placeId: 'depot',
               phrase: { id: 'plain', kind: 'leave', text: 'Just say it plainly' },
-              done: '“It was my routing, not your scanner.” Ece stared, then laughed. “I thought I was going mad.”',
+              done: '“I sent the deliveries to the wrong depot. Your scanner was fine.” Ece stared, then laughed. “I thought I was going mad.”',
             },
             {
               id: 'let',
-              ink: 'Let it go.',
+              ink: 'Say nothing about the mistake.',
               label: 'let it go',
               action: 'quiet',
               duration: 3,
@@ -926,31 +936,31 @@ const thursday: Moment[] = [
               tags: T,
               norms: [{ normId: 'lying', relation: 'violates' }],
               placeId: 'depot',
-              done: 'She let it go. Ece apologised to Murat twice.',
+              done: 'She said nothing about the mistake. Ece apologised to Murat twice.',
             },
           ]
         : [
             {
               id: 'yes',
-              ink: 'Say yes, after six.',
+              ink: 'Tell Ece she can watch you after six.',
               label: 'say yes to Ece',
               action: 'help',
               duration: 5,
               advertises: { meaning: 0.1 },
               gives: { meaning: 0.25, belonging: 0.15 },
               placeId: 'depot',
-              done: '“After six, then.” Ece did a small fist pump she thought nobody saw.',
+              done: '“You can watch after six, then.” Ece raised her fist in a small celebration she thought nobody saw.',
             },
             {
               id: 'let',
-              ink: 'Say next week.',
+              ink: 'Tell Ece she can watch you next week.',
               label: 'say next week',
               action: 'decline',
               duration: 3,
               advertises: { rest: 0.1 },
               gives: { autonomy: 0.1 },
               placeId: 'depot',
-              done: '“Next week?” Ece said of course, of course.',
+              done: '“Could we do it next week?” Ece said of course, of course.',
             },
           ],
     after: (s, chosen) => {
@@ -965,11 +975,12 @@ const thursday: Moment[] = [
     day: 4,
     at: at(12, 40),
     place: 'canteen',
-    scene: 'Lunch. Ece is doing an impression of Murat on the phone to his mother. It is very good.',
+    scene:
+      'It is lunchtime. Ece is doing an impression of Murat on the phone to his mother. It is very good.',
     pull: {
       to: 'laugh',
-      line: 'Laugh. Turnabout’s fair.',
-      borrow: 'You said be one of them. Laugh.',
+      line: 'Laugh. Murat mocked her, so it’s fair for her to mock him.',
+      borrow: 'You said to join in with them. Laugh.',
       strength: 1,
     },
     options: [
@@ -996,11 +1007,11 @@ const thursday: Moment[] = [
         gives: { rest: 0.1, autonomy: 0.1, ...lunchFood },
         placeId: 'yard',
         phrase: { id: 'walk', kind: 'redirect', text: 'Walk away from it' },
-        done: 'Loading dock. The pigeon brought a friend.',
+        done: 'She ate on the loading dock. The pigeon brought a friend.',
       },
       {
         id: 'defend',
-        ink: '“He covered your route on Monday.”',
+        ink: '“He did your deliveries for you on Monday.”',
         label: 'stick up for Murat',
         action: 'defend',
         duration: 25,
@@ -1008,7 +1019,7 @@ const thursday: Moment[] = [
         gives: { esteem: 0.1, meaning: 0.15, ...lunchFood },
         norms: [{ normId: 'backbiting', relation: 'fulfills' }],
         placeId: 'canteen',
-        done: '“He covered your route on Monday.” Ece went pink and did a kinder impression of Murat.',
+        done: '“He did your deliveries for you on Monday.” Ece’s face turned pink, and she did a kinder impression of Murat.',
       },
     ],
   },
@@ -1020,16 +1031,16 @@ const thursday: Moment[] = [
     place: 'depot',
     when: (c) => c.chosen['ece-4'] === 'yes',
     scene:
-      'Six o’clock, nearly. Ece is waiting by the board with two teas and a notebook. She has drawn columns.',
+      'It is nearly six o’clock. Ece is waiting by the delivery board with two teas and a notebook. She has drawn columns.',
     pull: {
       to: 'go',
-      line: 'You said after six. It’s nearly six. Technically you’re free.',
-      borrow: 'You said look after yourself. Go home.',
+      line: 'You said you would help after six. It’s nearly six. Technically, you’re free to go now.',
+      borrow: 'You said to look after yourself. Go home.',
     },
     options: [
       {
         id: 'stay',
-        ink: 'Stay. Show her the board.',
+        ink: 'Stay and show her how to use the delivery board.',
         label: 'show Ece the board',
         action: 'shadow',
         duration: 40,
@@ -1038,7 +1049,7 @@ const thursday: Moment[] = [
         gives: { belonging: 0.3, meaning: 0.35, competence: 0.15 },
         norms: [{ normId: 'keep-promise', relation: 'fulfills' }],
         placeId: 'depot',
-        done: 'Forty minutes, street by street. Ece’s columns were better than the board’s. Dilan caught the late bus.',
+        done: 'They spent forty minutes going through the streets. Ece’s columns were clearer than the delivery board’s. Dilan caught the late bus.',
       },
       {
         id: 'go',
@@ -1061,8 +1072,9 @@ const thursday: Moment[] = [
     day: 4,
     at: at(19, 45),
     place: 'home',
-    scene: 'Home. The shelf. The screws have been in their little bag since March.',
-    pull: { to: 'watch', line: 'Not tonight. You’ll only do it wrong tired.' },
+    scene:
+      'Dilan is home. The unfinished shelf is still there. The screws have been in their little bag since March.',
+    pull: { to: 'watch', line: 'Leave it tonight. You’ll only build it wrong when you’re tired.' },
     options: [
       {
         id: 'build',
@@ -1077,19 +1089,19 @@ const thursday: Moment[] = [
         placeId: 'home',
         done: (c) =>
           c.tired
-            ? 'She put the back on backwards, tired, and took it off again. Two sides, at least.'
-            : 'Two sides and the back. One screw left over, which is normal, apparently.',
+            ? 'She was tired. She put the back on backwards and took it off again. At least she had built the two sides.'
+            : 'She built two sides and the back of the shelf. One screw was left over. Apparently that is normal.',
       },
       {
         id: 'watch',
-        ink: 'Put something on.',
+        ink: 'Watch a show.',
         label: 'put something on',
         action: 'watch',
         duration: 60,
         advertises: { leisure: 0.3, rest: 0.2 },
         gives: { leisure: 0.2, rest: 0.15 },
         placeId: 'home',
-        done: 'Two episodes of a show about people renovating a farmhouse.',
+        done: 'She watched two episodes of a show about people renovating a farmhouse.',
       },
       {
         id: 'aylin',
@@ -1100,7 +1112,7 @@ const thursday: Moment[] = [
         advertises: { belonging: 0.1 },
         gives: { belonging: 0.2 },
         placeId: 'phone',
-        done: 'Aylin: “Only if there’s cake.” There was still cake.',
+        done: 'Aylin replied, “I’ll help only if there’s cake.” There was still cake.',
       },
     ],
     after: (s, chosen) => {
@@ -1113,29 +1125,31 @@ const thursday: Moment[] = [
 // ---------- Friday ----------
 
 const friday: Moment[] = [
-  alarm(5, (c) => (c.tired ? '06:40, Friday. Nearly. Nearly.' : '06:40, Friday.')),
+  alarm(5, (c) =>
+    c.tired ? 'It is 06:40 on Friday. The weekend is almost here.' : 'It is 06:40 on Friday.',
+  ),
   {
     id: 'gym-5',
     day: 5,
     at: at(7, 15),
     place: 'phone',
-    scene: 'An email: “We miss you! Your plan renews Friday.” It is Friday.',
+    scene: 'An email from the gym says, “We miss you! Your membership renews Friday.” It is Friday.',
     pull: {
       to: 'keep',
-      line: 'Keep it. You’ll go. Next week, properly.',
-      borrow: 'You said be kind to yourself. Keep it.',
+      line: 'Keep the gym membership. You’ll go regularly next week.',
+      borrow: 'You said to be kind to yourself. Keep the gym membership.',
     },
     options: [
       {
         id: 'cancel',
-        ink: 'Cancel it.',
+        ink: 'Cancel the gym membership.',
         label: 'cancel the gym',
         action: 'cancel',
         duration: 5,
         advertises: { esteem: -0.05 },
         gives: { autonomy: 0.25, esteem: 0.1 },
         placeId: 'phone',
-        done: 'Three screens of “Are you sure?”. She was sure.',
+        done: 'Three screens asked, “Are you sure?” She was sure.',
       },
       {
         id: 'go',
@@ -1157,7 +1171,7 @@ const friday: Moment[] = [
         advertises: { leisure: 0.15 },
         gives: {},
         placeId: 'phone',
-        done: 'She archived the email. The plan renewed at 09:00.',
+        done: 'She archived the email. The gym membership renewed at 09:00.',
       },
     ],
     after: (s, chosen) => {
@@ -1170,8 +1184,9 @@ const friday: Moment[] = [
     day: 5,
     at: at(12, 40),
     place: 'canteen',
-    scene: 'Murat, to the room: “Bowling tonight. Whole floor. Dilan, you’re coming.”',
-    pull: { to: 'bowl', line: 'Go. Be someone who goes to things.' },
+    scene:
+      'Murat calls across the room: “We’re going bowling tonight. Everyone on this floor is coming. Dilan, you’re coming.”',
+    pull: { to: 'bowl', line: 'Go bowling. Be someone who joins in.' },
     options: [
       {
         id: 'bowl',
@@ -1183,7 +1198,7 @@ const friday: Moment[] = [
         gives: { belonging: 0.25, ...lunchFood },
         followedBy: [{ label: 'bowling', duration: 150, effort: 0.25 }],
         placeId: 'canteen',
-        done: '“Go on then.” Ece cheered. Murat said lane six was his.',
+        done: '“I’ll come, then.” Ece cheered. Murat said lane six was his.',
       },
       {
         id: 'busy',
@@ -1194,7 +1209,7 @@ const friday: Moment[] = [
         advertises: { rest: 0.1, ...lunchFood },
         gives: { rest: 0.1, ...lunchFood },
         placeId: 'depot',
-        done: '“Busy.” Murat said she was always busy, and meant it kindly.',
+        done: '“I’m busy.” Murat said she was always busy, and meant it kindly.',
       },
     ],
     after: (s, chosen) => {
@@ -1209,22 +1224,23 @@ const friday: Moment[] = [
     at: at(19, 30),
     place: 'bowling',
     when: (c) => c.flags.bowling === true,
-    scene: 'Lane six. Ece bowls like she drives. Murat keeps score in pen. Mum’s number, in her pocket.',
+    scene:
+      'They are on lane six. Ece bowls like she drives. Murat keeps score in pen. Dilan’s phone is in her pocket, with Mum’s number on it.',
     pull: {
       to: 'stay',
       line: 'Stay for another game. Call her from bed.',
-      borrow: 'You said have fun for once. Stay.',
+      borrow: 'You said to have fun for once. Stay.',
     },
     options: [
       {
         ...callMum,
         ink: 'Call Mum from the car park.',
         placeId: 'phone',
-        done: 'The car park, under a buzzing light. Mum wanted to know who won.',
+        done: 'She called from the car park, under a buzzing light. Mum wanted to know who won.',
       },
       {
         id: 'stay',
-        ink: 'Another game.',
+        ink: 'Play another game.',
         label: 'stay for another game',
         action: 'bowl',
         duration: 60,
@@ -1234,7 +1250,7 @@ const friday: Moment[] = [
         tags: T,
         norms: [{ normId: 'kindness-to-parents', relation: 'violates' }],
         placeId: 'bowling',
-        done: 'Another game. She got a strike and Ece screamed.',
+        done: 'She played another game. She got a strike and Ece screamed.',
       },
     ],
     after: (s, chosen) => {
@@ -1247,12 +1263,12 @@ const friday: Moment[] = [
     at: at(19, 0),
     place: 'home',
     when: (c) => c.flags.gym === true && !c.flags.bowling,
-    scene: 'The gym bag by the door. She trips on it, as planned.',
-    pull: { to: 'skip', line: 'You’re spent. The bag will still be there tomorrow.' },
+    scene: 'Her gym bag is by the door. She trips on it, as planned.',
+    pull: { to: 'skip', line: 'You’re exhausted. The bag will still be there tomorrow.' },
     options: [
       {
         id: 'gym',
-        ink: 'Go. Twenty minutes counts.',
+        ink: 'Go to the gym. Even twenty minutes counts.',
         label: 'go to the gym',
         action: 'gym',
         duration: 50,
@@ -1260,7 +1276,7 @@ const friday: Moment[] = [
         advertises: { competence: 0.1, esteem: 0.1 },
         gives: (c) => (c.tired ? { competence: -0.15, esteem: -0.1 } : { competence: 0.25, esteem: 0.2 }),
         placeId: 'gym',
-        done: 'Twenty minutes on the rowing machine. The receptionist said “welcome back” like she meant it.',
+        done: 'She spent twenty minutes on the rowing machine. The receptionist said “welcome back” like she meant it.',
       },
       {
         id: 'skip',
@@ -1271,7 +1287,7 @@ const friday: Moment[] = [
         advertises: { rest: 0.3, leisure: 0.2 },
         gives: { rest: 0.25, leisure: 0.1 },
         placeId: 'home',
-        done: 'She sat on the sofa with the bag at her feet like a dog that wanted a walk.',
+        done: 'She sat on the sofa. The gym bag was at her feet, reminding her she had planned to go.',
       },
     ],
   },
@@ -1281,7 +1297,7 @@ const friday: Moment[] = [
     at: at(20, 30),
     place: 'home',
     when: (c) => !c.flags.bowling && (c.flags.shelf ?? 0) >= 1,
-    scene: 'The shelf: two sides and a back. The rest of it looks at her.',
+    scene: 'The shelf has two sides and a back. She can still see the unfinished parts.',
     pull: { to: 'later', line: 'It’s Friday. Saturday is for shelves.' },
     options: [
       {
@@ -1299,14 +1315,14 @@ const friday: Moment[] = [
       },
       {
         id: 'later',
-        ink: 'Saturday.',
+        ink: 'Leave the shelf until Saturday.',
         label: 'leave it till Saturday',
         action: 'watch',
         duration: 50,
         advertises: { leisure: 0.3, rest: 0.2 },
         gives: { leisure: 0.2, rest: 0.15 },
         placeId: 'home',
-        done: 'She left it till Saturday. The screws were patient.',
+        done: 'She left the shelf until Saturday. The screws could wait.',
       },
     ],
     after: (s, chosen) => {
@@ -1325,8 +1341,9 @@ const saturday: Moment[] = [
     at: at(10, 0),
     window: 8,
     place: 'home',
-    scene: (c) => `Saturday, ten o’clock. She records a voice note for Mum, and listens back. “${c.note}”`,
-    pull: { to: 'delete', line: 'Delete it. You sound mad.' },
+    scene: (c) =>
+      `It is ten o’clock on Saturday. She records a voice note for Mum and listens to it. “${c.note}”`,
+    pull: { to: 'delete', line: 'Delete it. You sound like you’re talking nonsense.' },
     options: [
       {
         id: 'send',

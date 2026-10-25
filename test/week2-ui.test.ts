@@ -63,7 +63,7 @@ async function importRun(page: Page, state: GameState) {
     ),
   });
   await page.locator('.toast').waitFor();
-  expect(await page.locator('.toast').innerText()).toBe('Replayed. It matches the file.');
+  expect(await page.locator('.toast').innerText()).toBe('The saved run was replayed. It matches the file.');
 }
 
 async function snapshot(page: Page, name: string) {

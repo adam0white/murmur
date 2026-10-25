@@ -30,8 +30,8 @@ describe('persistent moment records', () => {
     const s = first('up');
     const answer = required(s.answer);
     const immediate = required(answerRecord(s, answer));
-    expect(immediate.said).toEqual({ id: 'up', ink: 'Up. Feet on the floor.' });
-    expect(immediate.chosen).toEqual({ id: 'snooze', ink: 'Five more.' });
+    expect(immediate.said).toEqual({ id: 'up', ink: 'Get up and put your feet on the floor.' });
+    expect(immediate.chosen).toEqual({ id: 'snooze', ink: 'Sleep for five more minutes.' });
     expect(immediate.completed).toBe(false);
     runToCard(s);
     expect(s.answer).toBeNull();

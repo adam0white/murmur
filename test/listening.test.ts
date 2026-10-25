@@ -13,7 +13,7 @@ describe('gentle suggestions', () => {
       const o = cardView(s)?.options.find((o) => o.id === 'up');
       expect(o?.likelihood).toBeGreaterThan(0.1);
       expect(o?.likelihood).toBeLessThan(0.5);
-      expect(o?.mood).toBe("she's against it, but she's listening");
+      expect(o?.mood).toBe('She is against it, but she is listening.');
       queueInput(s, { kind: 'say', option: 'up' });
       if (s.answer?.chosen === 'up') lands++;
       else if (s.answer?.stayed) stays++;
@@ -55,7 +55,7 @@ describe('gentle suggestions', () => {
         const option = mode === 'exhaustion' ? 'up' : 'snooze';
         const hint = cardView(s)?.options.find((o) => o.id === option);
         expect(hint?.likelihood).toBe(0);
-        expect(hint?.mood).toMatch(/can't|won't/);
+        expect(hint?.mood).toMatch(/cannot|will not/);
         queueInput(s, { kind: 'say', option });
         expect(s.answer?.chosen).not.toBe(option);
         expect(s.answer?.stayed).toBeUndefined();
@@ -126,7 +126,7 @@ describe('gentle suggestions', () => {
       likelihood: 0.2,
     };
     expect(landingChance(resolution)).toBe(0.2);
-    expect(moodOf(resolution)).toContain("she's listening");
+    expect(moodOf(resolution)).toContain('she is listening');
   });
   it('matches each uncertain mood to observed seeded landings in self-play', () => {
     const bands = new Map<string, { n: number; landed: number; expected: number; variance: number }>();
@@ -160,7 +160,7 @@ describe('gentle suggestions', () => {
       expect(Math.abs(b.landed - b.expected)).toBeLessThan(5 * Math.sqrt(b.variance) + 2);
       if (mood.includes('leans toward')) expect(b.landed / b.n).toBeGreaterThan(0.5);
       if (mood.includes('firmly against')) expect(b.landed / b.n).toBeLessThan(0.1);
-      if (mood.includes("but she's listening")) {
+      if (mood.includes('but she is listening')) {
         expect(b.landed / b.n).toBeGreaterThan(0.1);
         expect(b.landed / b.n).toBeLessThan(0.5);
       }

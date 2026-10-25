@@ -191,7 +191,7 @@ it('records a refusal once in plain words, including on a legacy run', async () 
     await page.evaluate(() => window.__murmur.say('up'));
     const journal = await page.locator('#journal').innerText();
     expect(journal).toContain(
-      'You: “Get up and put your feet on the floor.” She chose “Sleep for five more minutes.”',
+      'You suggested “Get up and put your feet on the floor.” She chose “Sleep for five more minutes.”',
     );
     expect(journal).not.toMatch(/pencil’s way|She didn’t\. She|She put yours off/);
   } finally {

@@ -98,7 +98,9 @@ describe('Dilan source and return chapter', () => {
     expect(snapshot(rebuilt.person)).toEqual(snapshot(s.person));
     expect(rebuilt.oneCastDeparture).toEqual(s.oneCastDeparture);
     expect(s.oneCastDeparture?.purposes.some((g) => g.label === 'earn-respect')).toBe(true);
-    expect(s.log.some((l) => l.text.includes('earning respect') && l.text.includes('unfinished'))).toBe(true);
+    expect(s.log.some((l) => l.text.includes('earning respect') && l.text.includes('not finished'))).toBe(
+      true,
+    );
   });
 
   it('uses the real attended delivery, no invented skill, and complete checkpoint SHA256', async () => {
@@ -189,7 +191,7 @@ describe('Dilan source and return chapter', () => {
           (g) => g.status === 'active' && g.label === 'take up earn-respect again',
         ),
       ).toBe(true);
-      expect(chapter.log.at(-1)?.text).toContain(accepted ? 'had a short exchange' : 'did not stay');
+      expect(chapter.log.at(-1)?.text).toContain(accepted ? 'talked briefly' : 'did not stay');
       expect(installOneCastReturn(prefix, transfer)).toEqual(chapter);
     }
   });

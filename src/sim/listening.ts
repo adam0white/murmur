@@ -51,11 +51,11 @@ export function landingChance(r: SuggestionResolution): number {
 }
 export function moodOf(r: SuggestionResolution): string {
   const chance = landingChance(r);
-  if (chance === 0) return r.kind === 'cannot' ? "she can't" : "she won't";
-  if (chance === 1) return "she's willing";
-  if (chance >= 0.5) return "she leans toward it, but hasn't decided";
-  if (chance >= 0.1) return "she's against it, but she's listening";
-  return "she's firmly against it; a small chance she'll listen";
+  if (chance === 0) return r.kind === 'cannot' ? 'She cannot do it.' : 'She will not do it.';
+  if (chance === 1) return 'She is willing.';
+  if (chance >= 0.5) return 'She leans toward it, but has not decided.';
+  if (chance >= 0.1) return 'She is against it, but she is listening.';
+  return 'She is firmly against it. There is a small chance she will listen.';
 }
 
 /** Narrative provenance only. HF owns remembered strength, decay, scoring and discharge. */
@@ -78,9 +78,9 @@ export function keepSuggestion(s: GameState, o: Opt, ink: string): string {
     label: o.label,
   });
   if (o.action === 'call-mum') return 'You said call Mum. I’m not doing it now, but I’ll think about it.';
-  if (o.action === 'get-up') return 'Feet on the floor. Not yet. I heard you, though.';
+  if (o.action === 'get-up') return 'I’m not ready to get up yet. I heard you, though.';
   if (o.action === 'reply') return 'I could answer Aylin. Not now, but I’m thinking about what I’d say.';
-  return `I didn’t ${o.label}. But I’m still thinking about it.`;
+  return 'I didn’t follow your suggestion. But I’m still thinking about it.';
 }
 export function recalledThought(s: GameState, offers: Affordance[]): string | undefined {
   if (!listens(s)) return;
@@ -100,6 +100,6 @@ export function recalledThought(s: GameState, offers: Affordance[]): string | un
   );
   if (!thought) return;
   if (thought.action === 'call-mum')
-    return 'You said call Mum. I didn’t, but I thought about it. Maybe this time.';
-  return `You said “${thought.ink}” I didn’t then, but I thought about it.`;
+    return 'You told me to call Mum. I didn’t, but I thought about it. Maybe I will this time.';
+  return `You said, “${thought.ink}” I didn’t follow your suggestion then, but I thought about it.`;
 }

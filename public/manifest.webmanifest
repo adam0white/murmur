@@ -1,7 +1,7 @@
 {
   "name": "The Two Voices",
   "short_name": "Two Voices",
-  "description": "You are one person's inner voice through an ordinary week. Every evening she looks back.",
+  "description": "Suggest what Dilan should do from Monday to Saturday. You are one of the voices in her head. Each evening, she looks back at her day.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

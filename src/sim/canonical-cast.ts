@@ -88,21 +88,21 @@ const clues: Record<
     ink: 'Stay for dinner. Ask what Aylin wants to do on her own evening.',
     action: 'dinner',
     duration: 90,
-    line: 'After dinner Aylin mentioned a dance class above a tyre shop. “I like being bad at something there.” Dilan left the joke unsaid. Aylin had offered a confidence, not an invitation for the whole family.',
+    line: 'After dinner Aylin mentioned a dance class above a tyre shop. “I like being bad at something there.” Dilan left the joke unsaid. Aylin had shared something private. She had not invited the whole family.',
   },
   ece: {
     moment: 'lunch-2',
     ink: 'Ask Ece where she takes a break away from the depot.',
     action: 'chat',
     duration: 20,
-    line: 'Ece unfolded a map of places to sit without buying anything. Shade, backs on seats, closing times. She was checking it between courier shifts and logistics classes. “It isn’t an accessibility survey,” she said. Dilan asked before keeping a copy.',
+    line: 'Ece unfolded a map of places to sit without buying anything. It listed shade, seats with backs, and closing times. She was checking it between courier shifts and logistics classes. “It isn’t an accessibility survey,” she said. Dilan asked before keeping a copy.',
   },
   murat: {
     moment: 'route-3',
     ink: 'Decline the extra route. Ask Murat to open the allocation record with you.',
     action: 'review-route',
     duration: 20,
-    line: 'Murat opened the scheduling file. After Dilan challenged a target, he had assigned her the difficult stops and then recorded the delays as hers. He admitted the allocation was his. The workers still needed a corrected record; one private admission had not corrected it.',
+    line: 'Murat opened the scheduling file. After Dilan questioned a target, he had given her the difficult delivery stops. He had then recorded the delays as her fault. He admitted that he had assigned the stops. The workers still needed a corrected record; one private admission had not corrected it.',
   },
 };
 export function castOptions(s: GameState, m: Moment, base: Opt[]): Opt[] {
@@ -215,7 +215,7 @@ export function finishCastEncounter(s: GameState, m: Moment, chosen: Opt): strin
   return c.line;
 }
 export function castIntroduction(): string {
-  return 'Dilan, 33, delivers parcels in Istanbul. Her sister Aylin, 36, cooks school lunches and private meals. Ece, 24, works the depot routes while studying logistics and lives with her aunt. Murat, 27, left grill work for junior depot supervision. Their work does not end when Dilan goes home.';
+  return 'Dilan, 33, delivers parcels in Istanbul. Her sister Aylin, 36, cooks school lunches and private meals. Ece, 24, works the depot routes while studying logistics and lives with her aunt. Murat, 27, used to work as a grill cook. He is now a junior supervisor at the depot. Their work does not end when Dilan goes home.';
 }
 export function cloneCast(cast: CastState): CastState {
   const result = structuredClone(cast);
@@ -229,11 +229,11 @@ export function castScene(s: GameState, m: Moment, base: string): string {
   if (!s.cast) return base;
   const c = s.cast;
   if (m.id === 'alarm-1' && c.places.dilan && c.places.dilan !== 'home')
-    return `Dilan is at ${c.places.dilan === 'public-garden' ? 'the public garden beside the depot' : 'the depot break room'} before her shift. Her phone alarm rings. She can stand up or stay resting. ${c.assignments.dilan ?? 'The usual round'} is ahead.`;
+    return `Dilan is at ${c.places.dilan === 'public-garden' ? 'the public garden beside the depot' : 'the depot break room'} before her shift. Her phone alarm rings. She can stand up or stay resting. Her next job is ${c.assignments.dilan ?? 'the usual delivery route'}.`;
   if (m.id === 'lunch-2' && c.assignments.ece)
-    return `${base} Ece is on ${c.assignments.ece} this chapter; her logistics course is still unfinished.`;
+    return `${base} Ece’s current work is ${c.assignments.ece === 'courier round' ? 'a delivery route' : c.assignments.ece}. She is still studying logistics.`;
   if (m.id === 'dinner-3' && c.assignments.aylin)
-    return `${base} Aylin has come from ${c.assignments.aylin}. The meal is a family appointment, not an agency placement.`;
+    return `${base} Aylin has come from ${c.assignments.aylin === 'school kitchen' ? 'the school kitchen' : c.assignments.aylin}. She is here for a family meal.`;
   return base;
 }
 
@@ -253,7 +253,7 @@ export const CAST_MOMENTS: Moment[] = [
     place: 'home',
     when: (c) => c.chosen['shelf-4'] === 'reveal-dilan',
     scene:
-      'Saturday. Aylin has come for the short shelf visit they agreed. The boxes are off the uneven support. “Show me what catches,” she says. She has not come to take over.',
+      'It is Saturday. Aylin has come for the short visit they agreed on to look at the shelf. The boxes are off the uneven support. “Show me what catches,” she says. She has not come to take over.',
     pull: { to: 'leave-shelf', line: 'Have cake. Leave the shelf for another day.' },
     options: [
       {
@@ -290,7 +290,7 @@ export function castMoment(s: GameState, m: Moment): Moment {
   return {
     ...m,
     scene:
-      'Murat needs cover for Ece’s evening route. Dilan already reserved her remaining time; she cannot offer it twice. Aylin’s dinner is at half seven.',
+      'Murat needs someone to do Ece’s evening deliveries. Dilan has already promised to use her remaining time elsewhere. She cannot promise that time twice. Aylin’s dinner is at half past seven.',
     pull: { to: 'no', line: 'Keep the time you already reserved. Aylin is expecting you.' },
     options: (c) => (typeof original === 'function' ? original(c) : original).filter((o) => o.id !== 'route'),
   };

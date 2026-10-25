@@ -4,7 +4,6 @@ import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
 import type { Input } from '../src/sim/types.ts';
-import { plainEnglish } from '../src/ui/plain-english.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -66,8 +65,9 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.goto(`${origin}?lab=1`);
       await page.locator('.title .page-body > p').first().waitFor();
       const purpose = await page.locator('.title .page-body > p').allTextContents();
-      expect(purpose.join(' ')).toMatch(/during her week/);
+      expect(purpose.join(' ')).toMatch(/from Monday to Saturday/);
       expect(purpose.join(' ')).toMatch(/words can change her choices/);
+      expect(purpose.join(' ')).toContain('On Saturday, she looks back at her week.');
       const more = page.locator('.info-panel');
       expect(await more.isVisible()).toBe(false);
       await page.getByRole('button', { name: 'Information', exact: true }).focus();
@@ -78,13 +78,13 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.goto(`${origin}?lab=1&seed=1`);
       await page.locator('#new').click();
       const gap = await page.locator('.gap').innerText();
-      expect(gap).toBe('Her alarm is about to go.');
+      expect(gap).toBe('Her alarm is about to ring.');
       await page.locator('#hush').waitFor();
       await page.waitForTimeout(350);
       const story = [...purpose, gap, ...(await page.locator('.scene,.pull').allTextContents())].join(' ');
-      expect(story).toContain('Her alarm is about to go.');
+      expect(story).toContain('Her alarm is about to ring.');
       const instructions = (await page.locator('.caption,.hint,.gesture').allTextContents()).join(' ');
-      expect(instructions).toContain('Tap one to say it.');
+      expect(instructions).toContain('Tap a choice to suggest it.');
       expect(instructions).toContain('Hold to insist');
     } finally {
       await page.close();
@@ -145,7 +145,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.clock.install();
       await page.clock.resume();
       await page.clock.runFor(100);
-      expect(await page.locator('#state-words').innerText()).toBe("She's deciding");
+      expect(await page.locator('#state-words').innerText()).toBe('She is deciding.');
       const before = await page.locator('#clock').innerText();
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       await page.clock.runFor(8000);
@@ -154,21 +154,21 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       expect(await page.getByRole('dialog', { name: 'Game menu' }).isVisible()).toBe(true);
       await page.locator('#bp-close').click();
       await page.locator('.opt').first().click();
-      expect(await page.locator('#state-words').innerText()).toBe("She's answering");
+      expect(await page.locator('#state-words').innerText()).toBe('She is answering.');
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       const answered = await page.locator('#clock').innerText();
       await page.clock.runFor(8000);
       expect(await page.locator('#clock').innerText()).toBe(answered);
       await page.locator('#bp-close').click();
       await page.clock.runFor(1000);
-      expect(await page.locator('#state-words').innerText()).toBe("She's answering");
+      expect(await page.locator('#state-words').innerText()).toBe('She is answering.');
       await page.clock.runFor(2100);
       expect(await page.locator('#state-words').innerText()).toBe('');
       await page.locator('#hurry').click();
       await page.clock.runFor(3000);
-      expect(await page.locator('#state-words').innerText()).toBe("She's deciding");
+      expect(await page.locator('#state-words').innerText()).toBe('She is deciding.');
       await page.locator('#hush').click();
-      expect(await page.locator('#state-words').innerText()).toBe("She's answering");
+      expect(await page.locator('#state-words').innerText()).toBe('She is answering.');
       await page.clock.runFor(3100);
       expect(await page.locator('#state-words').innerText()).toBe('');
       expect(await page.locator('#state-words').count()).toBe(1);
@@ -255,7 +255,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         if (phase === 'evening') break;
         await page.clock.runFor(100);
       }
-      expect(await page.locator('#state-words').innerText()).toBe('The day is done');
+      expect(await page.locator('#state-words').innerText()).toBe('The day is done.');
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       await page.clock.runFor(8000);
       expect(await page.locator('#dayroot').count()).toBe(1);
@@ -350,7 +350,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.locator('.journal .n').filter({ hasText: completion?.text }).waitFor();
       expect(await page.locator('.journal').innerText()).toContain(completion?.text);
       expect(await latest.locator('.record-reply').last().innerText()).toContain(
-        example.words.replaceAll('“', '‘').replaceAll('”', '’'),
+        'Not now. After I say next week. I could have listened to ‘Tell Ece she can watch you next week.’ When the next moment comes, try a different suggestion, or say nothing.',
       );
       expect(await page.locator('.gap').count()).toBe(0);
       for (const el of [latest.locator('.record-reply').last(), page.locator('.journal .n').last()]) {
@@ -481,7 +481,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       await page.clock.install();
       await page.clock.runFor(1000);
       const up = page.locator('.opt[data-o="up"]');
-      expect(await up.locator('.lean').innerText()).toBe('only with a push');
+      expect(await up.locator('.lean').innerText()).toBe('She would agree only if you insist.');
       expect(await up.locator('.gesture').innerText()).toContain('Hold to insist');
       const box = await up.boundingBox();
       if (!box) throw new Error('No alarm suggestion');
@@ -649,7 +649,7 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
         await page.waitForTimeout(350);
         const record = page.locator('.journal .record-yours').first();
         const journal = page.locator('.journal');
-        expect(await record.innerText()).toContain('You:');
+        expect(await record.innerText()).toContain('You suggested');
         expect(await record.innerText()).toContain('Get up and put your feet on the floor.');
         expect(await journal.innerText()).toContain('She chose');
         expect(await journal.innerText()).toContain('Sleep for five more minutes.');
@@ -701,7 +701,7 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
       expect(live.card?.moment).toBe('note-1');
       expect(await page.locator('.gap').count()).toBe(0);
       expect(await page.locator('.sheet.open .card').count()).toBe(1);
-      expect(await page.locator('#state-words').innerText()).toBe("She's deciding");
+      expect(await page.locator('#state-words').innerText()).toBe('She is deciding.');
       expect(await page.locator('#hurry').count()).toBe(0);
       const reply = page.locator('[data-o="reply"]');
       const box = await reply.boundingBox();
@@ -810,7 +810,7 @@ describe('design round remembered words', { timeout: 30_000 }, () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
       await firstChoice(page, '0.3.0');
-      expect(await page.locator('[data-o="up"] .lean').innerText()).toMatch(/listening|hasn't decided/);
+      expect(await page.locator('[data-o="up"] .lean').innerText()).toMatch(/listening|has not decided/);
       const stayed = await page.evaluate(() => {
         const game = (
           window as unknown as {
@@ -834,13 +834,11 @@ describe('design round remembered words', { timeout: 30_000 }, () => {
         return null;
       });
       expect(stayed).toBeTruthy();
-      expect(await page.locator('.journal .stayed').innerText()).toContain(plainEnglish(stayed ?? ''));
+      expect(await page.locator('.journal .stayed').innerText()).toContain(stayed ?? '');
       await page.evaluate(() => {
         (window as unknown as { __murmur: { skipToCard(): void } }).__murmur.skipToCard();
       });
-      expect(await page.locator('.journal .stayed').first().innerText()).toContain(
-        plainEnglish(stayed ?? ''),
-      );
+      expect(await page.locator('.journal .stayed').first().innerText()).toContain(stayed ?? '');
       await page.evaluate(() => {
         const game = (
           window as unknown as {
@@ -889,7 +887,9 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
         ),
       });
       await page.locator('.toast').waitFor();
-      expect(await page.locator('.toast').innerText()).toBe('Replayed. It matches the file.');
+      expect(await page.locator('.toast').innerText()).toBe(
+        'The saved run was replayed. It matches the file.',
+      );
       expect(
         await page.evaluate(() => (window as unknown as { __murmur: { state: unknown } }).__murmur.state),
       ).toEqual({ ...cloneState(state), fileHistory: true, castScope: 'file', castHeadScopes: {} });

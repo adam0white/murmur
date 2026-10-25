@@ -52,7 +52,6 @@ import {
   returnedChapter,
   validateRun,
 } from './one-cast.ts';
-import { plainEnglish } from './plain-english.ts';
 import {
   answerThoughts,
   cardThought,
@@ -168,7 +167,7 @@ function clearSave() {
 // ---------- helpers ----------
 
 const esc = (x: string) =>
-  plainEnglish(x).replace(
+  x.replace(
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
   );
@@ -302,10 +301,10 @@ function infoPage() {
     screen === 'title'
       ? '<h2>Dilan</h2><p>Dilan is thirty-three. She delivers parcels through an Istanbul courier depot.</p><p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>'
       : screen === 'day'
-        ? '<h2>The two voices</h2><p>Tap a line to suggest it. Hold it to insist; it works only while she trusts you, and it costs trust.</p><p>Say nothing and she decides with only the pencil. The pencil is the other voice.</p><p>The words below each choice show how she feels about it.</p><p>Your ink darkens as she trusts you; the pencil grows as she trusts it.</p><p>Her day slows while she decides and hurries between moments.</p><p class="desktop-only">Shift+Enter insists on the focused line.</p>'
+        ? '<h2>The two voices</h2><p>Tap a choice to suggest it. Press and hold a choice to insist. Insisting works only while she trusts you, and it costs trust.</p><p>Choose “Say nothing” to let her decide without your advice. The pencil handwriting shows the other voice.</p><p>The words below each choice show how she feels about it.</p><p>Your handwriting gets darker as she trusts you more. The pencil handwriting gets larger as she trusts the other voice more.</p><p>Time passes slowly while she decides. It passes faster between choices.</p><p class="desktop-only">Press Shift+Enter to insist on the selected choice.</p>'
         : screen === 'evening'
-          ? '<h2>Her page</h2><p>A tick is something she kept today; a struck line is something she missed.</p><p>Tally marks are things she means to keep.</p><p>“In the margin” holds phrases she is taking as her own; larger means more hers.</p>'
-          : '<h2>Saturday</h2><p>These lines compare how much she trusted each voice at the start and end of the week.</p><p>The tally counts what you did: suggestions, holds, silences.</p><p>Another week continues with the same Dilan.</p>';
+          ? '<h2>Her page</h2><p>A tick marks something she followed through on today. A crossed-out line marks something she missed.</p><p>Tally marks show things she intends to follow through on.</p><p>“Words she is starting to use” lists phrases she is learning. Larger handwriting means a phrase has become more familiar to her.</p>'
+          : '<h2>Saturday</h2><p>These lines compare how much she trusted each voice at the start and end of the week.</p><p>The tally counts your suggestions, times you insisted, and times you chose to say nothing.</p><p>Another week continues with the same Dilan.</p>';
   const panel = overlay(
     `<section class="info-panel" role="dialog" aria-modal="true" aria-label="Information"><button class="overlay-close" data-close aria-label="Close information">×</button>${content}</section>`,
     'info-wrap',
@@ -334,11 +333,11 @@ function feedback(returnToMenu = false) {
 
 /** Her mood about each option, in a few words: never a number, never odds. */
 function cue(lean: Lean, pushed: Lean): string {
-  if (lean === 'yes') return 'she’s willing';
-  if (lean === 'if pushed') return 'she’d grumble';
-  if (pushed === 'yes' || pushed === 'if pushed') return 'only with a push';
-  if (lean === 'later') return 'she’d put it off';
-  return 'she’s against it';
+  if (lean === 'yes') return 'She is willing.';
+  if (lean === 'if pushed') return 'She might agree, but she would not like it.';
+  if (pushed === 'yes' || pushed === 'if pushed') return 'She would agree only if you insist.';
+  if (lean === 'later') return 'She wants to do it later.';
+  return 'She is against it.';
 }
 
 function urlSeed(): number | null {
@@ -390,7 +389,7 @@ function title() {
   }
   app.innerHTML = `${header()}<div class="page title"><div class="page-body">
     <h1>Two Voices</h1>
-    <p>You are one of the voices in Dilan’s head. Suggest what she should do during her week, from Monday to Saturday. Your words can change her choices.</p>${labMode ? `<p>${esc(castIntroduction())}</p>` : ''}
+    <p>You are one of the voices in Dilan’s head. Suggest what she should do from Monday to Saturday. Your words can change her choices. On Saturday, she looks back at her week.</p>${labMode ? `<p>${esc(castIntroduction())}</p>` : ''}
     ${toast ? `<div class="${failureRetry ? 'start-error' : 'toast'}" role="alert"><p>${esc(toast)}</p>${failureRetry ? '<div class="failure-actions"><button id="start-retry">Try again</button><button id="start-feedback">Feedback</button></div>' : ''}</div>` : ''}
     </div>${labMode ? '<div class="other-ways-wrap"><button class="row" id="other-ways">Lab tools <span aria-hidden="true">▸</span></button></div>' : ''}
     <footer class="title-spacer" id="title-spacer"></footer>
@@ -399,7 +398,7 @@ function title() {
       ${
         labMode
           ? `<button id="fresh-authored">Play a fresh local week</button>
-      <button id="return-shelf">Continue people from this browser</button><button id="held-cast">Resume a held accepted chapter</button><p id="return-status" class="soft small"></p>`
+      <button id="return-shelf">Continue with people saved in this browser</button><button id="held-cast">Resume an accepted chapter saved here</button><p id="return-status" class="soft small"></p>`
           : ''
       }
       <button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
@@ -441,7 +440,7 @@ function title() {
     const attempt = ++loadGeneration;
     try {
       const held = await heldCanonicalWeek();
-      if (!held) throw Error('No accepted held chapter is available.');
+      if (!held) throw Error('No saved chapter with an accepted checkpoint is available.');
       if (attempt !== loadGeneration) return;
       invalidateContinuity();
       s = held;
@@ -519,7 +518,7 @@ function title() {
   });
   document.getElementById('other-ways')?.addEventListener('click', () => {
     const { el, close } = overlay(
-      `<section class="other-ways" role="dialog" aria-modal="true" aria-label="Other ways in"><button data-close aria-label="Close other ways in">×</button><h2>Other ways in</h2><button id="second">Begin at the second week</button><p class="soft small">Her first week is played for you, by a quiet voice. You start on Monday of the second.</p><button id="load">Load a playtest run</button><input type="file" id="file" accept="application/json,.json" hidden /></section>`,
+      `<section class="other-ways" role="dialog" aria-modal="true" aria-label="Lab tools"><button data-close aria-label="Close other ways in">×</button><h2>Lab tools</h2><button id="second">Begin at the second week</button><p class="soft small">Her first week is played for you without advice. You start on Monday of the second week.</p><button id="load">Load a playtest run</button><input type="file" id="file" accept="application/json,.json" hidden /></section>`,
       'backpage-wrap other-ways-overlay',
     );
     el.querySelector('#second')?.addEventListener('click', () => {
@@ -595,7 +594,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       const r = ex.state ? await validateRun(ex.state) : replay(ex.seed, ex.inputs, until, version);
       // A timeout can end a day without advancing its minute. Include that boundary.
       if (ex.state && ex.state.phase !== 'day' && r.phase === 'day' && r.minute === until) step(r);
-      let note = 'Replayed.';
+      let note = 'The saved run was replayed.';
       if (ex.state) {
         let want = '';
         try {
@@ -605,8 +604,8 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
         }
         note =
           fingerprint(r) === want
-            ? 'Replayed. It matches the file.'
-            : 'Replayed, but it differs from the file.';
+            ? 'The saved run was replayed. It matches the file.'
+            : 'The saved run was replayed, but it differs from the file.';
       }
       invalidateContinuity();
       if (attempt !== loadGeneration) return;
@@ -621,7 +620,8 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       toast = note;
       enter();
     } catch {
-      toast = 'That file is not a run from this notebook.';
+      toast =
+        'This file could not be loaded. It may come from an older version of The Two Voices. Start a new game instead.';
       if (s) enter();
       else title();
     }
@@ -795,11 +795,11 @@ function records(): MomentRecord[] {
 
 function recordHtml(record: MomentRecord): string {
   const yours = record.said
-    ? `You${record.insisted ? ' insisted' : ''}: ${esc(quotedWords(record.said.ink))}${record.said.ink === record.chosen.ink ? ' ✓' : ` She chose ${esc(quotedWords(record.chosen.ink))}`}`
-    : `You said nothing${record.quiet === 'timeout' ? ' · time ran out' : ''}. She chose ${esc(quotedWords(record.chosen.ink))}`;
+    ? `You ${record.insisted ? 'insisted on' : 'suggested'} ${esc(quotedWords(record.said.ink))}${record.said.ink === record.chosen.ink ? ' ✓' : ` She chose ${esc(quotedWords(record.chosen.ink))}`}`
+    : `You said nothing${record.quiet === 'timeout' ? ' because time ran out' : ''}. She chose ${esc(quotedWords(record.chosen.ink))}`;
   const a = record.answer;
   const reply = s ? replyWords(s, a) : undefined;
-  return `<p class="record-yours">${yours}</p>${reply ? `<p class="record-reply her notebook-text">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She took it as “${esc(a.learned)}.” She kept that one.</p>` : ''}`;
+  return `<p class="record-yours">${yours}</p>${reply ? `<p class="record-reply her notebook-text">“${esc(reply)}” <span class="who">she says</span></p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She learned the words “${esc(a.learned)}.” She remembered them.</p>` : ''}`;
 }
 
 function drawJournal(lines: LogLine[]) {
@@ -818,7 +818,7 @@ function drawJournal(lines: LogLine[]) {
       const stamp = /^\d\d:\d\d/.test(l.text) ? '' : `<span class="jt">${clock(l.at)}</span> `;
       entries.push({
         key,
-        html: `${away ? '<p class="away">while you were away</p>' : ''}<p class="jl jscene">${stamp}${esc(l.text)}</p>`,
+        html: `${away ? '<p class="away">This happened while you were away.</p>' : ''}<p class="jl jscene">${stamp}${esc(l.text)}</p>`,
       });
       if (record) {
         const template = document.createElement('template');
@@ -836,7 +836,7 @@ function drawJournal(lines: LogLine[]) {
         l.who === 'pull'
           ? `<p class="jl pencil other-voice">${esc(l.text)}</p>`
           : l.who === 'dilan'
-            ? `<p class="jl notebook-text her">“${esc(plainEnglish(l.text).replace(/\.$/, ''))}.”</p>`
+            ? `<p class="jl notebook-text her">“${esc(l.text.replace(/\.$/, ''))}.”</p>`
             : `<p class="jl ${l.who === 'you' ? 'yours' : 'n'}"><span class="jt">${clock(l.at)}</span> ${esc(l.who === 'narrator' ? conversationWords(s, l.text) : l.text)}</p>`;
       entries.push({ key, html });
     }
@@ -922,7 +922,7 @@ function cardHtml(v: CardView): string {
   const pushSore = v.options.some((o) => RANK[o.pushed] < RANK[o.lean]);
   const hint = pushSore
     ? 'She resists pressure now. Holding a choice works worse than tapping it.'
-    : (v.hint ?? (first ? 'Tap one to say it.' : undefined));
+    : (v.hint ?? (first ? 'Tap a choice to suggest it.' : undefined));
   const pull = `<p class="pull notebook-text other-voice${v.borrowed ? ' borrowed' : ''}" style="${pencilStyle(tPull, 6)}">${esc(v.pullLine)}</p>`;
   const resolve = v.resolve
     ? `<p class="resolve">${tally(v.resolve.marks, v.id.length)}<span class="notebook-text">${esc(v.resolve.line)}</span></p>`
@@ -938,7 +938,7 @@ function cardHtml(v: CardView): string {
     <div class="card-text">
       <p class="scene">${esc(v.scene)}</p>
       ${resolve}${forecast}${pull}${recalled ? `<p class="stayed notebook-text">“${esc(recalled)}” <span class="who">she thinks</span></p>` : ''}
-      ${first && !v.borrowed ? '<p class="caption notebook-text other-voice">The handwriting shows the other voice.</p>' : ''}
+      ${first && !v.borrowed ? '<p class="caption notebook-text other-voice">The pencil handwriting shows the other voice.</p>' : ''}
       ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
     </div>
     <div class="opts card-actions">${first ? '<p class="caption right">Below each choice, you can see how she feels about it.</p>' : ''}${opts}
@@ -961,26 +961,26 @@ function drawStatus() {
   el.classList.toggle('urgent', left * CARD_SECONDS <= 8);
   words.textContent =
     menuPausedAt !== null
-      ? 'Her day waits'
+      ? 'Time is paused.'
       : s.phase !== 'day'
-        ? 'The day is done'
+        ? 'The day is done.'
         : s.card
           ? left * CARD_SECONDS <= 8
-            ? "She's about to decide"
-            : "She's deciding"
+            ? 'She is about to decide.'
+            : 'She is deciding.'
           : hurry
-            ? 'Her day is moving quickly'
+            ? 'Time is passing quickly.'
             : (performance.now() - answeredAt) / 1000 < READ_SECONDS
-              ? "She's answering"
+              ? 'She is answering.'
               : '';
 }
 
 function gapHtml(a: Answer | null): string {
   if (!s) return '';
   if (!a || !journalLines(s).some((line) => line.who === 'scene')) {
-    return `<div class="gap"><p class="soft">${s.day === 1 ? 'Her alarm is about to go.' : 'The day starts.'}</p></div>`;
+    return `<div class="gap"><p class="soft">${s.day === 1 ? 'Her alarm is about to ring.' : 'The day starts.'}</p></div>`;
   }
-  return '<div class="gap-actions"><p class="soft desktop-only">Her day runs on. The next moment will open here.</p><button class="quiet" id="hurry" aria-label="Skip to the next event">Skip ⏩</button></div>';
+  return '<div class="gap-actions"><p class="soft desktop-only">Her day continues. Her next choice will appear here.</p><button class="quiet" id="hurry" aria-label="Skip to the next event">Skip ahead ⏩</button></div>';
 }
 
 /** These are her reported thoughts, not a promise to agree next time. */
@@ -1095,7 +1095,7 @@ function evening() {
   app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     <div class="page-body">${pageHtml(pg)}</div>
-    <div class="page-actions actions"><button class="primary" id="next">On to ${esc(DAY_NAMES[s.day + 1] ?? 'Saturday')}</button></div>
+    <div class="page-actions actions"><button class="primary" id="next">Continue to ${esc(DAY_NAMES[s.day + 1] ?? 'Saturday')}</button></div>
   </div>`;
   toast = '';
   bindHeader();
@@ -1117,7 +1117,7 @@ function pageHtml(pg: Page): string {
     )
     .join('');
   const alone = [...new Set(pg.turnedAlone)]
-    .map((x) => `<p class="notebook-text her">I did that one myself. “${esc(x)}.”</p>`)
+    .map((x) => `<p class="notebook-text her">I did that without your advice. “${esc(x)}.”</p>`)
     .join('');
   return `<h2 class="notebook-text dayhead">${esc(DAY_NAMES[pg.day] ?? '')}, in bed</h2>
     ${rule(k)}
@@ -1125,9 +1125,9 @@ function pageHtml(pg: Page): string {
     <p class="notebook-text her">${esc(pg.herLine)}</p>
     ${alone}
     ${kept || missed ? `<ul class="km">${kept}${missed}</ul>` : ''}
-    ${resolves ? `<div class="block"><p class="label">she means to keep</p><ul class="resolves">${resolves}</ul></div>` : ''}
-    <div class="block"><p class="label">about you</p><p class="notebook-text to-you${pg.aboutYou === 'Some of what I heard today wasn’t you.' ? ' other-voice' : ''}">${esc(pg.aboutYou)}</p></div>
-    ${phrases ? `<div class="block margin-list"><p class="label">in the margin</p><div class="phrases">${phrases}</div></div>` : ''}`;
+    ${resolves ? `<div class="block"><p class="label">Her intentions</p><ul class="resolves">${resolves}</ul></div>` : ''}
+    <div class="block"><p class="label">What she thinks of you</p><p class="notebook-text to-you${pg.aboutYou === 'Some of what I heard today wasn’t you.' ? ' other-voice' : ''}">${esc(pg.aboutYou)}</p></div>
+    ${phrases ? `<div class="block margin-list"><p class="label">Words she is starting to use</p><div class="phrases">${phrases}</div></div>` : ''}`;
 }
 
 function nextDay() {
@@ -1153,11 +1153,11 @@ function ending() {
     <div class="page-body">${finalHtml(f)}
     ${
       s.returnChapter
-        ? `<section><h2 class="notebook-text">Back from the garden</h2><p>${esc(s.log.findLast((line) => line.text.startsWith('Back from the garden.'))?.text ?? '')}</p><p>The previous week stays in this notebook. Another week continues from this new chapter.</p></section>`
+        ? `<section><h2 class="notebook-text">Back from the garden</h2><p>${esc(s.log.findLast((line) => line.text.startsWith('I am back from the garden.'))?.text ?? '')}</p><p>The previous week stays in this notebook. Another week continues from her visit.</p></section>`
         : s.version === '0.5.0'
-          ? `<section><h2 class="notebook-text">A short visit</h2><p>The route week is over. Dilan can visit Hatice’s tea garden in Istanbul. Aylin is still her sister; Mum, Ece and depot Murat remain her own relations, distinct from the garden’s namesakes.</p><p>She will explicitly set aside these unfinished purposes for the visit: ${esc(
+          ? `<section><h2 class="notebook-text">A short visit</h2><p>Her week of deliveries is over. Dilan can visit Hatice’s tea garden in Istanbul. The people there are separate from the people in this story, even when they share a name. Aylin is still her sister. Mum, Ece and Murat from the depot remain part of her life.</p><p>She will pause these unfinished plans for the visit: ${esc(
               departureReleaseDescription(s).join(', ') || 'none',
-            )}. The unfinished shelf stays at home for this visit. These purposes become new intentions on her return; their earlier progress stays in this week’s record. Dated alarm, dinner and call promises remain in the week’s record; unresolved promises block departure. No success is invented.</p><button id="depart">Set aside unfinished purposes and make the visit</button>${labMode ? '<button id="depart-fork">Explicitly fork this competing departure</button>' : ''}<p id="departure-status" role="status">${esc(continuityMessage())}</p><a href="https://hearsay.adamwhite.work/">Visit Hearsay</a></section>`
+            )}. The unfinished shelf stays at home for this visit. When she returns, she will start these plans again. This week’s record keeps her earlier progress and any promises tied to a date. She cannot leave while an alarm, dinner or call promise remains unresolved. Paused work does not count as finished.</p><button id="depart">Pause unfinished plans and visit</button>${labMode ? '<button id="depart-fork">Explicitly fork this competing departure</button>' : ''}<p id="departure-status" role="status">${esc(continuityMessage())}</p><a href="https://hearsay.adamwhite.work/">Visit Hearsay</a></section>`
           : ''
     }
     <details class="final-tally"><summary>See the tally</summary><div id="notebook-tally">${notebookTally(s, true)}</div></details>
@@ -1236,14 +1236,14 @@ function finalHtml(f: Final): string {
     ${f.note ? `<div class="voicenote"><p class="label">voice note to Mum, ${sentWord}</p><p class="note">“${esc(f.note)}”</p></div>` : ''}
     ${finalInput ? `<p class="final-input notebook-text">${esc(finalInput)}</p>` : ''}
     <p class="n">${esc(f.line)}</p>
-    ${(f.threads ?? []).length > 0 ? `<div class="block threads"><p class="label">and</p>${(f.threads ?? []).map((x) => `<p class="n">${esc(x)}</p>`).join('')}</div>` : ''}
+    ${(f.threads ?? []).length > 0 ? `<div class="block threads"><p class="label">What else happened</p>${(f.threads ?? []).map((x) => `<p class="n">${esc(x)}</p>`).join('')}</div>` : ''}
     ${
       firstWeek
         ? `<div class="week-pages"><div class="block first-week"><p class="label">the first week</p><p class="n">${esc(firstWeek.line)}</p>${stripHtml(firstWeek)}</div><div class="block current-week"><p class="label">the second week</p>${stripHtml(f)}</div></div>`
         : `<div class="block current-week"><p class="label">the week</p>${stripHtml(f)}</div>`
     }
-    ${phrases ? `<div class="block margin-list"><p class="label">her own words now</p><div class="phrases">${phrases}</div></div>` : ''}
-    ${unasked ? `<div class="block"><p class="label">what she did unasked</p>${unasked}</div>` : ''}
+    ${phrases ? `<div class="block margin-list"><p class="label">Words she now uses herself</p><div class="phrases">${phrases}</div></div>` : ''}
+    ${unasked ? `<div class="block"><p class="label">What she did without your advice</p>${unasked}</div>` : ''}
     <div class="block hands"><p class="label">Trust in the two voices</p>${handsHtml(f)}</div>`;
 }
 
@@ -1281,7 +1281,7 @@ function backPage() {
   const { el, close } = overlay(
     `<section class="backpage" role="dialog" aria-modal="true" aria-label="Game menu">
     <div class="menu-heading"><h2>Game menu${s && screen !== 'title' ? ` · ${esc(DAY_NAMES[s.day]?.slice(0, 3) ?? '')} ${clock(s.minute)}` : ''}</h2><button data-close aria-label="Close game menu">×</button></div>
-    ${screen === 'day' ? '<p class="soft small">Her day waits while this is open.</p>' : ''}
+    ${screen === 'day' ? '<p class="soft small">Time is paused while this menu is open.</p>' : ''}
     ${labMode ? `<fieldset class="menu-speed"><legend>Pace between moments</legend>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>` : ''}
     <button class="row" id="bp-send">Feedback <span aria-hidden="true">▸</span></button>
     <button class="row" id="bp-fullscreen">Full screen</button>
@@ -1323,7 +1323,7 @@ function backPage() {
     try {
       const returned = await forkPendingReturn(() => attempt === loadGeneration);
       if (attempt !== loadGeneration) return;
-      if (!returned) throw new Error('No selected competing return.');
+      if (!returned) throw new Error('No competing return is selected.');
       invalidateContinuity();
       s = returned;
       await gateContinuity(recordingState(s), true);

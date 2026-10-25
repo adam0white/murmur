@@ -112,15 +112,15 @@ const normIds = new Set([
 
 const oldThreads = [
   'Ece has her own columns now. She sends Dilan a photo of them every morning.',
-  'Ece never asked to shadow her again. She asked Murat.',
+  'Ece never asked to watch Dilan work again. She asked Murat instead.',
   'Ece still thinks it was her scanner.',
   'Ece knows the new estate now. She knows who talked her round it.',
   'Murat stopped asking about the ring road. That was worse.',
   'Murat’s note says late twice. In pen. It also says reliable.',
-  'Aylin came round on Saturday for the shelf. There was still cake.',
+  'Aylin came to help with the shelf on Saturday. There was still cake.',
   'The screws are still in their little bag. March is a long time ago now.',
   'The gym bag is by the door again. On purpose.',
-  'She changed the lock screen. The beach can stay in the album.',
+  'She changed the lock screen. The beach photo can stay in the album.',
   'The beach photo is still the lock screen.',
 ];
 
@@ -372,7 +372,7 @@ describe('week-one canon', () => {
   it('extends Ece’s existing columns to the shared board', () => {
     const c = context({ weekOne: final('send', [oldThreads[0] as string]) });
     expect(text(moment('returns-8').scene, c)).toContain('morning photo');
-    expect(text(moment('board-11').scene, c)).toContain('spread to the shared board');
+    expect(text(moment('board-11').scene, c)).toContain('her own columns on the shared delivery board');
   });
 
   it('never rebuilds a completed shelf, including Aylin’s offstage Saturday visit', () => {
@@ -393,7 +393,7 @@ describe('week-one canon', () => {
     for (const [sent, recall] of [
       ['delete', 'Sunday'],
       ['send', 'eleven minutes'],
-      ['call', 'outlasted the kettle'],
+      ['call', 'kettle finished boiling'],
     ]) {
       for (const practice of [0, 0.8]) {
         const c = context({
@@ -481,19 +481,19 @@ describe('week-two routine variety', () => {
     for (const day of [8, 9, 10, 11, 12]) {
       const c = context({ day, weekday: day - 7, version: '0.4.1' });
       expect(options(moment(`alarm-${day}`), c).map((o) => text(o.ink, c))).toEqual([
-        'Up. Feet on the floor.',
-        'Five more.',
+        'Get up and put your feet on the floor.',
+        'Sleep for five more minutes.',
       ]);
       const old = { ...c, version: '0.4.0' };
       expect(options(moment(`bus-${day}`), old).map((o) => text(o.ink, old))).toEqual([
         'Call Mum.',
         'Scroll for a bit.',
-        'Text her: tomorrow, promise.',
+        'Text Mum and promise to call tomorrow.',
       ]);
       expect(options(moment(`bed-${day}`), old).map((o) => text(o.ink, old))).toEqual([
         'Write the day down.',
-        'One more video.',
-        'Phone on the floor. Sleep.',
+        'Watch one more video.',
+        'Put the phone on the floor and go to sleep.',
       ]);
     }
   });

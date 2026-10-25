@@ -6,4 +6,6 @@ Introduce at most one new idea per screen. Prefer familiar words and grade-seven
 Describe approximate state in clear English. Cut words the player does not need.
 Preserve the meaning, rules, difficulty, names, and culture.
 
-The display projection expands clipped legacy prose without changing simulation strings, saved runs, or replay fingerprints. A shared source checker reports possible fragments, long sentences, and terms needing review. It includes internal strings and cannot measure the complete rendered experience. Review its findings; do not treat its count as a reading grade.
+Rewrite player text at its source. Keep semantic IDs and HF action labels stable. Display lookup tables cannot provide complete story coverage. Current exports must replay exactly. Older exports whose text fingerprints differ must refuse with a plain start-fresh message.
+
+For this rewrite, compare full seeded runs before and after with only known prose fields blanked. Keep every semantic key, enum, chosen action, number, clock, RNG and array order in the comparison. Map learned phrase text back to its stable phrase ID. Read the rendered text and full-run distinct lines. Check longer sentences at 360×690 and 1280×800.

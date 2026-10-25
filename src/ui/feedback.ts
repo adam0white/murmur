@@ -38,7 +38,7 @@ export function showFeedback(options: {
   wrap.innerHTML = `<section class="feedback" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
     <div class="feedback-heading"><button id="feedback-back">← Back</button><h2 id="feedback-title">Feedback</h2></div>
     <div class="feedback-body">
-      <p>Send a note about this game. Recorded play links across games on this device. You can switch recording off in the menu.</p>
+      <p>Send a note about this game. When recording is on, your play history is linked across games on this device. You can switch recording off in the menu.</p>
       <div class="verdicts" role="group" aria-label="Would you keep playing?">
         <button type="button" class="chip" data-verdict="keep" aria-pressed="false">I'd keep playing</button>
         <button type="button" class="chip" data-verdict="mixed" aria-pressed="false">Not sure</button>
@@ -46,11 +46,11 @@ export function showFeedback(options: {
       </div>
       <label for="feedback-note">What happened? What did you want to do?</label>
       <textarea id="feedback-note" rows="4" placeholder="What happened? What did you want to do?"></textarea>
-      <details class="feedback-name"><summary>+ Your name or tester id</summary>
-        <label for="feedback-name">Your name or tester id</label><input type="text" id="feedback-name" maxlength="60" autocomplete="off" value="${esc(remembered)}" />
-        <p class="soft small">A name labels everything this device has sent, past and future. Leave it empty to stay unnamed.</p>
+      <details class="feedback-name"><summary>+ Your name or tester ID</summary>
+        <label for="feedback-name">Your name or tester ID</label><input type="text" id="feedback-name" maxlength="60" autocomplete="off" value="${esc(remembered)}" />
+        <p class="soft small">This name labels past and future feedback and play history sent from this device. Leave it empty to stay unnamed.</p>
       </details>
-      <details class="feedback-preview"><summary>What is sent</summary><p>Your note, optional verdict and name. With recording off, no run or linked history is sent.</p>${new URLSearchParams(location.search).get('lab') === '1' ? '<pre id="feedback-preview"></pre>' : ''}<a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noreferrer">Lab privacy</a></details>
+      <details class="feedback-preview"><summary>What is sent</summary><p>We send your note and any verdict or name you enter. With recording off, we send no saved game or linked play history.</p>${new URLSearchParams(location.search).get('lab') === '1' ? '<pre id="feedback-preview"></pre>' : ''}<a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noreferrer">Lab privacy</a></details>
       ${new URLSearchParams(location.search).get('lab') === '1' ? '<button type="button" id="feedback-download">Download this run</button>' : ''}
       <p role="status" id="feedback-status"></p>
     </div>
@@ -149,7 +149,7 @@ export function showFeedback(options: {
         run: feedbackRun(),
         sharePlay,
       });
-      const sentMessage = `${noteOnly ? 'Note and verdict queued without a run or history linkage' : 'Note and verdict queued with available run and linked play'} · ${receipt}`;
+      const sentMessage = `${noteOnly ? 'Your note and verdict are queued. No saved game or linked play history was included.' : 'Your note and verdict are queued with any available saved game and linked play history.'} Receipt: ${receipt}`;
       try {
         if (submittedName) localStorage.setItem(NAME_KEY, submittedName);
         else localStorage.removeItem(NAME_KEY);

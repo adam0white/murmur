@@ -29,11 +29,11 @@ describe('refusal recovery in her words', () => {
   it('answers each Monday refusal with a possible change specific to that moment', () => {
     const s = newGame(9, '0.2.1');
     const route = [
-      ['alarm-1', 'up', /next.*alarm.*hold.*feet/i],
+      ['alarm-1', 'up', /next.*alarm.*hold.*get out of bed/i],
       ['note-1', 'reply', /Aylin.*bus.*hold/i],
       ['late-1', 'truth', /Murat.*overslept.*hold/i],
       ['ece-1', 'talk', /already late.*Ece.*hold/i],
-      ['lunch-1', 'defend', /Ece.*speak up.*hold/i],
+      ['lunch-1', 'defend', /speak up.*Ece.*hold/i],
       ['slump-1', 'coffee', null],
       ['bus-1', 'call', /Mum.*bus.*hold/i],
     ] as const;
@@ -127,7 +127,7 @@ describe('refusal recovery in her words', () => {
     expect(answer(s).chosen).toBe('let');
     const words = replyWords(s, answer(s));
     expect(words).toContain(answer(s).says);
-    expect(words).toContain('Say next week.');
+    expect(words).toContain('Tell Ece she can watch you next week.');
     expect(words).toMatch(/next moment/i);
     expect(words).not.toMatch(/hold/i);
   });

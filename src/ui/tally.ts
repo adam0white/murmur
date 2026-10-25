@@ -9,5 +9,5 @@ export function notebookTally(s: GameState, enabled: boolean): string {
   const suggestions = inputs.filter((i) => i.kind === 'say' && !i.insist).length;
   const holds = inputs.filter((i) => i.kind === 'say' && i.insist).length;
   const silences = inputs.filter((i) => i.kind === 'quiet').length;
-  return `<section class="block" aria-label="Your notebook tally"><p class="label">Your notebook’s tally · this week</p><p>Total: ${suggestions + holds + silences} recorded choices = ${suggestions} plain suggestions + ${holds} holds + ${silences} chosen silences.</p><p class="soft small">One count per recorded choice. Page turns and moments left to pass add none. This game’s own reckoning counts your inputs; it does not measure Dilan.</p></section>`;
+  return `<section class="block" aria-label="Your notebook tally"><p class="label">Your choices this week</p><p>Total: ${suggestions + holds + silences} recorded ${suggestions + holds + silences === 1 ? 'choice' : 'choices'} = ${suggestions} ${suggestions === 1 ? 'suggestion' : 'suggestions'} + ${holds} ${holds === 1 ? 'time' : 'times'} you insisted + ${silences} ${silences === 1 ? 'time' : 'times'} you chose to say nothing.</p><p class="soft small">Each recorded choice counts once. Turning a page or letting time pass adds nothing. This tally counts your choices. It does not measure Dilan.</p></section>`;
 }
