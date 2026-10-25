@@ -1,3 +1,25 @@
+# Murmur handoff
+
+## Remaining
+
+- V3 owns the finite signed Good Hands engine 2.23 Aylin receiver follow-up and four unused test-import warning groups. Neither is shipped in the source below.
+- Games-deferred/plain4 own gameplay, design and Deferred work, including repeated Friday coffee and phrase practice. This documentation pass does not close those asks.
+- Adam accepts the fiction by playing. Owner acceptance remains 2026-11-03. Lab-panel rounds on HF3 builds are allowed under the playtest director; this docs worker runs no rounds. Friends’ playtests and Show HN remain paused.
+
+## Current source and delivered receipt — 2026-10-25
+
+Source `92cdebd9fe73d59ccf40c7bdcbd66e8ed310b27e` is edition 0.6.0, HF package 3.0.0, Person engine 2.23.0, client 0.4.10 and kit 0.5.11. The immutable local SDK artifacts are the 10/11 pair; publication of newer artifacts elsewhere is not host adoption. TypeScript is 7.0.2; support requires TypeScript 7 or later. See [README](README.md) for play, storage and finite continuation routes.
+
+The final V3 report records signed source, exact green CI `40239402052`, normal clean deployment `72a4cd7d-cb76-4c4c-aec1-e8e1de369481`, matching live release with `dirty:false`, 261 passing tests and one independent correctness review with no actionable findings. The docs worker also fetched the matching production `/release.json`. Source-only documentation changes do not require an app deployment.
+
+Browser evidence has limits. Actual production WebKit passed 360×690, 412×891, 768×1024 and 1280×800. Existing Chrome checked the production manifest; gameplay, responsive checks and export/replay used a bounded task-local mirror of actual live payloads. This does not establish production Chrome persistence or a genuine player cross-host ownership journey. Generated source/admission fixtures and replay controls are separate evidence. The phone mirror’s 1px internal card-text overflow is routed to plain4/F492.
+
+Authoritative delivery evidence: `~/code/.lab-scratch/v3/murmur/report.md` and `STATUS`; ongoing acceptance receipts: `~/code/.lab-scratch/cast/murmur.md`. Docs review and integration receipts: `~/code/.lab-scratch/docsweb/murmur-report.md`. Do not edit the central HF ledger; route proposals to `~/code/.lab-scratch/cast/murmur-ledger.md`.
+
+## Historical handoffs — 2026-10-19 through 2026-10-25
+
+The entries below preserve earlier work and receipts. Their versions, blockers and delivery phases describe those earlier snapshots; the current section above supersedes their current-state claims. Design history remains in `docs/design.md`.
+
 # Murmur canonical edition
 
 Edition0.6.0 maintains four canonical people through the existing two-week moment loop. Dilan and Aylin are sisters; Ece is a courier and part-time logistics student; Murat is a former grill cook in a later junior depot-supervision chapter. Mum is their unnamed background mother. The two inner voices are channels. See docs/canonical-adoption.md for the exhaustive census and playable discoveries.
