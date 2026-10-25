@@ -3,6 +3,7 @@
  * directly. Real time drives sim minutes, continuously: fast between cards (dead time skipped quickly), strongly
  * slowed while a card is open (never a hard pause), then a short readable beat after each answer.
  */
+
 import { FRAMEWORK_VERSION } from '@adam0white/human-framework';
 import { telemetryNotice, telemetryToggle } from '@adam0white/lab-kit';
 import { castIntroduction } from '../sim/canonical-cast.ts';
@@ -36,6 +37,7 @@ import { departureReleaseDescription } from '../sim/one-cast.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
 import { canonicalPersonControls, freshCanonicalWeek, heldCanonicalWeek } from './cast-chapter.ts';
 import { continuityControls, gateContinuity, installContinuity, invalidateContinuity } from './continuity.ts';
+import { required } from './dom.ts';
 import { showFeedback } from './feedback.ts';
 import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
 import { lab } from './lab.ts';
@@ -67,7 +69,7 @@ const labMode = new URLSearchParams(location.search).get('lab') === '1';
 
 const SAVE = 'murmur-save-v1';
 /** Real seconds an open card lasts (its whole window). */
-const CARD_SECONDS = 32;
+const CARD_SECONDS = 64;
 /** Real seconds after an answer when the clock runs slowly, so her words can be read. */
 const READ_SECONDS = 3;
 /** Between cards: the remaining gap shrinks with this time constant (s), never slower than GAP_FLOOR min/s. */
@@ -302,7 +304,7 @@ function infoPage() {
     screen === 'title'
       ? '<h2>Dilan</h2><p>Dilan is thirty-three. She delivers parcels from a courier depot in Istanbul.</p><p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>'
       : screen === 'day'
-        ? '<h2>The two voices</h2><p>Tap a choice to suggest it. Press and hold a choice to insist. Insisting works only while she trusts you, and it costs trust.</p><p>Choose “Say nothing” to let her decide without your advice. The pencil handwriting shows the other voice.</p><p>The words below each choice show how she feels about it.</p><p>Your handwriting gets darker as she trusts you more. The pencil handwriting gets larger as she trusts the other voice more.</p><p>Time passes slowly while she decides. It passes faster between choices.</p><p class="desktop-only">Press Shift+Enter to insist on the selected choice.</p>'
+        ? '<h2>The two voices</h2><p>Tap a choice to suggest it. Press and hold a choice to insist. Insisting works only while she trusts you, and it costs trust.</p><p>Choose “Say nothing” to let her decide without your advice. The pencil handwriting shows the other voice.</p><p>The words below each choice show how she feels about it.</p><p>Your handwriting gets darker as she trusts you more. The pencil handwriting gets larger as she trusts the other voice more.</p><p>You have 64 seconds to read and answer each choice. Time passes faster between choices.</p><p class="desktop-only">Press Shift+Enter to insist on the selected choice.</p>'
         : screen === 'evening'
           ? '<h2>Her page</h2><p>A tick marks something she followed through on today. A crossed-out line marks something she missed.</p><p>Tally marks show things she intends to follow through on.</p><p>“Words she is starting to use” lists phrases she is learning. Larger handwriting means a phrase has become more familiar to her.</p>'
           : '<h2>Saturday</h2><p>These lines compare how much she trusted each voice at the start and end of the week.</p><p>The tally counts your suggestions, times you insisted, and times you chose to say nothing.</p><p>Another week continues with the same Dilan.</p>';
@@ -397,7 +399,7 @@ function title() {
     </div>${labMode ? '<div class="other-ways-wrap"><button class="row" id="other-ways">Lab tools <span aria-hidden="true">▸</span></button></div>' : ''}
     <footer class="title-spacer" id="title-spacer"></footer>
     <div class="page-actions actions">
-      ${saved ? `<button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved!.day]?.slice(0, 3) ?? '')} ${clock(saved!.minute)}</button>` : ''}
+      ${saved ? `<button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved.day]?.slice(0, 3) ?? '')} ${clock(saved.minute)}</button>` : ''}
       ${
         labMode
           ? `<button id="fresh-authored">Play a fresh local week</button>
@@ -458,14 +460,14 @@ function title() {
   document.getElementById('new')?.addEventListener('click', () => {
     if (!save) newWeek(urlSeed() ?? randomSeed());
     else {
-      document.getElementById('new-confirm')!.hidden = false;
-      document.getElementById('new')!.hidden = true;
+      required(document.getElementById('new-confirm')).hidden = false;
+      required(document.getElementById('new')).hidden = true;
     }
   });
   document.getElementById('confirm-new')?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed()));
   document.getElementById('cancel-new')?.addEventListener('click', () => {
-    document.getElementById('new-confirm')!.hidden = true;
-    document.getElementById('new')!.hidden = false;
+    required(document.getElementById('new-confirm')).hidden = true;
+    required(document.getElementById('new')).hidden = false;
   });
   document
     .getElementById('fresh-authored')
@@ -971,8 +973,8 @@ function drawStatus() {
         ? 'The day is done.'
         : s.card
           ? left * CARD_SECONDS <= 8
-            ? 'She is about to decide.'
-            : 'She is deciding.'
+            ? `She decides in ${Math.ceil(left * CARD_SECONDS)} seconds.`
+            : `${Math.ceil(left * CARD_SECONDS)} seconds to answer.`
           : hurry
             ? 'Time is passing quickly.'
             : (performance.now() - answeredAt) / 1000 < READ_SECONDS
@@ -1182,19 +1184,19 @@ function ending() {
     try {
       if (!s) return;
       await releaseAndCheckpoint(s, writeSave);
-      document.getElementById('departure-status')!.textContent =
+      required(document.getElementById('departure-status')).textContent =
         continuityMessage() || 'Her visit is saved. Continue to the tea garden to meet her there.';
     } catch (error) {
-      document.getElementById('departure-status')!.textContent = String(error);
+      required(document.getElementById('departure-status')).textContent = String(error);
     }
   });
   document.getElementById('depart-fork')?.addEventListener('click', async () => {
     try {
       if (!s) return;
       await forkDeparture(s, writeSave);
-      document.getElementById('departure-status')!.textContent = continuityMessage();
+      required(document.getElementById('departure-status')).textContent = continuityMessage();
     } catch (error) {
-      document.getElementById('departure-status')!.textContent = String(error);
+      required(document.getElementById('departure-status')).textContent = String(error);
     }
   });
   void checkpoint(s, writeSave);
@@ -1206,10 +1208,10 @@ function ending() {
     enter();
   });
   document.getElementById('again')?.addEventListener('click', () => {
-    document.getElementById('end-confirm')!.hidden = false;
+    required(document.getElementById('end-confirm')).hidden = false;
   });
   document.getElementById('end-cancel-new')?.addEventListener('click', () => {
-    document.getElementById('end-confirm')!.hidden = true;
+    required(document.getElementById('end-confirm')).hidden = true;
   });
   document.getElementById('end-confirm-new')?.addEventListener('click', () => newWeek(randomSeed()));
   document.getElementById('export')?.addEventListener('click', download);
@@ -1290,7 +1292,7 @@ function backPage() {
     `<section class="backpage" role="dialog" aria-modal="true" aria-label="Game menu">
     <div class="menu-heading"><h2>Game menu${s && screen !== 'title' ? ` · ${esc(DAY_NAMES[s.day]?.slice(0, 3) ?? '')} ${clock(s.minute)}` : ''}</h2><button data-close aria-label="Close game menu">×</button></div>
     ${screen === 'day' ? '<p class="soft small">Time is paused while this menu is open.</p>' : ''}
-    ${labMode ? `<fieldset class="menu-speed"><legend>Pace between moments</legend>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>` : ''}
+    ${labMode ? `<fieldset class="menu-speed"><legend>Pace between moments</legend><p class="caption">Every choice allows 64 seconds. Slow changes only the time between choices.</p>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>` : ''}
     <button class="row" id="bp-send">Feedback <span aria-hidden="true">▸</span></button>
     <button class="row" id="bp-fullscreen">Full screen</button>
     ${s ? '<button class="row" id="bp-new">New game</button><div id="bp-confirm" hidden><p>Start a new game? This replaces your saved week.</p><button id="bp-confirm-new">Start new game</button><button id="bp-cancel-new">Cancel</button></div>' : ''}
@@ -1320,7 +1322,7 @@ function backPage() {
       writeSave();
       downloadJSON(envelope, 'dilan-passport.json');
     } catch (error) {
-      passport.querySelector('#passport-status')!.textContent = String(error);
+      required(passport.querySelector('#passport-status')).textContent = String(error);
     }
   });
   passport
@@ -1364,14 +1366,14 @@ function backPage() {
       close();
       enter();
     } catch (error) {
-      passport.querySelector('#passport-status')!.textContent = String(error);
+      required(passport.querySelector('#passport-status')).textContent = String(error);
     }
   });
   el.querySelector('#bp-new')?.addEventListener('click', () => {
-    el.querySelector<HTMLElement>('#bp-confirm')!.hidden = false;
+    required(el.querySelector<HTMLElement>('#bp-confirm')).hidden = false;
   });
   el.querySelector('#bp-cancel-new')?.addEventListener('click', () => {
-    el.querySelector<HTMLElement>('#bp-confirm')!.hidden = true;
+    required(el.querySelector<HTMLElement>('#bp-confirm')).hidden = true;
   });
   el.querySelector('#bp-confirm-new')?.addEventListener('click', () => {
     close();

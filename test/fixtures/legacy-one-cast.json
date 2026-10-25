@@ -1,0 +1,286 @@
+{
+  "sourceCommit": "9c43059ad5c51eb34156b8a22df03c1c96753b97",
+  "framework": "2.21.0",
+  "integrity": "sha512-GPyw3YavLAdXscZy91PgiOp/dZv7qBS50FrU1s3CUUkAW94bKUOKFTQsa2kBEkjQtgrDkFyz8K9e0P/bjVoVWg==",
+  "sourceRng": {
+    "a": -310694198,
+    "b": 1925820621,
+    "c": 678417973,
+    "d": 475654274
+  },
+  "sourceMinute": 583803,
+  "accepted": {
+    "person": {
+      "format": "hf-persona-state/1",
+      "mappingVersion": "hearsay-murmur/1",
+      "source": {
+        "schema": "human/person@1",
+        "engine": "2.21.0",
+        "id": "dilan-delivery",
+        "now": 360
+      },
+      "name": "Dilan",
+      "life": {
+        "bornAt": -17351844,
+        "sex": "female"
+      },
+      "rng": {
+        "a": -310694198,
+        "b": 1925820621,
+        "c": 678417973,
+        "d": 475654274
+      },
+      "traits": {
+        "honesty": 0.68,
+        "emotionality": 0.62,
+        "extraversion": 0.45,
+        "agreeableness": 0.6,
+        "conscientiousness": 0.48,
+        "openness": 0.5
+      },
+      "values": {
+        "benevolence": 0.5,
+        "universalism": 0.5,
+        "tradition": 0.5,
+        "conformity": 0.5,
+        "security": 0.5,
+        "achievement": 0.5,
+        "power": 0.5,
+        "hedonism": 0.5,
+        "stimulation": 0.5,
+        "selfDirection": 0.5
+      },
+      "health": {
+        "health": 1,
+        "fitness": 0.4908778653212349,
+        "circadianPeak": 960
+      },
+      "family": null,
+      "bonds": null,
+      "skills": {},
+      "skillRetention": null,
+      "episodes": [
+        {
+          "id": "hearsay-encounter",
+          "at": 360,
+          "kind": "witnessed",
+          "valence": 0.12,
+          "salience": 0.4,
+          "summary": "Hatice respected my work and offered a short exchange.",
+          "tags": [],
+          "action": "talk",
+          "actorId": "hearsay-hatice"
+        }
+      ],
+      "commitments": [],
+      "limitations": [
+        "source transient body/needs/affect/ambient omitted; target arrival policy",
+        "source habits/methods/beliefs/social/conscience omitted; target authored state",
+        "source optional behaviour stores and decision history omitted; target authored state",
+        "family/bonds provenance checked; target authored state",
+        "episode:delivery-work"
+      ]
+    },
+    "history": [
+      {
+        "id": "hearsay-encounter",
+        "kind": "hearsay-encounter",
+        "sourceGame": "hearsay",
+        "episodeId": "hearsay-encounter",
+        "disclosed": true,
+        "outcome": "accepted"
+      }
+    ],
+    "checkpoint": {
+      "sourceSchema": "human/person@1",
+      "sourceNow": 360,
+      "sourceRng": {
+        "a": -310694198,
+        "b": 1925820621,
+        "c": 678417973,
+        "d": 475654274
+      },
+      "checkpointDigest": "e90b6df272062bf5263587e6f30e5eb727ea90d92a3a452a09452236ba673cc8"
+    }
+  },
+  "declined": {
+    "person": {
+      "format": "hf-persona-state/1",
+      "mappingVersion": "hearsay-murmur/1",
+      "source": {
+        "schema": "human/person@1",
+        "engine": "2.21.0",
+        "id": "dilan-delivery",
+        "now": 360
+      },
+      "name": "Dilan",
+      "life": {
+        "bornAt": -17351844,
+        "sex": "female"
+      },
+      "rng": {
+        "a": -310694198,
+        "b": 1925820621,
+        "c": 678417973,
+        "d": 475654274
+      },
+      "traits": {
+        "honesty": 0.68,
+        "emotionality": 0.62,
+        "extraversion": 0.45,
+        "agreeableness": 0.6,
+        "conscientiousness": 0.48,
+        "openness": 0.5
+      },
+      "values": {
+        "benevolence": 0.5,
+        "universalism": 0.5,
+        "tradition": 0.5,
+        "conformity": 0.5,
+        "security": 0.5,
+        "achievement": 0.5,
+        "power": 0.5,
+        "hedonism": 0.5,
+        "stimulation": 0.5,
+        "selfDirection": 0.5
+      },
+      "health": {
+        "health": 1,
+        "fitness": 0.4908778653212349,
+        "circadianPeak": 960
+      },
+      "family": null,
+      "bonds": null,
+      "skills": {},
+      "skillRetention": null,
+      "episodes": [
+        {
+          "id": "hearsay-encounter",
+          "at": 360,
+          "kind": "witnessed",
+          "valence": -0.01,
+          "salience": 0.4,
+          "summary": "I ended the exchange.",
+          "tags": [],
+          "action": "leave",
+          "actorId": "hearsay-hatice"
+        }
+      ],
+      "commitments": [],
+      "limitations": [
+        "source transient body/needs/affect/ambient omitted; target arrival policy",
+        "source habits/methods/beliefs/social/conscience omitted; target authored state",
+        "source optional behaviour stores and decision history omitted; target authored state",
+        "family/bonds provenance checked; target authored state",
+        "episode:delivery-work"
+      ]
+    },
+    "history": [
+      {
+        "id": "hearsay-encounter",
+        "kind": "hearsay-encounter",
+        "sourceGame": "hearsay",
+        "episodeId": "hearsay-encounter",
+        "disclosed": true,
+        "outcome": "declined"
+      }
+    ],
+    "checkpoint": {
+      "sourceSchema": "human/person@1",
+      "sourceNow": 360,
+      "sourceRng": {
+        "a": -310694198,
+        "b": 1925820621,
+        "c": 678417973,
+        "d": 475654274
+      },
+      "checkpointDigest": "d0fddd08aeab1255fa7bfd330216fedd6af5c1fad2feadc6b5f93b384af00645"
+    }
+  },
+  "ui": {
+    "person": {
+      "format": "hf-persona-state/1",
+      "mappingVersion": "hearsay-murmur/1",
+      "source": {
+        "schema": "human/person@1",
+        "engine": "2.21.0",
+        "id": "dilan-delivery",
+        "now": 360
+      },
+      "name": "Dilan",
+      "life": {
+        "bornAt": -17351844,
+        "sex": "female"
+      },
+      "rng": {
+        "a": -310694198,
+        "b": 1925820621,
+        "c": 678417973,
+        "d": 475654274
+      },
+      "traits": {
+        "honesty": 0.68,
+        "emotionality": 0.62,
+        "extraversion": 0.45,
+        "agreeableness": 0.6,
+        "conscientiousness": 0.48,
+        "openness": 0.5
+      },
+      "values": {
+        "benevolence": 0.5,
+        "universalism": 0.5,
+        "tradition": 0.5,
+        "conformity": 0.5,
+        "security": 0.5,
+        "achievement": 0.5,
+        "power": 0.5,
+        "hedonism": 0.5,
+        "stimulation": 0.5,
+        "selfDirection": 0.5
+      },
+      "health": {
+        "health": 1,
+        "fitness": 0.4918778653212349,
+        "circadianPeak": 960
+      },
+      "family": null,
+      "bonds": null,
+      "skills": {},
+      "skillRetention": null,
+      "episodes": [
+        {
+          "id": "hearsay-encounter",
+          "at": 360,
+          "kind": "witnessed",
+          "valence": 0.12,
+          "salience": 0.372,
+          "summary": "Hatice respected my work and offered a short exchange.",
+          "tags": [],
+          "action": "talk",
+          "actorId": "hearsay-hatice"
+        }
+      ],
+      "commitments": [],
+      "limitations": [
+        "source transient body/needs/affect/ambient omitted; target arrival policy",
+        "source habits/methods/beliefs/social/conscience omitted; target authored state",
+        "source optional behaviour stores and decision history omitted; target authored state",
+        "family/bonds provenance checked; target authored state",
+        "episode:delivery-work",
+        "episode:e2"
+      ]
+    },
+    "checkpoint": {
+      "sourceSchema": "human/person@1",
+      "sourceNow": 360,
+      "sourceRng": {
+        "a": -310694198,
+        "b": 1925820621,
+        "c": 678417973,
+        "d": 475654274
+      },
+      "checkpointDigest": "168548c890ba211a9d431ed95d7ea4ff3fac658e08d48908dfdd935941b3ebec"
+    },
+    "openingMinute": 360
+  }
+}

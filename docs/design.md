@@ -24,6 +24,7 @@ Taken: A + the evening scene, five weekdays + Saturday, pencil vs ink, size of h
 7. **Tomorrow** carries it: a resolve prints on its card in her hand and pulls in HF (`review:resolve`); lost sleep makes the pull louder in the morning; a lie or a word at lunch comes back.
 
 ### After the first playtests (2026-10-19, see docs/playtests/)
+
 Four source-unread testers and the HF-character harness agreed on these. They changed the rules:
 - **Holding is a capability, not a free override.** It carries only while she trusts you enough (`INSIST_FROM`, 0.45). Each hold costs trust. Below that line a hold carries less than a tap, and she says so: "You keep pushing me. I'm not listening to that today." Always holding now loses more moments than plain speaking.
 - **Her phrases fade unless you say them again.** Each night a phrase you did not say again that day loses a fifth of its practice. This is host-side, because HF's 60-day half-life is too slow for one week (HF request 5). Training and then coasting no longer works. She still turns the pull away on her own sometimes.
@@ -34,6 +35,7 @@ Four source-unread testers and the HF-character harness agreed on these. They ch
 - **Bodily lines.** Routine hours now give water (tea at the desk), so she no longer reaches dinner "too thirsty". The forecast speaks only when an exertion would really cost her.
 
 ### After the first-timer playtest (2026-10-19, Claude Haiku)
+
 A first-timer could not tell her replies from the pencil, read the mood words as odds, and saw "Later" quietly hand the moment to the pencil. Fixes, none of which change a decision:
 - **Three hands, three looks.** Your ink is the serif; the pencil is graphite blue-grey handwriting; her replies are quoted handwriting marked "she says".
 - **Mood, not odds.** The small words are her mood: she's willing, she'd grumble, only with a push, she'd put it off, she's against it.
@@ -41,20 +43,24 @@ A first-timer could not tell her replies from the pencil, read the mood words as
 - **Every refusal has a reason.** When HF gives her no words, the host gives her a true one: tiredness, the easier way, or a plain no.
 
 ### Edges we keep (owner, 2026-10-19)
+
 The owner wants the edges playtesters find "a bit fun and slightly in our calculations" kept, not closed. The measure's `edge` policy plays them: it sides with the pull where the pull is right (the coffee when she is tired, the first lie), holds only where a hold carries and beats a tap, and speaks on borrowed cards. Over 8 seeds it lets the pull win 1.9 of 18.6 prompts and keeps 9.8 commitments, against 4.3 and 8.8 for the honest reader. It is the best policy but not a rout, so the edges stay.
 
 ### What saying nothing does
+
 It is a real move. You see who she is without you. A turning-away she learned from you (below) only shows as hers when she uses it unprompted, and the evening notes it: "I did that one myself." Saying nothing costs no trust and lets voice pressure fade. It does let her phrases fade. A "say nothing" control on each card makes silence a visible move.
 
 ### Two voices, made concrete
+
 - `pull` is an HF voice with its own trust (starts higher than yours: it has been with her longer). Its suggestion goes into the same decision as yours. When giving in felt good, she trusts it more (HF `learnFromVoice`). Its handwriting grows and shrinks with that trust.
 - Your ink darkens or fades with her trust in you. No meter for either.
 - The pull is sometimes right: the coffee before the 15:00 rush, skipping the run when she is spent. Those moments carry no held norm against the pull.
 - **Promptings:** tempting options carry a `temptation` tag and a norm from the HF catalog (punctuality, lying, backbiting, kindness-to-parents). HF records each as a prompt that passed, turned or won.
 - **Turning away:** when she follows you away from a prompt, she keeps your words as her own phrase (an HF prompting response, `redirect` or `leave`, low practice). Practice grows whenever it holds and fades with disuse. On later days the margin shows her phrases; by Friday she may turn before you speak.
-- **Borrowed ink** (Thursday and Friday, when she trusts you more than the pull): some pull lines arrive in your ink with a slightly wrong slant ("You said rest matters."). Mechanically the pull's suggestion then comes under your voice id, so her trust in *you* pays for it if it goes badly. Saying something real on that card drowns it out. The evening may notice: "Some of what I heard today wasn't you."
+- **Borrowed ink** (Thursday and Friday, when she trusts you more than the pull): some pull lines arrive in your ink with a slightly wrong slant ("You said rest matters."). Mechanically the pull's suggestion then comes under your voice id, so her trust in _you_ pays for it if it goes badly. Saying something real on that card drowns it out. The evening may notice: "Some of what I heard today wasn't you."
 
 ### Progressive disclosure, one new kind of choice a day
+
 - **Monday:** tap to suggest, hold to insist, or say nothing. The first alarm offers a hold with its trust cost beside the suggestion; holding fills the ink and acknowledges insistence. The pull, the lie at the depot (only if she was late), the gossip at lunch, Mum.
 - **Tuesday:** Monday's resolve prints on its card.
 - **Wednesday:** bodily forecast: Murat asks her to cover Ece's evening route, the night of Aylin's birthday dinner ("I can do the route, but I'll be spent for Aylin's."). Mum's message if she missed two calls.
@@ -63,17 +69,21 @@ It is a real move. You see who she is without you. A turning-away she learned fr
 - **Saturday morning:** the voice note to Mum, made from her review lines. Sending it is her decision; you can whisper. Then the last page.
 
 ### Achievement, without a scoreboard
+
 - A good week: on Thursday or Friday she turns before you speak; her phrases fill the margin; the call to Mum happens; the last page is short and plain.
 - A hard week: pressed handwriting, crossings-out, many weak resolves; still one honest line she means.
 - The last page: her own phrases, what she now does unasked, the two hands side by side, and the week strip.
 
 ## The back story (implied, never told)
+
 Dilan moved back to her hometown eight months ago after something ended. Objects that imply it: her lock screen is a beach photo with one person cropped out; a half-built shelf in the corner with the screws still in the bag; the gym email; her sister Aylin's voice notes ("Mum's asking again. Just ring her, it's ten minutes."). Murat runs the depot floor. Ece is the new driver.
 
 ## HF use (pinned exactly: 2.7.0 at start, 2.8.0 since 2026-10-19)
+
 One `Person` (Dilan). Voices `you` and `pull`. Opt-ins: fatigue store, promptings (reading `inclination`, never shown), review (style `ruminating`, 22:00). Commitments via `promise`: her alarm (to herself, daily), calling Mum (to Mum, evening window, daily), Aylin's dinner (Wednesday). Norms from the HF catalog only; no invented rulings. `predict` gives each option a faint lean (pure). `bodyForecast` on offers with `followedBy`.
 
 ## Rules
+
 - Inputs are stamped with the sim minute; replay of seed + input log rebuilds the state exactly.
 - No meters or percentages for Dilan's inner state. Money is not in this game; the clock is.
 - Faith stays quiet and unnamed. The prompting reading is never shown.
@@ -113,6 +123,7 @@ Cost and risk: more uncertainty makes her less predictable. Retained words add r
 **Replay and revert:** 0.2.1 saves and exports stay on 0.2.1, including unversioned historical saves. Creation and replay take an explicit edition; stored metadata and journal reconstruction preserve it. Canonical full-state hashes were captured from commit `a9447c2` before simulation edits: 12 complete runs across three seeds and four policies, plus 36 checkpoint replays/restored continuations. New runs use `GAME_VERSION` in `src/sim/game.ts`. To revert the default, set it to `'0.2.1'` and deploy. Keep `LISTENING_EDITION` and both supported branches so existing 0.3.0 runs still replay.
 
 ## Deferred (target: 2026-11-03)
+
 - Replace Friday’s repeated coffee card (fun review 2; target 2026-11-03): a new competing obligation changes the decisions and needs its own authored situation, edition boundary and playtest; this round preserves live 0.3.0 runs.
 - More campaigns, including a second week.
 - Other people as HF persons (Ece, Mum).
@@ -145,11 +156,11 @@ Owner, 2026-10-20: "We both need more of the same as well as other campaigns." "
 - **Week one's last page is canon.** Its thread lines and closing line ("On Sunday she rang anyway", "Ece has her own columns now", "Aylin came round on Saturday for the shelf", the lock screen) are true in week two. Nothing in week two contradicts them.
 - **More of the same, at the same density.** Five or six cards a day: the alarm, the bus home (the call to Mum), bed, and three new situations. Habits she built show as lines she does unasked. While "Feet on the floor" is strong she gets up alone and the journal says so.
 - **One new kind of choice a day:**
-  - Monday, *accept help*: Ece offers to clear the returns. Let her, or redo them herself. Mum's answer to Saturday opens the day; a tenancy renewal letter arrives and is never explained.
-  - Tuesday, *your words in her mouth*: Ece asks Dilan how to handle something, and Dilan answers with a phrase she learned from you. It may be wrong for Ece. Let it stand, soften it, or tell her to ask Ece what she thinks. Ece also asks for practice on the board: Dilan promises twenty minutes, Thursday evening, or nothing (an HF promise to Ece).
-  - Wednesday, *correct your own advice*: the pull quotes her own learned phrase, bent ("Just say it plainly. In front of everyone."). Then Ece makes a mistake: correct her privately or across the room. The evening is family.
-  - Thursday, *let another method stand*: Ece runs the board her own way. It works, and Dilan can't read it. Leave it, change it together, or put it back. Any promise to Ece falls due on the same evening as Dilan's own thread.
-  - Friday, *take back a promise*: she wants the early bus, and something is in her bag. Ece asks her to stay. Stay, withdraw a promise openly (HF `release`), or slip out.
+  - Monday, _accept help_: Ece offers to clear the returns. Let her, or redo them herself. Mum's answer to Saturday opens the day; a tenancy renewal letter arrives and is never explained.
+  - Tuesday, _your words in her mouth_: Ece asks Dilan how to handle something, and Dilan answers with a phrase she learned from you. It may be wrong for Ece. Let it stand, soften it, or tell her to ask Ece what she thinks. Ece also asks for practice on the board: Dilan promises twenty minutes, Thursday evening, or nothing (an HF promise to Ece).
+  - Wednesday, _correct your own advice_: the pull quotes her own learned phrase, bent ("Just say it plainly. In front of everyone."). Then Ece makes a mistake: correct her privately or across the room. The evening is family.
+  - Thursday, _let another method stand_: Ece runs the board her own way. It works, and Dilan can't read it. Leave it, change it together, or put it back. Any promise to Ece falls due on the same evening as Dilan's own thread.
+  - Friday, _take back a promise_: she wants the early bus, and something is in her bag. Ece asks her to stay. Stay, withdraw a promise openly (HF `release`), or slip out.
   - Saturday: Ece's message about the week, then the last page with both weeks.
 - **Kept unresolved for good:** who was cropped out of the photo, what ended, the subscription, the tenancy letter, what is in her bag on Friday.
 - **The edge we keep:** leaving can be selfish and still work. Staying can help Ece and cost Dilan something she won't explain. Kindness gets no guaranteed reward. The week-two pull is harder, because it uses her own phrases.
@@ -196,54 +207,54 @@ This supersedes the older “three hands” presentation and the visual disguise
 
 The audit covers all renderer branches in `src/ui/app.ts`, every font, colour and slant rule in `src/ui/style.css`, and text/font references in `src`, `index.html`, and `public`. Repeated runtime instances count once per renderer place below; the two pencil refusal descriptions share one place. **40 live style inconsistencies found; 40 fixed.** Dormant declarations and shared infrastructure are listed separately and excluded from that count.
 
-| Place | Current style before audit | Verdict | Change |
-| --- | --- | --- | --- |
-| Cover, “The other got there first.” (`title`) | Caveat, ink-soft override, −2° | Fix | Keep face/slant; restore pencil colour. |
-| Ordinary pull card (`cardHtml`) | Caveat, pencil, trust-sized/rotated | Keep | Route unchanged values through `.other-voice`. |
-| Borrowed pull card (`cardHtml`) | Literata, your ink, skew −9° / rotation +0.4° | Fix | Use the same other-voice marker and trust sizing as other pull lines. |
-| Journal pull (`drawJournal`, who=pull) | Caveat, pencil, upright | Fix | Add shared slant. |
-| First-card explanation, “the pencil is the other voice” | Literata italic, ink-soft | Fix | Add shared marker; 17px keeps Caveat legible. |
-| Refusal/defer descriptions naming the pencil (`recordHtml`) | Literata italic, pencil | Fix | Add handwritten face and shared slant. |
-| “She didn’t. She did something else.” (`recordHtml`) | Literata italic, pencil | Fix | Plain ink and upright; it does not identify the pull. |
-| Saturday “the pencil” comparisons (`handsHtml`) | Caveat, ink-soft override, trust-sized/rotated | Fix | Restore pencil colour; preserve size and angle. |
-| Evening “Some of what I heard today wasn’t you.” (`pageHtml`) | Caveat, ink, upright | Fix | Apply complete marker to this borrowed-voice description only. |
-| Header weekday (`header`) | Caveat, ink-soft | Fix | Literata; preserve size/line height. |
-| Kept words beneath clock (`header`) | Caveat, ink-soft | Fix | Literata; these are her learned words. |
-| Journal heading (`drawJournal`) | Caveat, ink-soft | Fix | Literata; preserve size. |
-| Journal Dilan speech (`drawJournal`, who=dilan) | Caveat, ink | Fix | Literata; preserve size. |
-| Recorded reply and “she says” (`recordHtml`) | Caveat reply, Literata attribution | Fix | Literata reply; keep attribution. |
-| Recorded learned phrase (`recordHtml`, margin) | Caveat, ink | Fix | Literata; preserve size. |
-| Card resolve (`cardHtml`) | Caveat, ink | Fix | Literata; preserve size and tally. |
-| Card bodily forecast (`cardHtml`) | Caveat, ink-soft | Fix | Literata; preserve size. |
-| Option mood (`cardHtml`, lean) | Caveat, ink-soft | Fix | Literata at 14px so the wider serif mood labels retain the phone-card fit. |
-| Card recalled thought (`cardHtml`, stayed) | Caveat, ink | Fix | Literata at 17px to preserve phone-card fit. |
-| Reported retained/completed thought (`thoughtHtml`) | Caveat, ink | Fix | Literata at the same 17px as card thoughts. |
-| “say nothing” control (`.hush`) | Caveat, ink-soft | Fix | Inherit Literata; preserve control dimensions. |
-| Evening resolve (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size and tally. |
-| Evening learned phrases (`pageHtml`) | Caveat, ink, −1.5° | Fix | Literata upright; preserve practice opacity and size. |
-| Evening independent-action speech (`pageHtml`, alone) | Caveat, ink | Fix | Literata; preserve size. |
-| Evening heading (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size. |
-| Evening review (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size. |
-| Evening herLine (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size. |
-| Evening aboutYou, all other branches (`pageHtml`) | Caveat, ink | Fix | Literata; preserve size. These describe you, not the pull. |
-| Continuation notice (`ending`) | Caveat, ink-soft | Fix | Literata; preserve size. |
-| Week-strip weekday labels (`stripHtml`, both weeks) | Caveat, ink | Fix | Literata; preserve size. |
-| Final learned phrases (`finalHtml`) | Caveat, ink, −1.5° | Fix | Literata upright; preserve practice opacity and size. |
-| Final independent actions (`finalHtml`) | Caveat, ink | Fix | Literata; preserve size. |
-| Saturday heading (`finalHtml`) | Caveat, ink | Fix | Literata; preserve size. |
-| Final input reflection (`finalHtml`) | Caveat, ink | Fix | Literata; preserve size. |
-| Toast (`.toast`) | Literata italic, sky | Fix | Upright; preserve sky status colour. |
-| Journal scene (`.jscene`) | Literata italic, ink-soft | Fix | Upright; preserve colour. |
-| Other captions: timer, mood explanation, running clock (`.caption`) | Literata italic, ink-soft | Fix | Upright; preserve size and colour. |
-| Gameplay hints (`.hint`) | Literata italic, ink-soft | Fix | Upright; preserve size and colour. |
-| Your recorded input/silence (`.record-yours`) | Literata italic, ink | Fix | Upright. |
-| Chosen action (`.record-chosen`) | Literata, pencil | Fix | Normal ink; a chosen action is not a pull utterance. |
-| Voice note to Mum (`.voicenote .note`) | Literata italic, ink | Fix | Upright; Dilan is speaking. |
-| Dormant `.herchoice` and `.yousaid .ink` rules | Pencil colour / italic; no rendered uses | Remove dormant rules | Remove marker declarations; not counted as live inconsistencies. |
-| Shared typography infrastructure | `.hand` applies Caveat plus size/line-height | Consolidate | Rename size/line-height helper `.notebook-text`; only `.other-voice` owns face, colour, rotation. |
-| Theme tokens / Google font loading | Caveat plus light #5f6b78 / dark #9fb0c2 | Keep | Keep original assets and theme colours. No other text rule consumes hand or pencil. |
-| SVG tick rotation / wobbled rules and tally strokes | Rotated tick geometry; ink-soft/moss strokes | Keep | Non-text geometry does not mark a voice. |
-| Other-voice metadata in index.html description | Nonvisual plain metadata | Keep | No rendered text to mark. |
+| Place                                                               | Current style before audit                     | Verdict              | Change                                                                                            |
+| ------------------------------------------------------------------- | ---------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------- |
+| Cover, “The other got there first.” (`title`)                       | Caveat, ink-soft override, −2°                 | Fix                  | Keep face/slant; restore pencil colour.                                                           |
+| Ordinary pull card (`cardHtml`)                                     | Caveat, pencil, trust-sized/rotated            | Keep                 | Route unchanged values through `.other-voice`.                                                    |
+| Borrowed pull card (`cardHtml`)                                     | Literata, your ink, skew −9° / rotation +0.4°  | Fix                  | Use the same other-voice marker and trust sizing as other pull lines.                             |
+| Journal pull (`drawJournal`, who=pull)                              | Caveat, pencil, upright                        | Fix                  | Add shared slant.                                                                                 |
+| First-card explanation, “the pencil is the other voice”             | Literata italic, ink-soft                      | Fix                  | Add shared marker; 17px keeps Caveat legible.                                                     |
+| Refusal/defer descriptions naming the pencil (`recordHtml`)         | Literata italic, pencil                        | Fix                  | Add handwritten face and shared slant.                                                            |
+| “She didn’t. She did something else.” (`recordHtml`)                | Literata italic, pencil                        | Fix                  | Plain ink and upright; it does not identify the pull.                                             |
+| Saturday “the pencil” comparisons (`handsHtml`)                     | Caveat, ink-soft override, trust-sized/rotated | Fix                  | Restore pencil colour; preserve size and angle.                                                   |
+| Evening “Some of what I heard today wasn’t you.” (`pageHtml`)       | Caveat, ink, upright                           | Fix                  | Apply complete marker to this borrowed-voice description only.                                    |
+| Header weekday (`header`)                                           | Caveat, ink-soft                               | Fix                  | Literata; preserve size/line height.                                                              |
+| Kept words beneath clock (`header`)                                 | Caveat, ink-soft                               | Fix                  | Literata; these are her learned words.                                                            |
+| Journal heading (`drawJournal`)                                     | Caveat, ink-soft                               | Fix                  | Literata; preserve size.                                                                          |
+| Journal Dilan speech (`drawJournal`, who=dilan)                     | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Recorded reply and “she says” (`recordHtml`)                        | Caveat reply, Literata attribution             | Fix                  | Literata reply; keep attribution.                                                                 |
+| Recorded learned phrase (`recordHtml`, margin)                      | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Card resolve (`cardHtml`)                                           | Caveat, ink                                    | Fix                  | Literata; preserve size and tally.                                                                |
+| Card bodily forecast (`cardHtml`)                                   | Caveat, ink-soft                               | Fix                  | Literata; preserve size.                                                                          |
+| Option mood (`cardHtml`, lean)                                      | Caveat, ink-soft                               | Fix                  | Literata at 14px so the wider serif mood labels retain the phone-card fit.                        |
+| Card recalled thought (`cardHtml`, stayed)                          | Caveat, ink                                    | Fix                  | Literata at 17px to preserve phone-card fit.                                                      |
+| Reported retained/completed thought (`thoughtHtml`)                 | Caveat, ink                                    | Fix                  | Literata at the same 17px as card thoughts.                                                       |
+| “say nothing” control (`.hush`)                                     | Caveat, ink-soft                               | Fix                  | Inherit Literata; preserve control dimensions.                                                    |
+| Evening resolve (`pageHtml`)                                        | Caveat, ink                                    | Fix                  | Literata; preserve size and tally.                                                                |
+| Evening learned phrases (`pageHtml`)                                | Caveat, ink, −1.5°                             | Fix                  | Literata upright; preserve practice opacity and size.                                             |
+| Evening independent-action speech (`pageHtml`, alone)               | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Evening heading (`pageHtml`)                                        | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Evening review (`pageHtml`)                                         | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Evening herLine (`pageHtml`)                                        | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Evening aboutYou, all other branches (`pageHtml`)                   | Caveat, ink                                    | Fix                  | Literata; preserve size. These describe you, not the pull.                                        |
+| Continuation notice (`ending`)                                      | Caveat, ink-soft                               | Fix                  | Literata; preserve size.                                                                          |
+| Week-strip weekday labels (`stripHtml`, both weeks)                 | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Final learned phrases (`finalHtml`)                                 | Caveat, ink, −1.5°                             | Fix                  | Literata upright; preserve practice opacity and size.                                             |
+| Final independent actions (`finalHtml`)                             | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Saturday heading (`finalHtml`)                                      | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Final input reflection (`finalHtml`)                                | Caveat, ink                                    | Fix                  | Literata; preserve size.                                                                          |
+| Toast (`.toast`)                                                    | Literata italic, sky                           | Fix                  | Upright; preserve sky status colour.                                                              |
+| Journal scene (`.jscene`)                                           | Literata italic, ink-soft                      | Fix                  | Upright; preserve colour.                                                                         |
+| Other captions: timer, mood explanation, running clock (`.caption`) | Literata italic, ink-soft                      | Fix                  | Upright; preserve size and colour.                                                                |
+| Gameplay hints (`.hint`)                                            | Literata italic, ink-soft                      | Fix                  | Upright; preserve size and colour.                                                                |
+| Your recorded input/silence (`.record-yours`)                       | Literata italic, ink                           | Fix                  | Upright.                                                                                          |
+| Chosen action (`.record-chosen`)                                    | Literata, pencil                               | Fix                  | Normal ink; a chosen action is not a pull utterance.                                              |
+| Voice note to Mum (`.voicenote .note`)                              | Literata italic, ink                           | Fix                  | Upright; Dilan is speaking.                                                                       |
+| Dormant `.herchoice` and `.yousaid .ink` rules                      | Pencil colour / italic; no rendered uses       | Remove dormant rules | Remove marker declarations; not counted as live inconsistencies.                                  |
+| Shared typography infrastructure                                    | `.hand` applies Caveat plus size/line-height   | Consolidate          | Rename size/line-height helper `.notebook-text`; only `.other-voice` owns face, colour, rotation. |
+| Theme tokens / Google font loading                                  | Caveat plus light #5f6b78 / dark #9fb0c2       | Keep                 | Keep original assets and theme colours. No other text rule consumes hand or pencil.               |
+| SVG tick rotation / wobbled rules and tally strokes                 | Rotated tick geometry; ink-soft/moss strokes   | Keep                 | Non-text geometry does not mark a voice.                                                          |
+| Other-voice metadata in index.html description                      | Nonvisual plain metadata                       | Keep                 | No rendered text to mark.                                                                         |
 
 ### Screenshot comparison and acceptance evidence
 

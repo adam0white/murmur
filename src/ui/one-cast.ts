@@ -1,7 +1,7 @@
 import { automaticCastCheckpoint, validateCanonicalRun } from './cast-chapter.ts';
 /** Murmur's authored crossing. Transport and recording remain separate from the deterministic week. */
 
-import { FRAMEWORK_VERSION, snapshot } from '@adam0white/human-framework';
+import { snapshot } from '@adam0white/human-framework';
 import {
   canonicalPersona,
   createPersona,
@@ -22,7 +22,7 @@ import {
 } from './continuity.ts';
 import { lab } from './lab.ts';
 
-export const CAST = 'hf.cast.dilan.murmur';
+const CAST = 'hf.cast.dilan.murmur';
 const PREFIX = 'murmur-one-cast-prefix:';
 let checkpointTask: Promise<void> | null = null;
 let status = '';
@@ -87,7 +87,7 @@ function requireReturnEnvelope(incoming: PersonaEnvelope): void {
     incoming.castRevision !== '1' ||
     incoming.source.game !== 'hearsay' ||
     !['4', '5'].includes(incoming.source.rules) ||
-    !['2.14.1', '2.17.0', FRAMEWORK_VERSION].includes(incoming.source.engine)
+    !['2.14.1', '2.17.0', '2.21.0'].includes(incoming.source.engine)
   )
     throw new Error('This return is from an unsupported edition. Start a fresh week.');
 }

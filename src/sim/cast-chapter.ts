@@ -4,7 +4,7 @@
 import {
   admitCalendarPersona,
   DEFAULT_NORMS,
-  FRAMEWORK_VERSION,
+  ENGINE_VERSION,
   type Person,
   snapshot,
   validateCalendarPersona,
@@ -92,7 +92,14 @@ function admit(input: LifePreparation, opening: Person): Person {
     !d ||
     parent.source.game !== d.game ||
     parent.source.rules !== d.rules ||
-    !['2.17.0', FRAMEWORK_VERSION].includes(parent.source.engine) ||
+    !(
+      parent.source.engine === '2.17.0' ||
+      parent.source.engine === '2.21.0' ||
+      ((own ||
+        (d.game === 'neighbours' && d.role === 'noor') ||
+        (d.game === 'hearsay' && d.role === 'dilan')) &&
+        parent.source.engine === ENGINE_VERSION)
+    ) ||
     parent.transfer.castPassport !== d.passport ||
     parent.transfer.sourceRole !== d.role
   )
@@ -376,7 +383,7 @@ export async function validateCastChapter(chapter: CastChapter, seed: number): P
       claim.castRevision !== input.parent.castRevision ||
       claim.source.game !== 'murmur' ||
       claim.source.rules !== CAST_VERSION ||
-      !['2.17.0', FRAMEWORK_VERSION].includes(claim.source.engine) ||
+      !['2.17.0', '2.21.0', ENGINE_VERSION].includes(claim.source.engine) ||
       !same(claim.transfer, { ...input.parent.transfer, life: input.life })
     )
       throw Error('Pinned whole-cast claim does not match its exact parent.');

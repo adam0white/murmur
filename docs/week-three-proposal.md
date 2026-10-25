@@ -10,14 +10,14 @@ Carry the actual HF person forward: voice trust and pressure, habits, learned ph
 
 ## Situations and earlier choices
 
-| Day | New situation | How earlier choices pay off |
-| --- | --- | --- |
-| Monday | Ece helps teach a new dispatcher. One instruction fits the board and fails on the loading floor. | Earlier practice lets Ece demonstrate. A withdrawn promise leaves a gap she names. The familiar phrase may need correction. |
-| Tuesday | Mum sorts photographs before a visit. The free hour also fits the shelf. | Finding the beach photograph changes what Mum asks about. A finished shelf gives the photographs somewhere to go. Otherwise the jobs compete. |
-| Wednesday | Aylin asks for help before a family meal. Murat offers another paid route. | Aylin remembers the birthday visit and Dilan's exhaustion. This time she asks for a specific arrival time. Attending eventually will not keep that promise. |
-| Thursday | A duplicate collection becomes a complaint during the new dispatcher's solo shift. | Earlier honesty and board advice determine what Dilan and Ece can truthfully say. Quiet repair takes time; calling across the room stops the van sooner. |
-| Friday | Ece can close alone, needs practice, or declines help. Dilan has evening plans. | Actual practice and the earlier promise determine the request. Helping costs Dilan her plan. Refusing can be right. Releasing a promise brings no automatic forgiveness. |
-| Saturday | Dilan records advice she kept, changed, or stopped using. | Quote actual choices across three weeks. Let her disagree with a once-useful phrase. End with her decision about sharing the note. |
+| Day       | New situation                                                                                    | How earlier choices pay off                                                                                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Monday    | Ece helps teach a new dispatcher. One instruction fits the board and fails on the loading floor. | Earlier practice lets Ece demonstrate. A withdrawn promise leaves a gap she names. The familiar phrase may need correction.                                              |
+| Tuesday   | Mum sorts photographs before a visit. The free hour also fits the shelf.                         | Finding the beach photograph changes what Mum asks about. A finished shelf gives the photographs somewhere to go. Otherwise the jobs compete.                            |
+| Wednesday | Aylin asks for help before a family meal. Murat offers another paid route.                       | Aylin remembers the birthday visit and Dilan's exhaustion. This time she asks for a specific arrival time. Attending eventually will not keep that promise.              |
+| Thursday  | A duplicate collection becomes a complaint during the new dispatcher's solo shift.               | Earlier honesty and board advice determine what Dilan and Ece can truthfully say. Quiet repair takes time; calling across the room stops the van sooner.                 |
+| Friday    | Ece can close alone, needs practice, or declines help. Dilan has evening plans.                  | Actual practice and the earlier promise determine the request. Helping costs Dilan her plan. Refusing can be right. Releasing a promise brings no automatic forgiveness. |
+| Saturday  | Dilan records advice she kept, changed, or stopped using.                                        | Quote actual choices across three weeks. Let her disagree with a once-useful phrase. End with her decision about sharing the note.                                       |
 
 ## Scope and acceptance
 

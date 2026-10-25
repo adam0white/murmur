@@ -10,7 +10,7 @@ import {
 } from '@adam0white/human-framework';
 import type { GameState, Opt } from './types.ts';
 
-export const LISTENING_EDITION = '0.3.0';
+const LISTENING_EDITION = '0.3.0';
 /** Editions with gentle suggestions and retained HF advice. */
 export const listens = (s: GameState | { version: string }) =>
   s.version === '0.6.0' ||

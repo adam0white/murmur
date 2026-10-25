@@ -1,4 +1,5 @@
 import { feedbackPersonaControl, feedbackSharePlay } from '@adam0white/lab-kit';
+import { required } from './dom.ts';
 import type { lab as gameLab } from './lab.ts';
 
 const NAME_KEY = 'hf-lab-feedback-name';
@@ -57,10 +58,10 @@ export function showFeedback(options: {
     <div class="feedback-actions page-actions"><button class="primary" id="feedback-send">Submit</button></div>
   </section>`;
   app.append(wrap);
-  const note = wrap.querySelector<HTMLTextAreaElement>('#feedback-note')!;
-  const name = wrap.querySelector<HTMLInputElement>('#feedback-name')!;
-  const send = wrap.querySelector<HTMLButtonElement>('#feedback-send')!;
-  const status = wrap.querySelector<HTMLElement>('#feedback-status')!;
+  const note = required(wrap.querySelector<HTMLTextAreaElement>('#feedback-note'));
+  const name = required(wrap.querySelector<HTMLInputElement>('#feedback-name'));
+  const send = required(wrap.querySelector<HTMLButtonElement>('#feedback-send'));
+  const status = required(wrap.querySelector<HTMLElement>('#feedback-status'));
   const feedbackRun = () => {
     try {
       return options.getRun();

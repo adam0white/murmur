@@ -4,7 +4,6 @@ import {
   abandonGoal,
   admitPersona,
   adoptGoal,
-  FRAMEWORK_VERSION,
   type Person,
   type PersonaProjectionSnapshot,
   projectPersona,
@@ -15,8 +14,7 @@ import {
 import { canonicalPersona } from '@adam0white/lab-client';
 import type { GameState } from './types.ts';
 
-export const DILAN_CAST_ID = 'hf.cast.dilan.murmur';
-export const SOURCE_MAPPING = 'murmur-hearsay/1';
+const SOURCE_MAPPING = 'murmur-hearsay/1';
 export const RETURN_MAPPING = 'hearsay-murmur/1';
 export interface DepartureReceipt {
   v: 1;
@@ -190,7 +188,7 @@ function checkedReturn(value: unknown): DilanTransfer {
   if (
     person.mappingVersion !== RETURN_MAPPING ||
     person.source.id !== 'dilan-delivery' ||
-    !['2.14.1', '2.17.0', FRAMEWORK_VERSION].includes(person.source.engine) ||
+    !['2.14.1', '2.17.0', '2.21.0'].includes(person.source.engine) ||
     person.name !== 'Dilan'
   )
     throw new Error('This return is not Hearsay’s Dilan mapping.');

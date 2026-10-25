@@ -145,7 +145,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.clock.install();
       await page.clock.resume();
       await page.clock.runFor(100);
-      expect(await page.locator('#state-words').innerText()).toBe('She is deciding.');
+      expect(await page.locator('#state-words').innerText()).toMatch(/^\d+ seconds to answer\.$/);
       const before = await page.locator('#clock').innerText();
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       await page.clock.runFor(8000);
@@ -166,7 +166,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       expect(await page.locator('#state-words').innerText()).toBe('');
       await page.locator('#hurry').click();
       await page.clock.runFor(3000);
-      expect(await page.locator('#state-words').innerText()).toBe('She is deciding.');
+      expect(await page.locator('#state-words').innerText()).toMatch(/^\d+ seconds to answer\.$/);
       await page.locator('#hush').click();
       expect(await page.locator('#state-words').innerText()).toBe('She is answering.');
       await page.clock.runFor(3100);
@@ -701,14 +701,14 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
       expect(live.card?.moment).toBe('note-1');
       expect(await page.locator('.gap').count()).toBe(0);
       expect(await page.locator('.sheet.open .card').count()).toBe(1);
-      expect(await page.locator('#state-words').innerText()).toBe('She is deciding.');
+      expect(await page.locator('#state-words').innerText()).toMatch(/^\d+ seconds to answer\.$/);
       expect(await page.locator('#hurry').count()).toBe(0);
       const reply = page.locator('[data-o="reply"]');
       const box = await reply.boundingBox();
       expect(box?.y).toBeGreaterThanOrEqual(0);
       expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
       const clock = await page.locator('#clock').innerText();
-      await page.clock.runFor(13_000);
+      await page.clock.runFor(26_000);
       expect(await page.locator('#clock').innerText()).not.toBe(clock);
       const minute = await page.evaluate(
         () => (window as unknown as { __murmur: { state: { minute: number } } }).__murmur.state.minute,

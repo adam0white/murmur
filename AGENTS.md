@@ -2,7 +2,7 @@
 
 Use Node >=24 with /opt/homebrew/bin first on PATH. Work in one managed isolated worktree. Before each commit run `node ~/code/human-framework/scripts/suite-lock.ts -- npm run check:lane`. These scripts do not acquire the shared lock. Deploy through the same wrapper around `npm run deploy`. Sign commits and include `Co-Authored-By: Codex <noreply@openai.com>`.
 
-The canonical edition is0.6.0: Dilan33/revision2, Aylin36, Ece24 and Murat27. Exact HF2.21.0/client0.4.7/kit0.5.8 pins apply. Canonical profiles come from the released client; private facts require actual choices. Keep the two-week loop, source obligations, deterministic pinned replay, whole-cast atomic admission, local source archives and exact-parent conflicts. Loaded runs never claim latest heads. Files retain file origin and cannot claim ownership by loading. An explicit alternate branch applies only to the selected person.
+The canonical edition is0.6.0: Dilan33/revision2, Aylin36, Ece24 and Murat27. Exact HF3.0.0 (engine2.23.0)/client0.4.10/kit0.5.11 pins apply. Canonical profiles come from the released client; private facts require actual choices. Keep the two-week loop, source obligations, deterministic pinned replay, whole-cast atomic admission, local source archives and exact-parent conflicts. Loaded runs never claim latest heads. Files retain file origin and cannot claim ownership by loading. An explicit alternate branch applies only to the selected person.
 
 Recording links play automatically under the single menu recording switch (owner2026-10-23). Do not restore per-person recording consent or recording-epoch publication RPCs. Character analysis keeps its separate opt-in. Preserve first-visit notice layout, DNT/GPC switch behavior and optional feedback sharing.
 

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { admitPersona, createPerson, projectPersona, promise, snapshot } from '@adam0white/human-framework';
 import { canonicalPersona } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
@@ -12,6 +13,8 @@ import {
   releaseOneCastDeparture,
 } from '../src/sim/one-cast.ts';
 import type { GameState } from '../src/sim/types.ts';
+
+const legacy = JSON.parse(readFileSync(new URL('./fixtures/legacy-one-cast.json', import.meta.url), 'utf8'));
 
 function playedSaturday(seed = 31): GameState {
   const s = newGame(seed, '0.5.0');
@@ -31,61 +34,13 @@ function departure() {
   return s;
 }
 
-/** Focused adapter control, explicitly not live target journey evidence. */
+/** Synthetic legacy mechanism controls captured with genuine HF2.21 on base9c43059.
+ * These fixtures do not prove a current Hearsay host journey. Current canonical fixtures are separate. */
 async function returnControl(prefix: GameState, accepted = true): Promise<DilanTransfer> {
   const from = (await createOneCastDeparture(prefix)).person;
-  const opening = createPerson({
-    id: 'dilan-delivery',
-    name: 'Dilan',
-    sex: 'female',
-    seed: 17,
-    now: 360,
-    bornAt: from.life.bornAt + 360 - from.source.now,
-  });
-  opening.body.fitness = from.health.fitness;
-  const p = admitPersona(from, opening, {
-    mappingVersion: 'murmur-hearsay/1',
-    sourceId: 'dilan',
-    targetId: 'dilan-delivery',
-  }).person;
-  p.body.fitness -= 0.001;
-  p.memory.episodes.push({
-    id: 'exchange',
-    at: p.now,
-    kind: 'witnessed',
-    action: accepted ? 'talk' : 'leave',
-    actorId: 'hatice',
-    valence: accepted ? 0.12 : -0.01,
-    salience: 0.4,
-    summary: accepted ? 'Hatice respected my work and offered a short exchange.' : 'I ended the exchange.',
-    tags: [],
-  });
-  const person = projectPersona(p, {
-    version: RETURN_MAPPING,
-    skills: {},
-    episodes: {
-      exchange: {
-        id: 'hearsay-encounter',
-        action: accepted ? 'talk' : 'leave',
-        actorId: 'hearsay-hatice',
-        tags: [],
-      },
-    },
-  });
-  return {
-    person,
-    history: [
-      {
-        id: 'hearsay-encounter',
-        kind: 'hearsay-encounter',
-        sourceGame: 'hearsay',
-        episodeId: 'hearsay-encounter',
-        disclosed: true,
-        outcome: accepted ? 'accepted' : 'declined',
-      },
-    ],
-    checkpoint: await checkpointPerson(p),
-  };
+  expect(from.rng).toEqual(legacy.sourceRng);
+  expect(from.source.now).toBe(legacy.sourceMinute);
+  return structuredClone(accepted ? legacy.accepted : legacy.declined) as DilanTransfer;
 }
 
 describe('Dilan source and return chapter', () => {

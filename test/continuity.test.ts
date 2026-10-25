@@ -1,7 +1,7 @@
 import { createPersona, type PersonaEnvelope } from '@adam0white/lab-client';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const events = vi.hoisted(() => {
+vi.hoisted(() => {
   const target = new EventTarget();
   Object.defineProperty(globalThis, 'window', { configurable: true, value: target });
   return target;
@@ -72,12 +72,6 @@ beforeEach(() => {
   recording.setPersonaRecording.mockClear();
   recording.allowPersonaRecording.mockClear();
 });
-async function linked(scope: 'shared' | 'file' = 'shared') {
-  state = { owner: {}, heads: [{ head: await source(), scope }] };
-  await gateContinuity(state);
-  return state;
-}
-
 it('captures authored ownership before source work and refuses publication after a generation change', async () => {
   state = { owner: {}, heads: [] };
   await gateContinuity(state);

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import {
   admitPersona,
   begin,
@@ -40,6 +41,8 @@ import {
   validateRun,
 } from '../src/ui/one-cast.ts';
 
+const legacy = JSON.parse(readFileSync(new URL('./fixtures/legacy-one-cast.json', import.meta.url), 'utf8'));
+
 beforeEach(() => {
   const storage = new Map<string, string>();
   vi.stubGlobal('localStorage', {
@@ -76,81 +79,23 @@ function playedDeparture(): GameState {
   queueInput(state, { kind: 'one-cast-release' });
   return state;
 }
-/** Contract control using real HF admission/action/projection. This is not a live Hearsay journey. */
+/** Synthetic legacy transport control: actual HF2.21 projection/checkpoint, dynamic test-only parent linkage.
+ * This is not a current Hearsay source-to-target journey. */
 async function targetReturn(source: PersonaEnvelope): Promise<PersonaEnvelope> {
-  const projection = (
-    await createOneCastDeparture(
-      await validateRun(
-        JSON.parse(localStorage.getItem(`murmur-one-cast-prefix:${source.branchId}`) ?? 'null'),
-      ),
-    )
-  ).person;
-  const opening = createPerson({
-    id: 'dilan-delivery',
-    name: 'Dilan',
-    sex: 'female',
-    seed: 17,
-    now: 360,
-    bornAt: projection.life.bornAt + 360 - projection.source.now,
-  });
-  opening.body.fitness = projection.health.fitness;
-  const person = admitPersona(projection, opening, {
-    mappingVersion: 'murmur-hearsay/1',
-    sourceId: 'dilan',
-    targetId: 'dilan-delivery',
-  }).person;
-  const offer = {
-    id: 'one-cast-talk',
-    action: 'talk',
-    label: 'Share one ordinary exchange',
-    duration: 0,
-    effort: 0.01,
-    with: ['hatice'],
-    advertises: { belonging: 0.08, meaning: 0.12 },
-  };
-  const decision = decide(person, [offer], { now: person.now });
-  expect(begin(person, offer, decision)).toBeTruthy();
-  finish(person, {
-    affordanceId: offer.id,
-    action: offer.action,
-    status: 'completed',
-    at: person.now,
-    needs: offer.advertises,
-    percepts: [
-      {
-        at: person.now,
-        channel: 'social',
-        kind: 'one-cast-encounter',
-        actorId: 'hatice',
-        valence: 0.4,
-        salience: 1,
-        summary: 'Hatice respected my work and offered a short exchange.',
-      },
-    ],
-  });
-  const episode = person.memory.episodes.findLast((e) => e.action === 'one-cast-encounter');
-  expect(episode).toBeDefined();
-  if (!episode) throw new Error('The HF encounter did not produce a memory.');
-  const returning = projectPersona(person, {
-    version: 'hearsay-murmur/1',
-    skills: {},
-    episodes: {
-      [episode.id]: { id: 'hearsay-encounter', action: 'talk', actorId: 'hearsay-hatice', tags: [] },
-    },
-  });
+  const returning = structuredClone(legacy.ui.person);
   return createPersona({
     format: 'hf-persona/1',
     castId: source.castId,
     castRevision: '1',
     branchId: source.branchId,
     parentRevision: source.revision,
-    source: { game: 'hearsay', build: 'contract-control', engine: person.engine, rules: '4' },
+    source: { game: 'hearsay', build: 'contract-control', engine: returning.source.engine, rules: '4' },
     transfer: {
       person: returning,
       admission: {
         adapter: 'hearsay-one-cast/1',
         mapping: 'hearsay-murmur/1',
-        openingMinute: person.now,
+        openingMinute: legacy.ui.openingMinute,
         sourceRevision: source.revision,
         sourceCheckpointDigest: (source.transfer.checkpoint as { checkpointDigest: string }).checkpointDigest,
       },
@@ -164,7 +109,7 @@ async function targetReturn(source: PersonaEnvelope): Promise<PersonaEnvelope> {
           outcome: 'accepted',
         },
       ],
-      checkpoint: await checkpointPerson(person),
+      checkpoint: structuredClone(legacy.ui.checkpoint),
     },
     limitations: returning.limitations,
   });

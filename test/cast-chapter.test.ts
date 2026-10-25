@@ -114,3 +114,59 @@ it('validates the exact pinned initial cast and claims on load without a shelf',
   forged.initial.people.aylin.traits.honesty = 0.01;
   await expect(validateCastChapter(forged, 17)).rejects.toThrow(/initial cast/i);
 });
+
+it('admits Ece from the actual published HF3 Neighbours exporter and replays the receiving chapter', async () => {
+  const { readFileSync } = await import('node:fs');
+  const fixture = JSON.parse(
+    readFileSync(new URL('./fixtures/neighbours-hf3-ece.json', import.meta.url), 'utf8'),
+  );
+  expect(fixture.rawReplayExact).toBe(true);
+  expect(fixture.envelope.source).toEqual({
+    game: 'neighbours',
+    build: '40ca6b87b310',
+    engine: '2.23.0',
+    rules: 'neighbours-cast-1',
+  });
+  const parent = fixture.envelope;
+  const input = preparePersonaLife(parent, parent.transfer.life.anchoredAt ?? 0);
+  const chapter = await prepareCastChapter([input], 17);
+  expect(chapter.initial.people.ece.rng).toEqual(parent.transfer.person.person.rng);
+  expect(chapter.initial.people.ece.body.fitness).toBe(parent.transfer.person.person.health.fitness);
+  const s = newGame(17, '0.6.0', chapter);
+  runToCard(s);
+  queueInput(s, { kind: 'quiet' });
+  expect(cloneState(replay(17, s.inputs, s.minute, '0.6.0', chapter))).toEqual(cloneState(s));
+  const unsupported = structuredClone(input);
+  unsupported.parent.source.engine = '2.24.0';
+  const { revision: _revision, ...body } = unsupported.parent;
+  unsupported.parent = await createPersona(body);
+  await expect(prepareCastChapter([unsupported], 17)).rejects.toThrow(/native|dialect|passport/i);
+});
+
+it('admits Dilan from the actual published HF3 Hearsay exporter and replays the receiving chapter', async () => {
+  const { readFileSync } = await import('node:fs');
+  const fixture = JSON.parse(
+    readFileSync(new URL('./fixtures/hearsay-hf3-dilan.json', import.meta.url), 'utf8'),
+  );
+  expect(fixture.rawReplayExact).toBe(true);
+  expect(fixture.envelope.source).toEqual({
+    game: 'hearsay',
+    build: '4967957de13ccd63d84dbbba1c6ca4fbbc686596',
+    engine: '2.23.0',
+    rules: 'hearsay-cast-6',
+  });
+  const parent = fixture.envelope;
+  const input = preparePersonaLife(parent, parent.transfer.life.anchoredAt ?? 0);
+  const chapter = await prepareCastChapter([input], 17);
+  expect(chapter.initial.people.dilan.rng).toEqual(parent.transfer.person.person.rng);
+  expect(chapter.initial.people.dilan.body.fitness).toBe(parent.transfer.person.person.health.fitness);
+  const s = newGame(17, '0.6.0', chapter);
+  runToCard(s);
+  queueInput(s, { kind: 'quiet' });
+  expect(cloneState(replay(17, s.inputs, s.minute, '0.6.0', chapter))).toEqual(cloneState(s));
+  const unsupported = structuredClone(input);
+  unsupported.parent.source.engine = '2.24.0';
+  const { revision: _revision, ...body } = unsupported.parent;
+  unsupported.parent = await createPersona(body);
+  await expect(prepareCastChapter([unsupported], 17)).rejects.toThrow(/native|dialect|passport/i);
+});

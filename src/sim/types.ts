@@ -1,5 +1,6 @@
 import type { FollowOn, NeedId, NormTag, Person, PromptingResponseKind } from '@adam0white/human-framework';
 import type { PersonaEnvelope } from '@adam0white/lab-client';
+import type { CastSourceRecord } from '../ui/cast-chapter.ts';
 import type { DepartureReceipt } from './one-cast.ts';
 
 /** One thing Dilan could do at a moment. */
@@ -215,7 +216,7 @@ export interface ReturnChapter {
 }
 export interface GameState {
   castHeadScopes?: Record<string, 'shared' | 'local' | 'file'>;
-  castSources?: Record<string, import('../ui/cast-chapter.ts').CastSourceRecord>;
+  castSources?: Record<string, CastSourceRecord>;
   castChapter?: import('./cast-chapter.ts').CastChapter;
   castHeads?: Record<string, PersonaEnvelope>;
   castScope?: 'shared' | 'local' | 'file';

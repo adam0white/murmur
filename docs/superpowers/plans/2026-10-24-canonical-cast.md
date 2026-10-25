@@ -6,6 +6,7 @@
 **Spec:** /Users/abdul/code/.lab-scratch/cast/murmur-brief.md and game-common-brief.md; current-feedback-authority.md overrides old recording-consent requirements. Full delivery already authorized.
 
 ## Constraints
+
 - One implementer, one independent complete-diff correctness/game-design review. No other game worker.
 - Preserve feedback owner b17724c and newest immutable vendor pins; no competing push until its delivery finishes.
 - All four current heads inspected before choosing source; all applicable heads admitted or whole startup refuses.
@@ -13,6 +14,7 @@
 - Use locked full local suites, signed commits, exact CI, normal deployment, real existing-profile journey at both requested sizes.
 
 ## Tasks
+
 - [x] Cast and fiction: add canonical-cast.ts; extend current edition to0.6.0 while retaining historical deterministic constructors. Add all four complete Persons and authored role/family introductions. Add actual completed-choice discoveries in the moment loop for uneven shelf, Aylin dance, Ece resting map, Murat allocation record. Preserve dinner/practice/Friday-close consequences. Prove discovery refusals and current replay.
 - [x] Receiving chapter: add cast-chapter.ts with finite observed native source dialects. Validate envelope/revision/body/clock/digest/norm/action/entity meanings before atomic claim. Pin inputs, complete initial actors and claims. Apply coarse life assignments/place/contact to actual fiction/offers. Preserve duties, health, projects and supported relationships; archive unsupported meanings explicitly. Prove all-or-none refusal and deterministic life effects.
 - [x] UI/replay/checkpoints: fresh explicit New week uses released whole-cast batch; refusal stays title with explicit local fresh choice. Continue loads pinned state without shelf reads. Current exports/save replay complete initial collection and file nonownership. Source checkpoints at actual eligible boundaries use owned accepted heads and preserve raw local prefix. Terminal closure applies to owned death. Focused ownership/CAS/file/reload controls.
@@ -20,6 +22,7 @@
 - [ ] Genuine current peer source UI→Murmur admission; export receipts and inspect same pinned target at360×690 and1280×800. Preserve preferences/owner saves and release browser lease. Finish scratch report/ledger, retain owner acceptance pending and clean only own proven-merged worktree.
 
 ## Review focus
+
 - Whole batch must refuse an unsupported other allocated head even when preferred Dilan is compatible.
 - Imported recording preferences never become ownership authority.
 - Dinner/colleague promises require actual target play; admission does not clear goals or make a prior acquaintance.

@@ -136,7 +136,7 @@ export function installContinuity(
     teardown = undefined;
   };
 }
-export function setContinuityStatus(text: string): void {
+function setContinuityStatus(text: string): void {
   statusText = text;
   refreshPanels();
 }
@@ -247,7 +247,7 @@ export function reduceLocalPersona(
   }
   return acceptPersona(state, envelope, options.fork);
 }
-export async function acceptLocalPersona(
+async function acceptLocalPersona(
   input: PersonaEnvelope,
   options: LocalPersonaOptions = {},
 ): Promise<PersonaEnvelope> {

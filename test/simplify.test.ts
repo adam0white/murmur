@@ -137,3 +137,22 @@ for (const labMode of [false, true])
       await page.close();
     }
   }, 30000);
+
+it('shows the longer response window and explains that Slow changes only gaps', async () => {
+  const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
+  try {
+    await page.goto(`${url}?lab=1`);
+    await page.evaluate(() => {
+      window.__murmur.fast = true;
+      window.__murmur.start(19);
+    });
+    await page.locator('#hush').waitFor();
+    expect(await page.locator('#state-words').textContent()).toMatch(/6[34] seconds to answer/);
+    await page.locator('#menu').click();
+    expect(await page.locator('.menu-speed').textContent()).toContain(
+      'Every choice allows 64 seconds. Slow changes only the time between choices.',
+    );
+  } finally {
+    await page.close();
+  }
+});

@@ -126,7 +126,7 @@ const PSYCH = ['safety', 'belonging', 'esteem', 'autonomy', 'competence', 'leisu
 const { FEET_ALONE_FROM, upAloneLine } = weekTwo;
 
 export const trustOf = (p: Person, id: string) => p.will.voices.find((v) => v.voiceId === id)?.trust ?? 0.5;
-export const minuteOfDay = (m: number) => (((m - DAY0) % 1440) + 1440) % 1440;
+const minuteOfDay = (m: number) => (((m - DAY0) % 1440) + 1440) % 1440;
 export const clock = (m: number) => {
   const d = minuteOfDay(m);
   return `${String(Math.floor(d / 60)).padStart(2, '0')}:${String(d % 60).padStart(2, '0')}`;
@@ -289,7 +289,7 @@ function pullSuggestion(s: GameState, m: Moment, borrowed: boolean): Suggestion 
  * Insisting is a capability, not a free override: it carries only while she trusts you enough
  * (INSIST_FROM). Below that, holding is just a louder say, and she can still refuse.
  */
-export const INSIST_FROM = 0.45;
+const INSIST_FROM = 0.45;
 export const insistCarries = (p: Person) => trustOf(p, YOU) >= INSIST_FROM;
 
 function yourSuggestion(p: Person, option: string, insist?: boolean): Suggestion {
@@ -1061,7 +1061,7 @@ function herLine(s: GameState): string {
 }
 
 /** Saturday's voice note, composed from what the week was. */
-export function voiceNote(s: GameState): string {
+function voiceNote(s: GameState): string {
   const calls = s.flags.calls ?? 0;
   const parts: string[] = ['Mum, it’s me.'];
   if (calls >= 3) parts.push('I know I rang most days. I liked it.');
