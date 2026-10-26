@@ -1,5 +1,9 @@
 # The Two Voices: design
 
+**Current premise.** Dilan, 33, delivers parcels from a courier depot in Istanbul. You suggest what she should do; she decides.
+
+**Historical premise.** The one-line premise below records the earlier fiction.
+
 **One line.** You are the inner voice of Dilan, 33, a dispatcher at a courier depot in the town she moved back to eight months ago. Her own pull speaks at the same moments, louder. You can only nudge. Each night she looks back over the day in her own words. Nothing is graded until then.
 
 **Done for the first playable** (set 2026-10-19 by the coordinator's brief; the owner accepts feel separately): five played weekdays and a Saturday morning, an ending, a playtest export that replays, tests, a headless measure, at least three source-unread playtests recorded verbatim with their findings applied, live at https://murmur.adamwhite.work and listed in the HF games collection.
