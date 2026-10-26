@@ -1,5 +1,45 @@
 # Murmur handoff
 
+## Current SDK source and technical delivery — 2026-10-26
+
+Signed source `154caef0ccee20950cfb7491390fcb5c6ebe8d58` adopts immutable
+lab-client0.4.11 / lab-kit0.5.12, with HF3.0.0 / Person engine2.23.0 unchanged.
+Exact CI40272974381 succeeded. The final GD report records guarded deployment
+`e85cdb7e-7bfd-4339-b0be-52f9788aaef2`, exact live154/HF3.0.0/dirty:false and
+eight matching non-HTML public files. HTML differs only by Cloudflare Fonts rewriting;
+the final fetch reordered the same18 font-face rules. It is not full HTML byte equality.
+Initial98033 source and red CI40268910740 remain the earlier repair phase, not the
+final live receipt. The980→154 source delta was workflow/test-only; product/codec bytes
+remained unchanged.
+
+Ordinary Feedback renders the shared SDK **I'm stopping** and **I'm confused** labels.
+The custom host form stores the selected label separately from the textarea. Selection
+or clearing sends nothing and preserves the edited note. Submit joins label, optional
+verdict and trimmed note through the existing recording/sharing and receipt/error path.
+Run downloads are diagnostic: exact `?lab=1` exposes Feedback’s Download this run;
+there is no ordinary Keep a copy control. Imports, seed and history tools remain lab-only.
+
+Existing Chrome checked the production manifest, then a literal served-byte mirror at
+360×690 and1280×800 with services blocked. Default and opt-in local runs, quiet choices
+without Submit, and four full/compact file imports passed. Compact files came from the
+committed codec; there is no separate compact-download UI. These builder controls do
+not establish production gameplay/persistence, a human/CAS journey or owner acceptance.
+Original signed Aylin and Selin evidence is not restamped. The final154 producer remains
+distinct from original provenance; receiving and cross-origin proof remain separately
+owned by Good Hands. Owner fiction acceptance remains2026-11-03.
+
+GD’s final report/STATUS05:59:18Z records all own release trees/branches, tabs, overrides,
+servers and task-local files cleaned, and release handoff complete. Other owners’ work
+was preserved. Later source integration remains coordinated; this summary claims no
+source slot. Final authority: `~/code/.lab-scratch/games-deferred/murmur-next-report.md`,
+`murmur-next-STATUS`, `murmur-next-deliver-source-proof.json` and `murmur-next-live-proof.json`.
+
+## Prior root-documentation snapshot
+
+The complete earlier handoff follows unchanged. Its SDK pins, source-delivery statements
+and future-work status describe that snapshot, not this final154 receipt. Its original
+signed artifacts, owner/faith and Deferred records remain evidence.
+
 ## Remaining
 
 - Games-deferred owns the future richer eight-episode life mapping and SDK client 0.4.11 / kit 0.5.12 adoption. Neither is shipped in the source below. The host still pins client 0.4.10 / kit 0.5.11.

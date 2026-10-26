@@ -23,6 +23,11 @@ The current week is saved in this origin’s browser local storage. A save conta
 
 The first-visit notice explains recording and linked play across games on this device. One menu recording switch controls both. Explicitly turning it on opts in despite DNT/GPC. Character analysis has its own opt-in. With recording off, feedback offers an unticked choice to share this play; leaving it unticked sends the note without the saved run or linked history. See [Lab privacy](https://human.adamwhite.work/lab/privacy/).
 
+Current source Feedback offers **I'm stopping** and **I'm confused**. Selecting or
+clearing one sends nothing and leaves your edited note unchanged. **Submit** combines
+the selected words, optional verdict and current note. This is source behavior; its
+CI repair and live-delivery status are recorded in HANDOFF.
+
 The exact `?lab=1` query enables lab tools: run loading, downloading, seed controls, chapter/history/passport controls and pace settings. Slow changes gaps between choices, not the 64-second choice window. Downloaded runs preserve pinned admitted inputs for deterministic replay. Current exports require exact replay validation; incompatible older files may refuse with a start-fresh message. Loading never claims the latest shared heads.
 
 ## Supported continuation routes
@@ -42,7 +47,7 @@ The unchanged artifact from signed Good Hands source `509386298dfd89026c10bc6011
 
 ## Development and delivery
 
-Use Node 24 or later with `/opt/homebrew/bin` first on PATH. Install with `npm ci`; run `npm run dev`. This host pins game edition 0.6.0, HF package 3.0.0 (Person engine 2.23.0), lab client 0.4.10 and lab kit 0.5.11. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
+Use Node 24 or later with `/opt/homebrew/bin` first on PATH. Install with `npm ci`; run `npm run dev`. This host pins game edition 0.6.0, HF package 3.0.0 (Person engine 2.23.0), lab client 0.4.11 and lab kit 0.5.12. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
 
 Before each commit, run the normal lane under the shared lock:
 
