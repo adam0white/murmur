@@ -1,0 +1,929 @@
+{
+  "source": "12914c3670a8f7beb58f101380f1bdc258ea7d6c",
+  "comparison": "Complete raw state, canonical object-key order only. No values or histories removed.",
+  "fixtures": [
+    {
+      "label": "open",
+      "version": "0.2.1",
+      "seed": 17,
+      "inputs": [],
+      "minute": 576402,
+      "phase": "day",
+      "sha256": "b31deb2ae2ab408e0aa4d682e6c7e9a43304aa9242fdec1a53aae72802b94e27"
+    },
+    {
+      "label": "first-end",
+      "version": "0.2.1",
+      "seed": 17,
+      "inputs": [
+        {
+          "kind": "quiet",
+          "at": 576402
+        },
+        {
+          "kind": "quiet",
+          "at": 576436
+        },
+        {
+          "kind": "quiet",
+          "at": 576506
+        },
+        {
+          "kind": "quiet",
+          "at": 576641
+        },
+        {
+          "kind": "quiet",
+          "at": 576761
+        },
+        {
+          "kind": "quiet",
+          "at": 576921
+        },
+        {
+          "kind": "quiet",
+          "at": 577091
+        },
+        {
+          "kind": "quiet",
+          "at": 577291
+        },
+        {
+          "kind": "next",
+          "at": 577291
+        },
+        {
+          "kind": "quiet",
+          "at": 577841
+        },
+        {
+          "kind": "quiet",
+          "at": 577946
+        },
+        {
+          "kind": "quiet",
+          "at": 578111
+        },
+        {
+          "kind": "quiet",
+          "at": 578201
+        },
+        {
+          "kind": "quiet",
+          "at": 578361
+        },
+        {
+          "kind": "quiet",
+          "at": 578531
+        },
+        {
+          "kind": "quiet",
+          "at": 578731
+        },
+        {
+          "kind": "next",
+          "at": 578731
+        },
+        {
+          "kind": "quiet",
+          "at": 579281
+        },
+        {
+          "kind": "quiet",
+          "at": 579316
+        },
+        {
+          "kind": "quiet",
+          "at": 579386
+        },
+        {
+          "kind": "quiet",
+          "at": 579641
+        },
+        {
+          "kind": "quiet",
+          "at": 579891
+        },
+        {
+          "kind": "quiet",
+          "at": 580066
+        },
+        {
+          "kind": "quiet",
+          "at": 580181
+        },
+        {
+          "kind": "next",
+          "at": 580181
+        },
+        {
+          "kind": "quiet",
+          "at": 580721
+        },
+        {
+          "kind": "quiet",
+          "at": 580826
+        },
+        {
+          "kind": "quiet",
+          "at": 580891
+        },
+        {
+          "kind": "quiet",
+          "at": 581081
+        },
+        {
+          "kind": "quiet",
+          "at": 581241
+        },
+        {
+          "kind": "quiet",
+          "at": 581411
+        },
+        {
+          "kind": "quiet",
+          "at": 581506
+        },
+        {
+          "kind": "quiet",
+          "at": 581611
+        },
+        {
+          "kind": "next",
+          "at": 581611
+        },
+        {
+          "kind": "quiet",
+          "at": 582161
+        },
+        {
+          "kind": "quiet",
+          "at": 582196
+        },
+        {
+          "kind": "quiet",
+          "at": 582266
+        },
+        {
+          "kind": "quiet",
+          "at": 582521
+        },
+        {
+          "kind": "quiet",
+          "at": 582681
+        },
+        {
+          "kind": "quiet",
+          "at": 582851
+        },
+        {
+          "kind": "quiet",
+          "at": 583081
+        },
+        {
+          "kind": "next",
+          "at": 583081
+        },
+        {
+          "kind": "quiet",
+          "at": 583801
+        }
+      ],
+      "minute": 583801,
+      "phase": "end",
+      "sha256": "f63abace4bf0851ae54d76a272736377812f0e947c7134201530e0cc16417f66"
+    },
+    {
+      "label": "open",
+      "version": "0.3.0",
+      "seed": 17,
+      "inputs": [],
+      "minute": 576402,
+      "phase": "day",
+      "sha256": "131ffc729a6704300dcd3635fa0c2df55f7a414758241e364728d69d5912e927"
+    },
+    {
+      "label": "first-end",
+      "version": "0.3.0",
+      "seed": 17,
+      "inputs": [
+        {
+          "kind": "quiet",
+          "at": 576402
+        },
+        {
+          "kind": "quiet",
+          "at": 576436
+        },
+        {
+          "kind": "quiet",
+          "at": 576506
+        },
+        {
+          "kind": "quiet",
+          "at": 576641
+        },
+        {
+          "kind": "quiet",
+          "at": 576761
+        },
+        {
+          "kind": "quiet",
+          "at": 576921
+        },
+        {
+          "kind": "quiet",
+          "at": 577091
+        },
+        {
+          "kind": "quiet",
+          "at": 577291
+        },
+        {
+          "kind": "next",
+          "at": 577291
+        },
+        {
+          "kind": "quiet",
+          "at": 577841
+        },
+        {
+          "kind": "quiet",
+          "at": 577946
+        },
+        {
+          "kind": "quiet",
+          "at": 578111
+        },
+        {
+          "kind": "quiet",
+          "at": 578201
+        },
+        {
+          "kind": "quiet",
+          "at": 578361
+        },
+        {
+          "kind": "quiet",
+          "at": 578531
+        },
+        {
+          "kind": "quiet",
+          "at": 578731
+        },
+        {
+          "kind": "next",
+          "at": 578731
+        },
+        {
+          "kind": "quiet",
+          "at": 579281
+        },
+        {
+          "kind": "quiet",
+          "at": 579316
+        },
+        {
+          "kind": "quiet",
+          "at": 579386
+        },
+        {
+          "kind": "quiet",
+          "at": 579641
+        },
+        {
+          "kind": "quiet",
+          "at": 579891
+        },
+        {
+          "kind": "quiet",
+          "at": 580066
+        },
+        {
+          "kind": "quiet",
+          "at": 580181
+        },
+        {
+          "kind": "next",
+          "at": 580181
+        },
+        {
+          "kind": "quiet",
+          "at": 580721
+        },
+        {
+          "kind": "quiet",
+          "at": 580826
+        },
+        {
+          "kind": "quiet",
+          "at": 580891
+        },
+        {
+          "kind": "quiet",
+          "at": 581081
+        },
+        {
+          "kind": "quiet",
+          "at": 581241
+        },
+        {
+          "kind": "quiet",
+          "at": 581411
+        },
+        {
+          "kind": "quiet",
+          "at": 581506
+        },
+        {
+          "kind": "quiet",
+          "at": 581611
+        },
+        {
+          "kind": "next",
+          "at": 581611
+        },
+        {
+          "kind": "quiet",
+          "at": 582161
+        },
+        {
+          "kind": "quiet",
+          "at": 582196
+        },
+        {
+          "kind": "quiet",
+          "at": 582266
+        },
+        {
+          "kind": "quiet",
+          "at": 582521
+        },
+        {
+          "kind": "quiet",
+          "at": 582681
+        },
+        {
+          "kind": "quiet",
+          "at": 582851
+        },
+        {
+          "kind": "quiet",
+          "at": 583081
+        },
+        {
+          "kind": "next",
+          "at": 583081
+        },
+        {
+          "kind": "quiet",
+          "at": 583801
+        }
+      ],
+      "minute": 583801,
+      "phase": "end",
+      "sha256": "daf6ca1e31d4c8881367fa7a9807faedc5cd6e42d4220c0171339dedf627683d"
+    },
+    {
+      "label": "open",
+      "version": "0.6.0",
+      "seed": 17,
+      "inputs": [],
+      "minute": 576402,
+      "phase": "day",
+      "sha256": "e43154cbdc5553ea9e4d078792894fd101da4bfe9321d17d2df02e56755cee66"
+    },
+    {
+      "label": "first-end",
+      "version": "0.6.0",
+      "seed": 17,
+      "inputs": [
+        {
+          "kind": "quiet",
+          "at": 576402
+        },
+        {
+          "kind": "quiet",
+          "at": 576436
+        },
+        {
+          "kind": "quiet",
+          "at": 576506
+        },
+        {
+          "kind": "quiet",
+          "at": 576641
+        },
+        {
+          "kind": "quiet",
+          "at": 576761
+        },
+        {
+          "kind": "quiet",
+          "at": 576921
+        },
+        {
+          "kind": "quiet",
+          "at": 577091
+        },
+        {
+          "kind": "quiet",
+          "at": 577291
+        },
+        {
+          "kind": "next",
+          "at": 577291
+        },
+        {
+          "kind": "quiet",
+          "at": 577841
+        },
+        {
+          "kind": "quiet",
+          "at": 577946
+        },
+        {
+          "kind": "quiet",
+          "at": 578111
+        },
+        {
+          "kind": "quiet",
+          "at": 578201
+        },
+        {
+          "kind": "quiet",
+          "at": 578361
+        },
+        {
+          "kind": "quiet",
+          "at": 578531
+        },
+        {
+          "kind": "quiet",
+          "at": 578731
+        },
+        {
+          "kind": "next",
+          "at": 578731
+        },
+        {
+          "kind": "quiet",
+          "at": 579281
+        },
+        {
+          "kind": "quiet",
+          "at": 579316
+        },
+        {
+          "kind": "quiet",
+          "at": 579386
+        },
+        {
+          "kind": "quiet",
+          "at": 579641
+        },
+        {
+          "kind": "quiet",
+          "at": 579891
+        },
+        {
+          "kind": "quiet",
+          "at": 580066
+        },
+        {
+          "kind": "quiet",
+          "at": 580181
+        },
+        {
+          "kind": "next",
+          "at": 580181
+        },
+        {
+          "kind": "quiet",
+          "at": 580721
+        },
+        {
+          "kind": "quiet",
+          "at": 580826
+        },
+        {
+          "kind": "quiet",
+          "at": 580891
+        },
+        {
+          "kind": "quiet",
+          "at": 581081
+        },
+        {
+          "kind": "quiet",
+          "at": 581241
+        },
+        {
+          "kind": "quiet",
+          "at": 581411
+        },
+        {
+          "kind": "quiet",
+          "at": 581506
+        },
+        {
+          "kind": "quiet",
+          "at": 581611
+        },
+        {
+          "kind": "next",
+          "at": 581611
+        },
+        {
+          "kind": "quiet",
+          "at": 582161
+        },
+        {
+          "kind": "quiet",
+          "at": 582196
+        },
+        {
+          "kind": "quiet",
+          "at": 582266
+        },
+        {
+          "kind": "quiet",
+          "at": 582521
+        },
+        {
+          "kind": "quiet",
+          "at": 582681
+        },
+        {
+          "kind": "quiet",
+          "at": 582851
+        },
+        {
+          "kind": "quiet",
+          "at": 583081
+        },
+        {
+          "kind": "next",
+          "at": 583081
+        },
+        {
+          "kind": "quiet",
+          "at": 583696
+        },
+        {
+          "kind": "quiet",
+          "at": 583801
+        }
+      ],
+      "minute": 583801,
+      "phase": "end",
+      "sha256": "cf3deb1ec83e7f0c210b7c44932d77867053467fc44ab9a1c24519fb5e9ac2c1"
+    },
+    {
+      "label": "second-end",
+      "version": "0.6.0",
+      "seed": 17,
+      "inputs": [
+        {
+          "kind": "quiet",
+          "at": 576402
+        },
+        {
+          "kind": "quiet",
+          "at": 576436
+        },
+        {
+          "kind": "quiet",
+          "at": 576506
+        },
+        {
+          "kind": "quiet",
+          "at": 576641
+        },
+        {
+          "kind": "quiet",
+          "at": 576761
+        },
+        {
+          "kind": "quiet",
+          "at": 576921
+        },
+        {
+          "kind": "quiet",
+          "at": 577091
+        },
+        {
+          "kind": "quiet",
+          "at": 577291
+        },
+        {
+          "kind": "next",
+          "at": 577291
+        },
+        {
+          "kind": "quiet",
+          "at": 577841
+        },
+        {
+          "kind": "quiet",
+          "at": 577946
+        },
+        {
+          "kind": "quiet",
+          "at": 578111
+        },
+        {
+          "kind": "quiet",
+          "at": 578201
+        },
+        {
+          "kind": "quiet",
+          "at": 578361
+        },
+        {
+          "kind": "quiet",
+          "at": 578531
+        },
+        {
+          "kind": "quiet",
+          "at": 578731
+        },
+        {
+          "kind": "next",
+          "at": 578731
+        },
+        {
+          "kind": "quiet",
+          "at": 579281
+        },
+        {
+          "kind": "quiet",
+          "at": 579316
+        },
+        {
+          "kind": "quiet",
+          "at": 579386
+        },
+        {
+          "kind": "quiet",
+          "at": 579641
+        },
+        {
+          "kind": "quiet",
+          "at": 579891
+        },
+        {
+          "kind": "quiet",
+          "at": 580066
+        },
+        {
+          "kind": "quiet",
+          "at": 580181
+        },
+        {
+          "kind": "next",
+          "at": 580181
+        },
+        {
+          "kind": "quiet",
+          "at": 580721
+        },
+        {
+          "kind": "quiet",
+          "at": 580826
+        },
+        {
+          "kind": "quiet",
+          "at": 580891
+        },
+        {
+          "kind": "quiet",
+          "at": 581081
+        },
+        {
+          "kind": "quiet",
+          "at": 581241
+        },
+        {
+          "kind": "quiet",
+          "at": 581411
+        },
+        {
+          "kind": "quiet",
+          "at": 581506
+        },
+        {
+          "kind": "quiet",
+          "at": 581611
+        },
+        {
+          "kind": "next",
+          "at": 581611
+        },
+        {
+          "kind": "quiet",
+          "at": 582161
+        },
+        {
+          "kind": "quiet",
+          "at": 582196
+        },
+        {
+          "kind": "quiet",
+          "at": 582266
+        },
+        {
+          "kind": "quiet",
+          "at": 582521
+        },
+        {
+          "kind": "quiet",
+          "at": 582681
+        },
+        {
+          "kind": "quiet",
+          "at": 582851
+        },
+        {
+          "kind": "quiet",
+          "at": 583081
+        },
+        {
+          "kind": "next",
+          "at": 583081
+        },
+        {
+          "kind": "quiet",
+          "at": 583696
+        },
+        {
+          "kind": "quiet",
+          "at": 583801
+        },
+        {
+          "kind": "next",
+          "at": 583801
+        },
+        {
+          "kind": "quiet",
+          "at": 586481
+        },
+        {
+          "kind": "quiet",
+          "at": 586513
+        },
+        {
+          "kind": "quiet",
+          "at": 586726
+        },
+        {
+          "kind": "quiet",
+          "at": 587171
+        },
+        {
+          "kind": "quiet",
+          "at": 587241
+        },
+        {
+          "kind": "quiet",
+          "at": 587371
+        },
+        {
+          "kind": "next",
+          "at": 587371
+        },
+        {
+          "kind": "quiet",
+          "at": 587921
+        },
+        {
+          "kind": "quiet",
+          "at": 588131
+        },
+        {
+          "kind": "quiet",
+          "at": 588431
+        },
+        {
+          "kind": "quiet",
+          "at": 588611
+        },
+        {
+          "kind": "quiet",
+          "at": 588691
+        },
+        {
+          "kind": "quiet",
+          "at": 588811
+        },
+        {
+          "kind": "next",
+          "at": 588811
+        },
+        {
+          "kind": "quiet",
+          "at": 589361
+        },
+        {
+          "kind": "quiet",
+          "at": 589466
+        },
+        {
+          "kind": "quiet",
+          "at": 589751
+        },
+        {
+          "kind": "quiet",
+          "at": 589881
+        },
+        {
+          "kind": "quiet",
+          "at": 590051
+        },
+        {
+          "kind": "quiet",
+          "at": 590121
+        },
+        {
+          "kind": "quiet",
+          "at": 590251
+        },
+        {
+          "kind": "next",
+          "at": 590251
+        },
+        {
+          "kind": "quiet",
+          "at": 590801
+        },
+        {
+          "kind": "quiet",
+          "at": 590906
+        },
+        {
+          "kind": "quiet",
+          "at": 591011
+        },
+        {
+          "kind": "quiet",
+          "at": 591321
+        },
+        {
+          "kind": "quiet",
+          "at": 591491
+        },
+        {
+          "kind": "quiet",
+          "at": 591561
+        },
+        {
+          "kind": "quiet",
+          "at": 591691
+        },
+        {
+          "kind": "next",
+          "at": 591691
+        },
+        {
+          "kind": "quiet",
+          "at": 592241
+        },
+        {
+          "kind": "quiet",
+          "at": 592273
+        },
+        {
+          "kind": "quiet",
+          "at": 592346
+        },
+        {
+          "kind": "quiet",
+          "at": 592601
+        },
+        {
+          "kind": "quiet",
+          "at": 592871
+        },
+        {
+          "kind": "quiet",
+          "at": 592886
+        },
+        {
+          "kind": "quiet",
+          "at": 593131
+        },
+        {
+          "kind": "next",
+          "at": 593131
+        },
+        {
+          "kind": "quiet",
+          "at": 593881
+        }
+      ],
+      "minute": 593881,
+      "phase": "end",
+      "sha256": "fe0ebce596ecd4c7ae9129ef811eaacc6097cc7fe31c23f4bbb21b25145e1b8a"
+    }
+  ]
+}

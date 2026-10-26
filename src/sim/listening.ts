@@ -13,6 +13,7 @@ import type { GameState, Opt } from './types.ts';
 const LISTENING_EDITION = '0.3.0';
 /** Editions with gentle suggestions and retained HF advice. */
 export const listens = (s: GameState | { version: string }) =>
+  s.version === '0.7.0' ||
   s.version === '0.6.0' ||
   s.version === '0.5.0' ||
   s.version === LISTENING_EDITION ||

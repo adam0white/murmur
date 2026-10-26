@@ -1,7 +1,8 @@
-import { type Browser, chromium } from 'playwright';
+import type { Browser } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { newGame } from '../src/sim/game.ts';
+import { launchBrowser } from './browser.ts';
 
 let browser: Browser;
 let server: ViteDevServer;
@@ -10,7 +11,7 @@ beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
   await server.listen();
   url = server.resolvedUrls?.local[0] ?? '';
-  browser = await chromium.launch({ channel: 'chrome' });
+  browser = await launchBrowser();
 });
 afterAll(async () => {
   await browser?.close();

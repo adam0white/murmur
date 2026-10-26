@@ -1,4 +1,5 @@
 import { automaticCastCheckpoint, validateCanonicalRun } from './cast-chapter.ts';
+import { assertNotebookState } from './notebook.ts';
 /** Murmur's authored crossing. Transport and recording remain separate from the deterministic week. */
 
 import { snapshot } from '@adam0white/human-framework';
@@ -93,8 +94,9 @@ function requireReturnEnvelope(incoming: PersonaEnvelope): void {
 }
 /** Validate all pinned envelopes before restoring a run; never read the current shelf head. */
 export async function validateRun(json: GameState): Promise<GameState> {
+  assertNotebookState(json);
   if (!json || !Array.isArray(json.inputs)) throw new Error('Not a notebook run.');
-  if (json.version === '0.6.0') return validateCanonicalRun(json);
+  if (json.version === '0.6.0' || json.version === '0.7.0') return validateCanonicalRun(json);
   if (json.personaHead) await validatePersona(json.personaHead);
   let rebuilt: GameState;
   if (json.returnChapter) {

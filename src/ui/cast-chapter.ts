@@ -1,3 +1,4 @@
+import { assertNotebookState } from './notebook.ts';
 /** Current canonical UI transport. Only explicit new chapters claim; files never acquire ownership by loading. */
 
 import { ENGINE_VERSION } from '@adam0white/human-framework';
@@ -16,7 +17,7 @@ import {
 } from '@adam0white/lab-client';
 import { CAST, CAST_VERSION, type CastRole, roleOf } from '../sim/canonical-cast.ts';
 import { type CastReturnArchive, prepareCastChapter, validateCastChapter } from '../sim/cast-chapter.ts';
-import { createCastSource } from '../sim/cast-source.ts';
+import { createCastHistorySource, createCastSource } from '../sim/cast-source.ts';
 import { cloneState, newGame, queueInput, replay, step } from '../sim/game.ts';
 import type { GameState } from '../sim/types.ts';
 import { departureGuardCurrent, publishPersona, recordingEpochGuard, shelf } from './continuity.ts';
@@ -156,7 +157,8 @@ function simulationOnly(s: GameState) {
   return copy;
 }
 export async function validateCanonicalRun(json: GameState): Promise<GameState> {
-  if (json.version !== CAST_VERSION || !json.cast)
+  assertNotebookState(json);
+  if ((json.version !== CAST_VERSION && json.version !== '0.7.0') || !json.cast)
     throw Error('This notebook uses an older cast edition. Start fresh.');
   if (json.castChapter) await validateCastChapter(json.castChapter, json.seed);
   const rebuilt = replay(
@@ -359,7 +361,7 @@ export function canonicalPersonControls(s: GameState, save: () => void): HTMLEle
   el.innerHTML =
     '<h3>People in this chapter</h3><p>The whole cast arrives together. A checkpoint observes an eligible completed Saturday; it does not clear work or promises.</p><label>Person <select id="cast-person">' +
     CAST.map((c) => `<option value="${roleOf(c.castId)}">${c.name}</option>`).join('') +
-    '</select></label><button id="cast-pause">Pause this person’s supported unfinished purposes</button><button id="cast-save">Save this person’s finished chapter</button><button id="cast-alternate">Save an explicit alternate branch for this person</button><button id="cast-download">Download this person’s accepted passport</button><p id="cast-status" role="status"></p>';
+    '</select></label><button id="cast-pause">Pause this person’s supported unfinished purposes</button><button id="cast-save">Save this person’s finished chapter</button><button id="cast-alternate">Save an explicit alternate branch for this person</button><button id="cast-download">Download this person’s accepted passport</button><button id="cast-history-download">Download Aylin’s eight-episode source archive</button><p id="cast-status" role="status"></p>';
   const role = () => (el.querySelector('select') as HTMLSelectElement).value as CastRole;
   const status = (text: string) => {
     const p = el.querySelector('#cast-status');
@@ -382,6 +384,45 @@ export function canonicalPersonControls(s: GameState, save: () => void): HTMLEle
   el.querySelector('#cast-alternate')?.addEventListener('click', () =>
     run(() => saveCastPerson(s, role(), save, { fork: true })),
   );
+  el.querySelector('#cast-history-download')?.addEventListener('click', () => {
+    void (async () => {
+      const notebook = cloneState(s);
+      const native = await createCastHistorySource(notebook);
+      const cast = canonicalCast('hf.cast.aylin.murmur');
+      const parent = notebook.castHeads?.[cast.castId];
+      const branchId = parent?.branchId ?? crypto.randomUUID();
+      const envelope = await createPersona({
+        format: 'hf-persona/1',
+        castId: cast.castId,
+        castRevision: cast.revision,
+        branchId,
+        parentRevision: parent?.revision ?? null,
+        source,
+        transfer: {
+          ...native.transfer,
+          life: parent?.transfer.life ?? initialPersonaLife(cast.castId, branchId, Date.now()),
+        },
+        limitations: native.limitations,
+      });
+      const payload = {
+        format: 'murmur-history-archive/1',
+        notebook,
+        native,
+        envelope,
+        sourceBuildBasis: notebook.fileHistory
+          ? 'Imported notebook; original build is not recorded here.'
+          : source.build,
+        producer: source,
+        ownership: 'file export; no shelf claim or upload',
+      };
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+      a.download = 'murmur-aylin-history.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      status('The complete source archive was downloaded locally. No chapter was claimed.');
+    })().catch((e) => status(String(e)));
+  });
   el.querySelector('#cast-download')?.addEventListener('click', () => {
     const head = s.castHeads?.[`hf.cast.${role()}.murmur`];
     if (!head) {

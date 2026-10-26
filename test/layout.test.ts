@@ -1,6 +1,8 @@
-import { type Browser, chromium } from 'playwright';
+import type { Browser } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
+import { expandNotebook } from '../src/ui/notebook.ts';
+import { launchBrowser } from './browser.ts';
 
 let browser: Browser;
 let server: ViteDevServer;
@@ -9,7 +11,7 @@ beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
   await server.listen();
   url = server.resolvedUrls?.local[0] ?? '';
-  browser = await chromium.launch({ channel: 'chrome' });
+  browser = await launchBrowser();
 });
 afterAll(async () => {
   await browser?.close();
@@ -123,6 +125,9 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
         expect(await page.locator('#feedback-send').isDisabled()).toBe(false);
       }
       await page.locator('#feedback-send').click();
+      await page.waitForFunction(() =>
+        document.querySelector('#feedback-status')?.textContent?.includes('Your note is stored'),
+      );
       expect(await page.locator('#feedback-status').innerText()).toBe(
         'Sent. Your note is stored. Reference stub.',
       );
@@ -131,6 +136,11 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
       expect(calls[0][0]).toBe('feedback');
       const extra = calls[0].at(-1);
       expect(extra.name).toBe('tester');
+      if (mode === 'linked')
+        expect((await expandNotebook(extra.run)).state).toEqual(
+          await page.evaluate(() => JSON.parse(JSON.stringify(window.__murmur.state))),
+        );
+      else expect(extra.run).toBeUndefined();
       expect(calls[0][1]).toContain('Verdict: keep');
       expect(await page.evaluate(() => localStorage.getItem('hf-lab-feedback-name'))).toBe('tester');
       await page.locator('#feedback-send').click();

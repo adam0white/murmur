@@ -29,3 +29,8 @@ Game: The Two Voices (`adam0white/murmur`), built on `@adam0white/human-framewor
 ## 5. A host-set practice half-life for prompting responses
 
 **Confirmed (source):** practice for a prompting response decays with a fixed 60-day half-life (`PROMPTINGS_DEFAULTS.practiceHalfLifeDays`). `enablePromptings` keeps the practice of an existing response. A one-week game cannot make a phrase fade with disuse through the public API. **Workaround:** each night the host scales `practice` on responses not used that day (`fadePhrases` in `src/sim/game.ts`). This writes into HF-owned state. **Proposal:** an optional `practiceHalfLifeDays` in `enablePromptings`, or a per-response `halfLifeDays`. Target 2.9.0.
+
+
+## Host adoption candidate — 2026-10-26
+
+The requests above record the original HF2.8 findings and workarounds. Published HF3.0 already provides explicit multi-commitment fulfillment, scoped PromptingResponse.cue and public practiceHalfLifeDays. The optional0.7.0 host candidate adopts all three without an HF upgrade. Its completed birthday dinner names both overlapping promises and stages no synthetic call. Learned responses retain their actual situation cues. Continuous3.106day decay replaces the nightly host multiplier only in0.7. Existing0.6/0.3/0.2.1 raw state and continuation controls remain exact; no usedLines, names, prose or RNG normalization is used. Source review, signed delivery and real owner/player acceptance remain separate.

@@ -1,6 +1,6 @@
 # A third week: the advice comes back
 
-**For owner approval. No third week is implemented or authorized.**
+**Historical proposal below.** The widened owner instruction now authorizes remaining campaign engineering. An explicit0.7.0 candidate implements this scope; default0.6.0 and loaded notebooks keep their original story. The independent review is complete; its bounded chronology, departure and control-budget corrections are implemented. Signed delivery remains pending. Adam accepts the fiction by playing, with owner acceptance2026-11-03. The older approval/implementation statements below record the proposal's original sequencing.
 
 A third week earns its place if Dilan must live with what she and the player have set in motion. Keep the two voices, the running day, and evening review. Add five weekdays and a Saturday ending. Trust, fatigue, competing promises, and other people's needs still limit what the player can achieve.
 
@@ -18,6 +18,12 @@ Carry the actual HF person forward: voice trust and pressure, habits, learned ph
 | Thursday  | A duplicate collection becomes a complaint during the new dispatcher's solo shift.               | Earlier honesty and board advice determine what Dilan and Ece can truthfully say. Quiet repair takes time; calling across the room stops the van sooner.                 |
 | Friday    | Ece can close alone, needs practice, or declines help. Dilan has evening plans.                  | Actual practice and the earlier promise determine the request. Helping costs Dilan her plan. Refusing can be right. Releasing a promise brings no automatic forgiveness. |
 | Saturday  | Dilan records advice she kept, changed, or stopped using.                                        | Quote actual choices across three weeks. Let her disagree with a once-useful phrase. End with her decision about sharing the note.                                       |
+
+## Implemented schedule correction
+
+Only edition0.7 replaces the first Friday afternoon coffee card in its original slot at15:20. The third Tuesday bus at18:15 precedes the photographs at18:40. Old-edition queues keep their original order.
+
+On the third Friday, a completed closing choice ends depot work. Leaving on time takes the17:20 bus and a25-minute commute before home time. Staying for practice still costs70minutes. The bus line follows the completed choice and departure time. The actual three-week control shares its played campaign across these checks and retains full replay, with a specific20-second budget.
 
 ## Scope and acceptance
 

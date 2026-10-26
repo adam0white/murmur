@@ -1,11 +1,12 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { type Browser, type Page as BrowserPage, chromium } from 'playwright';
+import type { Browser, Page as BrowserPage } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cardView, cloneState, newGame, queueInput, runToCard } from '../src/sim/game.ts';
 import type { GameState } from '../src/sim/types.ts';
 import { momentRecords } from '../src/ui/journal.ts';
 import { answerThoughts, attributedWords, cardThought, finalInputWords } from '../src/ui/presentation.ts';
+import { launchBrowser } from './browser.ts';
 
 function required<T>(value: T | null | undefined): T {
   if (value == null) throw new Error('Required test state is absent');
@@ -87,7 +88,7 @@ describe('follow-up b rendered exact runs', { timeout: 30_000 }, () => {
       await before.listen();
       beforeUrl = before.resolvedUrls?.local[0];
     }
-    browser = await chromium.launch({ headless: true, channel: 'chrome' });
+    browser = await launchBrowser();
     if (shots) mkdirSync(shots, { recursive: true });
   });
   afterAll(async () => {

@@ -21,6 +21,8 @@ export async function castDigest(value: unknown): Promise<string> {
   ).join('');
 }
 export async function createCastSource(s: GameState, role: CastRole) {
+  if (s.version === '0.7.0')
+    throw Error('The three-week edition has no supported source passport yet. Keep its full notebook.');
   if (s.version !== CAST_VERSION || !s.cast || s.phase !== 'end' || ![6, 13].includes(s.day) || s.card)
     throw Error('A native checkpoint needs an actually played completed Saturday boundary.');
   const p = s.cast.people[role];
@@ -72,6 +74,8 @@ function projectCastPerson(p: import('@adam0white/human-framework').Person) {
 
 /** An explicit replayed Saturday choice, never called by import or checkpoint. Unsupported purposes and duties refuse before mutation. */
 export function releaseCastSource(s: GameState, role: CastRole): void {
+  if (s.version === '0.7.0')
+    throw Error('The three-week edition has no supported source departure yet. Keep its full notebook.');
   if (s.version !== CAST_VERSION || !s.cast || s.phase !== 'end' || ![6, 13].includes(s.day))
     throw Error('Pause at an actually completed Saturday boundary.');
   const p = s.cast.people[role];
@@ -102,5 +106,80 @@ export function releaseCastSource(s: GameState, role: CastRole): void {
   s.cast.pauses[role] = {
     at: p.now,
     purposes: goals.map((g) => ({ id: g.id, label: g.label, progress: g.progress })),
+  };
+}
+
+/** Explicit finite history dialect for canonical Aylin on0.6 only. The last eight actual episodes
+ * retain every source reference and payload. The declared producer clock offset is zero; a receiver must
+ * explicitly map its own clock. This creates no acquaintances, skill credit, told facts or ownership.
+ * Full raw state/notebook remain mandatory archive inputs. Belief/debt transport is not demonstrated.
+ */
+export async function createHistoryProjection(p: import('@adam0white/human-framework').Person) {
+  if (p.id !== 'aylin' || p.name !== 'Aylin' || p.engine !== '2.23.0' || !p.body.alive || p.activity)
+    throw Error('History projection requires the supported living idle Aylin source.');
+  if (Object.keys(p.memory.beliefs).length || p.agenda.commitments.length || (p.agenda.owed ?? []).length)
+    throw Error('This finite history dialect does not map beliefs, commitments or debt.');
+  const raw = snapshot(p);
+  const selected = raw.memory.episodes.slice(-8);
+  if (selected.length !== 8) throw Error('This history dialect needs eight actual source episodes.');
+  const episodes = Object.fromEntries(
+    selected.map((e) => [
+      e.id,
+      {
+        id: e.id,
+        ...(e.action !== undefined ? { action: e.action } : {}),
+        ...(e.actorId !== undefined ? { actorId: e.actorId } : {}),
+        ...(e.targetId !== undefined ? { targetId: e.targetId } : {}),
+        ...(e.placeId !== undefined ? { placeId: e.placeId } : {}),
+        ...(e.voiceId !== undefined ? { voiceId: e.voiceId } : {}),
+        ...(e.tags !== undefined ? { tags: [...e.tags] } : {}),
+      },
+    ]),
+  );
+  const map = {
+    version: 'murmur-calendar/2',
+    skills: identity(Object.keys(raw.skills)),
+    episodes,
+    calendar: {
+      version: 'hf-persona-calendar-map/1' as const,
+      offset: 0,
+      sourceNorms: DEFAULT_NORMS,
+      references: {
+        commitments: {},
+        chains: {},
+        actions: {},
+        entities: {},
+        norms: identity(DEFAULT_NORMS.map((n) => n.id)),
+      },
+    },
+  };
+  const person = projectCalendarPersona(raw, map); // Public HF3.0 validates actual health, active work/projects and duties.
+  return {
+    person,
+    checkpoint: { schema: raw.schema, sourceMinute: raw.now, rng: raw.rng, sha256: await castDigest(raw) },
+    selection: {
+      version: 'murmur-history-selection/1' as const,
+      ids: selected.map((e) => e.id),
+      map,
+      omittedEpisodeIds: raw.memory.episodes.slice(0, -8).map((e) => e.id),
+      unsupportedStores: person.person.limitations,
+      sourceRawDigest: await castDigest(raw),
+      clockOffset: 0,
+    },
+  };
+}
+export async function createCastHistorySource(s: GameState) {
+  const old = await createCastSource(s, 'aylin'); // Preserve the actual completed Saturday and all native source restrictions.
+  const history = await createHistoryProjection(old.raw);
+  return {
+    raw: old.raw,
+    transfer: { castPassport: 'murmur-cast/2', sourceRole: 'aylin', ...history },
+    limitations: [
+      ...old.limitations,
+      `${history.selection.omittedEpisodeIds.length} source episodes remain only in the full archive.`,
+      'Supported story source: Murmur0.6.0 only. Third-week0.7 sources are not admitted by this finite dialect.',
+      'Source references retain source meanings. They create no destination acquaintance, trust, qualification or publicly told fact.',
+      'This source has empty beliefs, commitments and debt; no nonempty transport coverage is claimed.',
+    ],
   };
 }

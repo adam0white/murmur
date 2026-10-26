@@ -125,8 +125,8 @@ Cost and risk: more uncertainty makes her less predictable. Retained words add r
 ## Deferred (target: 2026-11-03)
 
 - Replace Friday’s repeated coffee card (fun review 2; target 2026-11-03): a new competing obligation changes the decisions and needs its own authored situation, edition boundary and playtest; this round preserves live 0.3.0 runs.
-- More campaigns, including a second week.
-- Other people as HF persons (Ece, Mum).
+- More campaigns, including a second week. **Reconciled2026-10-26:** week two already exists; the further campaign is the optional0.7 third-week candidate below, pending review/delivery and Adam’s play.
+- Other people as HF persons (Ece, Mum). **Reconciled2026-10-26:** Ece already has a canonical HF person. Mum remains background; any foreground allocation change is Adam’s input for2026-11-03. This candidate adds no person.
 - DL-27 exact resume and saved-location sentence (review finding 1; target 2026-11-03): versioned snapshots, legacy migration and reload tests need a separate persistence change; current seed/input-only Continue can skip an unanswered interval.
 - DL-28 replay-preserving send compaction (review finding 4; target 2026-11-03): both send paths need a compact export contract with exact in-progress replay boundaries and representative upload-bound tests.
 
@@ -267,3 +267,22 @@ Done for this audit: this table, desktop and phone screenshot comparison, repo c
 ### Owner intake polish (0.4.2, 2026-10-21)
 
 The owner's two-week run is recorded verbatim in [the intake](playtests/owner-2026-10-21.md). New runs vary the first-week call completions, explain arrival at Aylin's after the extra route, quote unprompted phrases only beside their own action, and use clear cancellation and parcel replies. Both phone header labels fit at 360×690 and 412×891. Decision weights, insistence costs, and difficulty stay as before: the player can already finish ahead of the pencil through selective plain suggestions and silence. Existing editions remain replayable; finished 0.3.0 runs still upgrade to 0.4.1 so their first-week fingerprint stays identical. Delivery ends with signed main, green CI, a clean matching live release, and the eight-line scratch report. The [third-week proposal](week-three-proposal.md) awaits owner approval; no third week is implemented. Owner acceptance of feel remains separate from technical checks.
+
+
+## Optional third-week candidate — 2026-10-26
+
+Remaining: independent director review, signed delivery, exact green CI, clean deployment and source→target proof. Adam's fiction acceptance remains2026-11-03. This source is an uncommitted candidate, not a shipped release.
+
+The widened owner instruction authorizes the remaining campaign engineering. It supersedes the old proposal-only sequencing; owner taste is still an input. Default0.6.0 retains its two-week story and exact rules. Selecting the three-week edition starts0.7.0 with fresh local canonical people. It never migrates a loaded0.6 notebook or silently claims latest browser heads.
+
+Friday's repeated coffee card becomes an Ece handover versus Dilan's unfinished board. The third week carries the actual people, promises, practices, fatigue, choices and both earlier weeks' pages. Monday checks a board instruction against the loading floor. Tuesday photographs compete with shelf work. Wednesday an arrival promise has a six-o'clock window; a paid route takes ninety actual minutes and misses it. Thursday quiet repair and stopping the van have different time and public consequences. Friday closing practice costs Dilan her evening. Saturday remembers actual outcomes and lets her keep, revise or share her advice. Routine alarms remain steady; buses and bedtimes refer to that day's events.
+
+Only0.7 uses public HF3.0 multi-commitment fulfillment for one actual birthday dinner, scoped prompting cues, and continuous practiceHalfLifeDays=log(0.5)/log(0.8), about3.106days. It removes the synthetic second call and nightly practice mutation in this edition. This continuous decay differs from the old reinforcement-gated nightly rule. No difficulty success or assent is scripted.
+
+Current full saves already held complete state. The new murmur-save/2 wrapper checks its header and preserves the exact minute, unanswered deadline and state; old input-only saves retain their historical next-choice branch and disclose that limit. Resume names the actual saved location. Both run send paths now use murmur-notebook/1: lossless gzip/base64 of the entire notebook with byte count and SHA256. It reconstructs complete histories, Person/RNG and source archives; it prunes nothing. A malformed or future format refuses. Ordinary information reading slows time; the Game menu pauses it.
+
+Client0.4.11 and kit0.5.12 use the exact verified immutable release artifacts on the single HF3.0 graph. Quiet Feedback choices select literal note labels and send nothing before Submit. Recording-off remains note-only unless the player chooses sharing. A note receipt does not prove optional run delivery. npm publication is excluded by HF owner policy and is not a missing dependency.
+
+GDI702 is a separate explicit murmur-cast/2 / murmur-calendar/2 source projection from supported0.6 Aylin only. It maps the last eight actual source episodes, preserves source references and declares a zero producer clock offset. It archives and discloses omitted episode IDs and unsupported stores. The actual92cdebd source has200episodes and empty beliefs/commitments/debt; nonempty transport is not proved. Oldv1 is unchanged. No source reference awards trust, acquaintance, skills, work or public knowledge. The original92cdebd notebook/build remains historical; a later signed producer commit implements this dialect. The offline export script requires that signed clean producer. Good Hands receiver work and genuine cross-origin proof remain separate.
+
+Deferred reconciliation: a second week and canonical Ece already exist. Do not build them again. Mum remains an unnamed background parent; there is no41st maintained person. Foreground allocation and real owner/player taste remain Adam's inputs for2026-11-03. GDI027/028/030/031/032/574/575/576/689/702 are implemented in this candidate pending review/delivery; this does not close their delivery or taste acceptance. No new player/model round, outreach, service or allocation change occurred.

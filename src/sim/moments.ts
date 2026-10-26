@@ -6,6 +6,7 @@ import { CAST_MOMENTS, CAST_VERSION } from './canonical-cast.ts';
  */
 import type { Ctx, Moment, Opt } from './types.ts';
 import { WEEK_TWO } from './week2.ts';
+import { FRIDAY_HANDOVER, WEEK_THREE } from './week3.ts';
 
 const T = ['temptation'];
 /** The same moment on another day reads differently: one variant per weekday (Monday first). */
@@ -828,7 +829,8 @@ const wednesday: Moment[] = [
     at: at(19, 45),
     place: 'aylin',
     scene: (c) =>
-      (c.version === '0.4.2' || c.version === '0.5.0' || c.version === '0.6.0') && c.flags.route
+      (c.version === '0.4.2' || c.version === '0.5.0' || c.version === '0.6.0' || c.version === '0.7.0') &&
+      c.flags.route
         ? 'Dilan is in Aylin’s kitchen. She is fifteen minutes late after finishing the extra route. Aylin has saved her some dinner. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”'
         : 'Dilan is in Aylin’s kitchen. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”',
     pull: {
@@ -1395,11 +1397,14 @@ export const MOMENTS: Moment[] = [
 export const LAST_DAY = 6;
 export const WEEK_TWO_LAST_DAY = 13;
 export const momentById = (id: string): Moment => {
-  const m = [...MOMENTS, ...CAST_MOMENTS].find((x) => x.id === id);
+  const m = [...MOMENTS, ...CAST_MOMENTS, FRIDAY_HANDOVER, ...WEEK_THREE].find((x) => x.id === id);
   if (!m) throw new Error(`no moment ${id}`);
   return m;
 };
 export const momentsOf = (day: number, version?: string): Moment[] => [
-  ...(version === CAST_VERSION ? CAST_MOMENTS.filter((m) => m.day === day) : []),
-  ...MOMENTS.filter((m) => m.day === day),
+  ...(version === CAST_VERSION || version === '0.7.0' ? CAST_MOMENTS.filter((m) => m.day === day) : []),
+  ...MOMENTS.filter((m) => m.day === day).map((m) =>
+    version === '0.7.0' && m.id === 'slump-5' ? FRIDAY_HANDOVER : m,
+  ),
+  ...(version === '0.7.0' ? WEEK_THREE.filter((m) => m.day === day) : []),
 ];

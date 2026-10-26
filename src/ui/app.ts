@@ -22,6 +22,7 @@ import {
   isEdition,
   LEGACY_VERSION,
   type Lean,
+  NEXT_VERSION,
   newGame,
   nextCardAt,
   queueInput,
@@ -41,6 +42,7 @@ import { required } from './dom.ts';
 import { showFeedback } from './feedback.ts';
 import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
 import { lab } from './lab.ts';
+import { assertNotebookState, compactNotebook, expandNotebook, savedLocation } from './notebook.ts';
 import {
   checkpoint,
   continuityMessage,
@@ -80,6 +82,7 @@ const TURN_MS = 3000;
 const HOLD_MS = 600;
 
 interface Save {
+  format?: 'murmur-save/2';
   version?: string;
   seed: number;
   inputs: Input[];
@@ -143,20 +146,35 @@ function readSave(): Save | null {
   try {
     const raw = localStorage.getItem(SAVE);
     const sv = raw ? (JSON.parse(raw) as Save) : null;
-    return sv &&
-      typeof sv.seed === 'number' &&
-      Array.isArray(sv.inputs) &&
-      (!sv.version || isEdition(sv.version))
-      ? sv
-      : null;
+    if (sv && 'format' in sv && sv.format !== 'murmur-save/2') throw Error('Unsupported save format.');
+    if (
+      sv?.format &&
+      (!sv.state ||
+        sv.version !== sv.state.version ||
+        sv.seed !== sv.state.seed ||
+        JSON.stringify(sv.inputs) !== JSON.stringify(sv.state.inputs))
+    )
+      throw Error('Malformed saved notebook.');
+    if (!sv) return null;
+    if (sv.state) assertNotebookState(sv.state);
+    if (!Number.isSafeInteger(sv.seed) || !Array.isArray(sv.inputs) || (sv.version && !isEdition(sv.version)))
+      throw Error('Unknown or malformed saved edition.');
+    return sv;
   } catch {
+    toast = 'This saved notebook could not be read. It remains in this browser.';
     return null;
   }
 }
 function writeSave() {
   if (!s) return;
   try {
-    const text = JSON.stringify({ version: s.version, seed: s.seed, inputs: s.inputs, state: cloneState(s) });
+    const text = JSON.stringify({
+      format: 'murmur-save/2',
+      version: s.version,
+      seed: s.seed,
+      inputs: s.inputs,
+      state: cloneState(s),
+    });
     localStorage.setItem(SAVE, text);
     lab.captureSave(JSON.parse(text));
   } catch {}
@@ -209,7 +227,7 @@ const tick = (key: number) =>
 const rule = (key: number) =>
   `<svg class="rule" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path d="${wob(2, 3, 298, 3, key, 1)}"/></svg>`;
 const header = (_menu = true, when = false) =>
-  `<header class="top"><span class="when">${when || screen !== 'title' ? `<span class="dayname notebook-text"><span id="dayname" class="long">${s ? DAY_NAMES[s.day] : ''}</span><span id="dayshort" class="short">${s ? DAY_NAMES[s.day]?.slice(0, 3) : ''}</span></span> <span class="clock" id="clock">${s ? (screen === 'evening' ? '· in bed' : screen === 'end' ? '· week is done' : clock(s.minute)) : ''}</span><span class="week-label" id="week-label" ${!s || weekOf(s.day) !== 2 ? 'hidden' : ''}> · second week</span>` : '<a href="https://human.adamwhite.work/games/">All games</a>'}</span><div class="top-controls"><button class="info-btn" id="info" aria-label="Information">i</button><button class="menu-btn" id="menu" aria-label="Game menu">≡</button></div></header>${when ? `<div class="state-strip" role="status"><span id="state-words"></span><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, 1, 1)}"/></svg></div>` : ''}`;
+  `<header class="top"><span class="when">${when || screen !== 'title' ? `<span class="dayname notebook-text"><span id="dayname" class="long">${s ? DAY_NAMES[s.day] : ''}</span><span id="dayshort" class="short">${s ? DAY_NAMES[s.day]?.slice(0, 3) : ''}</span></span> <span class="clock" id="clock">${s ? (screen === 'evening' ? '· in bed' : screen === 'end' ? '· week is done' : clock(s.minute)) : ''}</span><span class="week-label" id="week-label" ${!s || weekOf(s.day) < 2 ? 'hidden' : ''}> · ${s && weekOf(s.day) === 3 ? 'third' : 'second'} week</span>` : '<a href="https://human.adamwhite.work/games/">All games</a>'}</span><div class="top-controls"><button class="info-btn" id="info" aria-label="Information">i</button><button class="menu-btn" id="menu" aria-label="Game menu">≡</button></div></header>${when ? `<div class="state-strip" role="status"><span id="state-words"></span><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, 1, 1)}"/></svg></div>` : ''}`;
 const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 };
 const credit = () =>
   `<p class="credit soft small">Dilan is a person from the <a href="https://human.adamwhite.work/">Human Framework ${FRAMEWORK_VERSION}</a>.</p>`;
@@ -240,7 +258,8 @@ function bindHeader() {
   document.getElementById('info')?.addEventListener('click', () => toggle('info', infoPage));
 }
 function overlay(markup: string, className: string, onClose?: () => void) {
-  holdClock();
+  const reading = className === 'info-wrap';
+  if (!reading) holdClock();
   const previous = document.activeElement as HTMLElement | null;
   const background = [...app.children] as HTMLElement[];
   const inert = background.map((node) => node.inert);
@@ -269,7 +288,7 @@ function overlay(markup: string, className: string, onClose?: () => void) {
     dayChildren.forEach((node, index) => {
       node.inert = childInert[index] ?? false;
     });
-    resumeClock();
+    if (!reading) resumeClock();
     previous?.focus();
     onClose?.();
   };
@@ -324,7 +343,8 @@ function feedback(returnToMenu = false) {
   showFeedback({
     app,
     lab,
-    getRun: exportRun,
+    getRun: compactRun,
+    feedbackChoices: true,
     download,
     close: () => {
       feedbackOpen = false;
@@ -359,7 +379,7 @@ export async function start() {
   await initOneCast();
   // Do not allow the title's autosend hook to capture a cached continuing run.
   await gateContinuity(recordingState(s));
-  lab.trackRun(() => structuredClone(exportRun()), {
+  lab.trackRun(() => compactRun(), {
     runKey: () => s?.seed ?? 'title',
     getLogs: () => s?.log.slice(-40).map((line) => line.text) ?? [],
   });
@@ -399,14 +419,14 @@ function title() {
     </div>${labMode ? '<div class="other-ways-wrap"><button class="row" id="other-ways">Lab tools <span aria-hidden="true">▸</span></button></div>' : ''}
     <footer class="title-spacer" id="title-spacer"></footer>
     <div class="page-actions actions">
-      ${saved ? `<button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved.day]?.slice(0, 3) ?? '')} ${clock(saved.minute)}</button>` : ''}
+      ${saved ? `<p class="soft small">${esc(save?.state ? savedLocation(saved) : 'This older save keeps your answers, but not the exact saved minute. Resume opens its next choice.')}</p><button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved.day]?.slice(0, 3) ?? '')} ${clock(saved.minute)}</button>` : ''}
       ${
         labMode
           ? `<button id="fresh-authored">Play a fresh local week</button>
       <button id="return-shelf">Continue with people saved in this browser</button><button id="held-cast">Resume an accepted chapter saved here</button><p id="return-status" class="soft small"></p>`
           : ''
       }
-      <button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
+      <label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
       <div id="new-confirm" hidden><p>Start a new game? This replaces your saved week.</p><div class="confirm-actions"><button id="confirm-new">Start new game</button><button id="cancel-new">Cancel</button></div></div>
       ${labMode ? credit() : ''}
     </div></div>`;
@@ -458,13 +478,15 @@ function title() {
     }
   });
   document.getElementById('new')?.addEventListener('click', () => {
-    if (!save) newWeek(urlSeed() ?? randomSeed());
+    if (!save) newWeek(urlSeed() ?? randomSeed(), selectedEdition());
     else {
       required(document.getElementById('new-confirm')).hidden = false;
       required(document.getElementById('new')).hidden = true;
     }
   });
-  document.getElementById('confirm-new')?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed()));
+  document
+    .getElementById('confirm-new')
+    ?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed(), selectedEdition()));
   document.getElementById('cancel-new')?.addEventListener('click', () => {
     required(document.getElementById('new-confirm')).hidden = true;
     required(document.getElementById('new')).hidden = false;
@@ -540,6 +562,9 @@ function title() {
   });
 }
 
+function selectedEdition() {
+  return document.querySelector<HTMLInputElement>('#next-edition')?.checked ? NEXT_VERSION : GAME_VERSION;
+}
 async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   const attempt = ++loadGeneration;
   invalidateContinuity();
@@ -584,7 +609,8 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
     if (!f) return;
     const attempt = ++loadGeneration;
     try {
-      const ex = JSON.parse(await f.text()) as {
+      const parsed = JSON.parse(await f.text());
+      const ex = (parsed && ('format' in parsed || parsed.state) ? await expandNotebook(parsed) : parsed) as {
         game?: string;
         version?: string;
         seed: number;
@@ -595,6 +621,11 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       const version = ex.version ?? ex.state?.version ?? LEGACY_VERSION;
       if (!isEdition(version) || (ex.version && ex.state?.version && ex.version !== ex.state.version))
         throw new Error('unknown or conflicting edition');
+      if (
+        ex.state &&
+        (ex.seed !== ex.state.seed || JSON.stringify(ex.inputs) !== JSON.stringify(ex.state.inputs))
+      )
+        throw Error('Conflicting notebook prefix.');
       const until = ex.state?.minute;
       const r = ex.state
         ? await validateRun(ex.state)
@@ -684,6 +715,8 @@ function day() {
 /** Sim minutes per real second, now. */
 function rate(nowMs: number): number {
   if (!s) return 0;
+  if (activePanel?.kind === 'info')
+    return Math.min(0.05, s.card ? (s.card.closesAt - s.card.openedAt) / CARD_SECONDS : 1);
   if (s.card) {
     const win = s.card.closesAt - s.card.openedAt;
     // The card closes on the window's last step: `win` steps after the one that opened it.
@@ -764,7 +797,10 @@ function drawDay() {
   if (ds) ds.textContent = (DAY_NAMES[s.day] ?? '').slice(0, 3);
   if (ck) ck.textContent = clock(s.minute);
   const week = document.getElementById('week-label');
-  if (week) week.hidden = weekOf(s.day) !== 2;
+  if (week) {
+    week.hidden = weekOf(s.day) < 2;
+    week.textContent = ` · ${weekOf(s.day) === 3 ? 'third' : 'second'} week`;
+  }
   const shown = journalLines(s);
   const logKey = `${shown.length}:${s.card?.openedAt ?? ''}:${s.applied}:${doneLine(s) ? 1 : 0}`;
   if (drawn.log !== logKey) {
@@ -969,17 +1005,19 @@ function drawStatus() {
   words.textContent =
     menuPausedAt !== null
       ? 'Time is paused.'
-      : s.phase !== 'day'
-        ? 'The day is done.'
-        : s.card
-          ? left * CARD_SECONDS <= 8
-            ? `She decides in ${Math.ceil(left * CARD_SECONDS)} seconds.`
-            : `${Math.ceil(left * CARD_SECONDS)} seconds to answer.`
-          : hurry
-            ? 'Time is passing quickly.'
-            : (performance.now() - answeredAt) / 1000 < READ_SECONDS
-              ? 'She is answering.'
-              : '';
+      : activePanel?.kind === 'info'
+        ? 'Time is passing slowly while you read. Her choice can still pass.'
+        : s.phase !== 'day'
+          ? 'The day is done.'
+          : s.card
+            ? left * CARD_SECONDS <= 8
+              ? `She decides in ${Math.ceil(left * CARD_SECONDS)} seconds.`
+              : `${Math.ceil(left * CARD_SECONDS)} seconds to answer.`
+            : hurry
+              ? 'Time is passing quickly.'
+              : (performance.now() - answeredAt) / 1000 < READ_SECONDS
+                ? 'She is answering.'
+                : '';
 }
 
 function gapHtml(a: Answer | null): string {
@@ -1401,6 +1439,10 @@ function backPage() {
     });
 }
 
+async function compactRun() {
+  const run = exportRun();
+  return run ? compactNotebook(run) : null;
+}
 function exportRun() {
   if (!s) return null;
   return {
@@ -1446,6 +1488,7 @@ function releaseWake() {
   wake?.release().catch(() => {});
   wake = null;
 }
+window.addEventListener('pagehide', writeSave);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     writeSave();

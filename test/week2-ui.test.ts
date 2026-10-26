@@ -1,11 +1,12 @@
 import { mkdir } from 'node:fs/promises';
-import { type Browser, chromium, type Page } from 'playwright';
+import type { Browser, Page } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { playedFirstWeek } from '../src/sim/firstweek.ts';
 import { anotherWeek, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
 import type { GameState } from '../src/sim/types.ts';
 import type { tester } from '../src/ui/app.ts';
+import { launchBrowser } from './browser.ts';
 
 declare global {
   interface Window {
@@ -35,7 +36,7 @@ beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
   await server.listen();
   origin = server.resolvedUrls?.local[0] ?? '';
-  browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  browser = await launchBrowser();
   if (shots) await mkdir(shots, { recursive: true });
 }, 30_000);
 

@@ -99,6 +99,7 @@ export interface Flags {
   sent?: string;
   /** Week-two content state, owned by src/sim/week2.ts (keys are that file's to name). */
   w2?: Record<string, string | number | boolean>;
+  w3?: Record<string, string | number | boolean>;
 }
 
 export type Verdict = 'assented' | 'complied' | 'deferred' | 'modified' | 'refused' | 'commanded';

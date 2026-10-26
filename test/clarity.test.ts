@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { type Browser, chromium, type Page } from 'playwright';
+import type { Browser, Page } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
 import type { Input } from '../src/sim/types.ts';
+import { launchBrowser } from './browser.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -13,7 +14,7 @@ beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
   await server.listen();
   origin = server.resolvedUrls?.local[0] ?? '';
-  browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  browser = await launchBrowser();
 }, 30_000);
 
 afterAll(async () => {
@@ -38,14 +39,26 @@ async function firstChoice(page: Page, version = '0.2.1') {
 }
 
 async function documentTargets(page: Page, height: number) {
-  const boxes = [];
-  for (const el of await page.locator('button:visible, a:visible, summary:visible').all()) {
-    const box = await el.boundingBox();
-    expect(box?.width, await el.innerText()).toBeGreaterThanOrEqual(44);
-    expect(box?.height, await el.innerText()).toBeGreaterThanOrEqual(44);
-    expect(box?.y).toBeGreaterThanOrEqual(0);
-    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(height);
-    if (box) boxes.push({ ...box, label: await el.innerText(), id: await el.getAttribute('id') });
+  // Font loading can move the footer between separate protocol reads. Take all hitboxes in one layout.
+  await page.evaluate(() => document.fonts.ready);
+  const boxes = await page.locator('button:visible, a:visible, summary:visible').evaluateAll((els) =>
+    els.map((el) => {
+      const box = el.getBoundingClientRect();
+      return {
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        label: (el as HTMLElement).innerText,
+        id: el.id,
+      };
+    }),
+  );
+  for (const box of boxes) {
+    expect(box.width, box.label).toBeGreaterThanOrEqual(44);
+    expect(box.height, box.label).toBeGreaterThanOrEqual(44);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(height);
   }
   for (const [i, a] of boxes.entries()) {
     for (const b of boxes.slice(i + 1)) {
@@ -466,7 +479,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
 });
 
 describe('round 4 early insistence', { timeout: 30_000 }, () => {
-  it('lets a real touch hold carry the first ordinary suggestion before any refusals', async () => {
+  it('lets a trusted WebKit pointer hold carry the first ordinary suggestion before any refusals', async () => {
     const page = await browser.newPage({
       viewport: { width: 360, height: 690 },
       hasTouch: true,
@@ -485,16 +498,14 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       expect(await up.locator('.gesture').innerText()).toContain('Hold to insist');
       const box = await up.boundingBox();
       if (!box) throw new Error('No alarm suggestion');
-      const touch = await page.context().newCDPSession(page);
-      await touch.send('Input.dispatchTouchEvent', {
-        type: 'touchStart',
-        touchPoints: [{ x: box.x + 30, y: box.y + 25 }],
-      });
+      // WebKit has no CDP touch transport. These trusted mouse events exercise the shared pointer path.
+      await page.mouse.move(box.x + 30, box.y + 25);
+      await page.mouse.down();
       await page.clock.runFor(300);
       expect(await up.locator('.gesture').innerText()).toContain('insisting');
       expect((await up.boundingBox())?.y).toBe(box.y);
       await page.clock.runFor(350);
-      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await page.mouse.up();
       const run = await page.evaluate(
         () =>
           (
@@ -528,11 +539,9 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       const up = page.locator('[data-o="up"]');
       const box = await up.boundingBox();
       if (!box) throw new Error('No alarm suggestion');
-      const touch = await page.context().newCDPSession(page);
-      await touch.send('Input.dispatchTouchEvent', {
-        type: 'touchStart',
-        touchPoints: [{ x: box.x + 30, y: box.y + 25 }],
-      });
+      // WebKit has no CDP touch transport. These trusted mouse events exercise the shared pointer path.
+      await page.mouse.move(box.x + 30, box.y + 25);
+      await page.mouse.down();
       await page.clock.runFor(200);
       await page.evaluate(() => {
         const game = (window as unknown as { __murmur: { quiet(): void; skipToCard(): void } }).__murmur;
@@ -540,7 +549,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
         game.skipToCard();
       });
       await page.clock.runFor(600);
-      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await page.mouse.up();
       const inputs = await page.evaluate(
         () => (window as unknown as { __murmur: { state: { inputs: Input[] } } }).__murmur.state.inputs,
       );
@@ -557,7 +566,7 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
     }
   });
 
-  it('cancels an unfinished touch hold and keeps an ordinary tap available', async () => {
+  it('cancels an unfinished WebKit pointer hold and keeps an ordinary tap available', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
       await firstChoice(page);
@@ -570,13 +579,12 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       const up = page.locator('.opt[data-o="up"]');
       const box = await up.boundingBox();
       if (!box) throw new Error('No alarm suggestion');
-      const touch = await page.context().newCDPSession(page);
-      await touch.send('Input.dispatchTouchEvent', {
-        type: 'touchStart',
-        touchPoints: [{ x: box.x + 30, y: box.y + 25 }],
-      });
+      // WebKit has no CDP touch transport. These trusted mouse events exercise the shared pointer path.
+      await page.mouse.move(box.x + 30, box.y + 25);
+      await page.mouse.down();
       await page.clock.runFor(250);
-      await touch.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+      await page.mouse.move(1, 1);
+      await page.mouse.up();
       await page.clock.runFor(700);
       expect(await up.locator('.gesture').innerText()).toContain('Hold to insist');
       expect(

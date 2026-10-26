@@ -1,3 +1,4 @@
+import { FEEDBACK_LABELS, type FeedbackLabel } from '@adam0white/lab-client';
 import { feedbackPersonaControl, feedbackSharePlay } from '@adam0white/lab-kit';
 import { required } from './dom.ts';
 import type { lab as gameLab } from './lab.ts';
@@ -11,7 +12,8 @@ const esc = (text: string) =>
 export function showFeedback(options: {
   app: HTMLElement;
   lab: typeof gameLab;
-  getRun: () => unknown;
+  getRun: () => unknown | Promise<unknown>;
+  feedbackChoices?: boolean;
   download: () => void;
   close: () => void;
 }) {
@@ -45,7 +47,16 @@ export function showFeedback(options: {
         <button type="button" class="chip" data-verdict="mixed" aria-pressed="false">Not sure</button>
         <button type="button" class="chip" data-verdict="quit" aria-pressed="false">I'd stop here</button>
       </div>
-      <label for="feedback-note">What happened? What did you want to do?</label>
+      ${
+        options.feedbackChoices
+          ? `<div role="group" aria-label="What happened">${Object.entries(FEEDBACK_LABELS)
+              .map(
+                ([key, label]) =>
+                  `<button type="button" class="chip" data-feedback-label="${key}" aria-pressed="false">${esc(label)}</button>`,
+              )
+              .join('')}</div>`
+          : ''
+      }<label for="feedback-note">What happened? What did you want to do?</label>
       <textarea id="feedback-note" rows="4" placeholder="What happened? What did you want to do?"></textarea>
       <details class="feedback-name"><summary>+ Your name or tester ID</summary>
         <label for="feedback-name">Your name or tester ID</label><input type="text" id="feedback-name" maxlength="60" autocomplete="off" value="${esc(remembered)}" />
@@ -73,6 +84,16 @@ export function showFeedback(options: {
   if (personaChoice) wrap.querySelector('textarea')?.after(personaChoice);
 
   let verdict = '';
+  let feedbackLabel: FeedbackLabel | undefined;
+  for (const button of wrap.querySelectorAll<HTMLButtonElement>('[data-feedback-label]'))
+    button.addEventListener('click', () => {
+      feedbackLabel =
+        feedbackLabel === button.dataset.feedbackLabel
+          ? undefined
+          : (button.dataset.feedbackLabel as FeedbackLabel);
+      for (const item of wrap.querySelectorAll<HTMLButtonElement>('[data-feedback-label]'))
+        item.setAttribute('aria-pressed', String(item.dataset.feedbackLabel === feedbackLabel));
+    });
   let sent = false;
   let sending = false;
   const close = () => {
@@ -94,7 +115,7 @@ export function showFeedback(options: {
       note: note.value,
       verdict: verdict || undefined,
       name: name.value.trim() || undefined,
-      run: feedbackRun(),
+      run: lab.telemetryOn ? 'Complete replayable notebook, losslessly compressed on Submit.' : undefined,
     };
     const previewNode = wrap.querySelector('#feedback-preview');
     if (previewNode) previewNode.textContent = JSON.stringify(preview, null, 2);
@@ -139,14 +160,18 @@ export function showFeedback(options: {
     sending = true;
     refresh();
     const submittedName = name.value.trim().slice(0, 60);
-    const submittedNote = [verdict ? `Verdict: ${verdict}` : '', note.value.trim()]
+    const submittedNote = [
+      feedbackLabel ? FEEDBACK_LABELS[feedbackLabel] : '',
+      verdict ? `Verdict: ${verdict}` : '',
+      note.value.trim(),
+    ]
       .filter(Boolean)
       .join('\n\n');
     try {
       const sharePlay = feedbackSharePlay(personaChoice);
       const receipt = await lab.sendFeedback(submittedNote, {
         name: submittedName,
-        run: feedbackRun(),
+        run: lab.telemetryOn || sharePlay ? await feedbackRun() : undefined,
         sharePlay,
       });
       const sentMessage = `Sent. Your note is stored. Reference ${receipt}.`;
