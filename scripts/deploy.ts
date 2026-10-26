@@ -20,8 +20,8 @@ const checks = JSON.parse(
   run('gh', ['api', `repos/adam0white/murmur/commits/${head}/check-runs?filter=all&per_page=100`], true),
 ).check_runs as CheckRun[];
 console.log(`Verified CI run ${trustedCi(head, runs, checks)} for ${head}.`);
-run('npm', ['run', 'build']);
+run('pnpm', ['run', 'build']);
 if (git('status', '--porcelain')) throw Error('Build changed tracked source.');
 git('fetch', 'origin', 'main');
 if (head !== git('rev-parse', 'origin/main')) throw Error('Origin advanced during build.');
-run('npx', ['wrangler', 'deploy']);
+run('pnpm', ['exec', 'wrangler', 'deploy']);

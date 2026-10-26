@@ -1,5 +1,9 @@
 # Murmur handoff
 
+## Dependency installation — 2026-10-26
+
+Use pnpm 12.14.0 and shared Node 26.12.0. Install with `pnpm install --frozen-lockfile`; `npm run` remains valid. The pnpm lock imports the existing npm lock with exact versions preserved. Overrides and native build permissions live in `pnpm-workspace.yaml`. Do not regenerate an npm lock or install a runtime per worktree. This configuration change requires full lane, unchanged raw build bytes, reviewed signed source and exact green CI; it does not deploy the app or establish game readiness.
+
 ## Current SDK source and technical delivery — 2026-10-26
 
 Signed source `154caef0ccee20950cfb7491390fcb5c6ebe8d58` adopts immutable

@@ -47,7 +47,7 @@ The unchanged artifact from signed Good Hands source `509386298dfd89026c10bc6011
 
 ## Development and delivery
 
-Use Node 24 or later with `/opt/homebrew/bin` first on PATH. Install with `npm ci`; run `npm run dev`. This host pins game edition 0.6.0, HF package 3.0.0 (Person engine 2.23.0), lab client 0.4.11 and lab kit 0.5.12. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
+Use shared Node 26.12.0 (`.node-version` and `.nvmrc`) and pnpm 12.14.0 with `/opt/homebrew/bin` first on PATH. Install with `pnpm install --frozen-lockfile`; run `npm run dev`. This host pins game edition 0.6.0, HF package 3.0.0 (Person engine 2.23.0), lab client 0.4.11 and lab kit 0.5.12. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
 
 Before each commit, run the normal lane under the shared lock:
 
@@ -56,3 +56,5 @@ node ~/code/human-framework/scripts/suite-lock.ts -- npm run check:lane
 ```
 
 App deployment uses the same wrapper around `npm run deploy`. Deploy only clean signed exact main with exact green CI. Verify the resulting live `/release.json`. Source-only docs need no deployment. See [AGENTS](AGENTS.md) for delivery rules and [HANDOFF](HANDOFF.md) for the current receipt, browser limits and remaining owner acceptance. [Design](docs/design.md) records design history; it is not a current delivery receipt. Follow the [plain-English rules](docs/lab/plain-english.md).
+
+Dependency changes use pnpm and the committed `pnpm-lock.yaml`. The npm lock was imported with exact dependency versions preserved. Do not regenerate an npm lock or install a runtime per worktree. The policy uses strict engines/peers, no hoisting, hardlinks, a 24-hour third-party release delay and an owned `@adam0white/*` exemption.
