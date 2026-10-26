@@ -1,6 +1,8 @@
 import type { Browser } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
+import { playedFirstWeek } from '../src/sim/firstweek.ts';
+import { anotherWeek, cloneState, queueInput, runToCard } from '../src/sim/game.ts';
 import { expandNotebook } from '../src/ui/notebook.ts';
 import { launchBrowser } from './browser.ts';
 
@@ -154,20 +156,34 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
 it('offers privacy beside the recording switch and yields journal room before scrolling long text', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
+    // Build the actual long journal headlessly, then render its ordinary saved notebook.
+    // Re-rendering and saving every earlier card is unrelated to this layout assertion.
+    const state = anotherWeek(playedFirstWeek(1));
+    while (state.card?.moment !== 'bus-10') {
+      if (state.phase === 'evening') queueInput(state, { kind: 'next' });
+      else {
+        runToCard(state);
+        if (state.card && state.card.moment !== 'bus-10') queueInput(state, { kind: 'quiet' });
+      }
+    }
+    await page.addInitScript((saved) => {
+      localStorage.setItem(
+        'murmur-save-v1',
+        JSON.stringify({
+          format: 'murmur-save/2',
+          version: saved.version,
+          seed: saved.seed,
+          inputs: saved.inputs,
+          state: saved,
+        }),
+      );
+    }, cloneState(state));
     await page.goto(`${url}?lab=1&seed=1`);
     await page.locator('#menu').click();
     expect(await page.locator('.menu-footer').getByRole('link', { name: 'Lab privacy' }).count()).toBe(1);
     await page.locator('#bp-close').click();
     await page.evaluate(() => (window.__murmur.fast = true));
-    await page.locator('#other-ways').click();
-    await page.locator('#second').click();
-    await page.evaluate(() => {
-      const g = window.__murmur;
-      for (let i = 0; i < 100 && g.view()?.id !== 'bus-10'; i++) {
-        if (g.state?.phase === 'evening') g.next();
-        else g.skipToCard();
-      }
-    });
+    await page.locator('#cont').click();
     expect(await page.evaluate(() => window.__murmur.view()?.id)).toBe('bus-10');
     expect((await page.locator('#journal').boundingBox())!.height).toBeLessThan(112);
   } finally {
