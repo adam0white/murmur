@@ -21,16 +21,14 @@ it('retains the complete raw states captured from12914c3 and exact restored cont
   for (const f of corpus.fixtures) {
     const s = replay(f.seed, f.inputs, f.minute, f.version);
     if (f.phase !== 'day' && s.phase === 'day') step(s);
-    expect(
-      createHash('sha256')
-        .update(canonicalPersona(cloneState(s)))
-        .digest('hex'),
-    ).toBe(f.sha256);
-    const restored = restoreState(JSON.parse(JSON.stringify(cloneState(s))));
+    // Reuse the same complete JSON snapshot for its raw hash and persisted restore.
+    const saved = canonicalPersona(cloneState(s));
+    expect(createHash('sha256').update(saved).digest('hex')).toBe(f.sha256);
+    const restored = restoreState(JSON.parse(saved));
     for (let i = 0; i < 37; i++) {
       step(s);
       step(restored);
     }
-    expect(cloneState(restored)).toEqual(cloneState(s));
+    expect(canonicalPersona(cloneState(restored))).toBe(canonicalPersona(cloneState(s)));
   }
 });
