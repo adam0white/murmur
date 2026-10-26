@@ -426,7 +426,7 @@ function title() {
       <button id="return-shelf">Continue with people saved in this browser</button><button id="held-cast">Resume an accepted chapter saved here</button><p id="return-status" class="soft small"></p>`
           : ''
       }
-      <label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
+      <label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
       <div id="new-confirm" hidden><p>Start a new game? This replaces your saved week.</p><div class="confirm-actions"><button id="confirm-new">Start new game</button><button id="cancel-new">Cancel</button></div></div>
       ${labMode ? credit() : ''}
     </div></div>`;
@@ -563,6 +563,7 @@ function title() {
 }
 
 function selectedEdition() {
+  if (document.querySelector<HTMLInputElement>('#outcomes-edition')?.checked) return '0.8.0';
   return document.querySelector<HTMLInputElement>('#next-edition')?.checked ? NEXT_VERSION : GAME_VERSION;
 }
 async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
@@ -594,7 +595,7 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   if (attempt !== loadGeneration) return;
   clearSave();
   s = next;
-  if (!useShelf || localDevelopment) s.castScope = 'local';
+  if (!useShelf || localDevelopment || version === '0.8.0') s.castScope = 'local';
   await gateContinuity(recordingState(s));
   writeSave();
   enter();

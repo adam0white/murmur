@@ -158,7 +158,7 @@ function simulationOnly(s: GameState) {
 }
 export async function validateCanonicalRun(json: GameState): Promise<GameState> {
   assertNotebookState(json);
-  if ((json.version !== CAST_VERSION && json.version !== '0.7.0') || !json.cast)
+  if ((json.version !== CAST_VERSION && json.version !== '0.7.0' && json.version !== '0.8.0') || !json.cast)
     throw Error('This notebook uses an older cast edition. Start fresh.');
   if (json.castChapter) await validateCastChapter(json.castChapter, json.seed);
   const rebuilt = replay(

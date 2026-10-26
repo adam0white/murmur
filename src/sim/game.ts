@@ -66,6 +66,7 @@ import {
 } from './listening.ts';
 import { LAST_DAY, momentById, momentsOf, WEEK_TWO_LAST_DAY } from './moments.ts';
 import { releaseOneCastDeparture } from './one-cast.ts';
+import { finishOutcome, OUTCOMES_VERSION, outcomeThreads } from './outcomes.ts';
 import * as weekTwo from './week2.ts';
 import { thirdWeekHerLine, thirdWeekNote, thirdWeekThreads } from './week3.ts';
 
@@ -122,7 +123,8 @@ const hasWeekTwo = (s: GameState) =>
   s.version === WEEK_TWO_EDITION ||
   s.version === '0.4.1' ||
   s.version === GAME_VERSION ||
-  s.version === NEXT_VERSION;
+  s.version === NEXT_VERSION ||
+  s.version === OUTCOMES_VERSION;
 export const weekOf = (day: number) => Math.floor((day - 1) / 7) + 1;
 export const weekdayOf = (day: number) => ((day - 1) % 7) + 1;
 const WINDOW = 5;
@@ -172,7 +174,7 @@ export function newGame(
   plainEnglish = true,
 ): GameState {
   if (!isEdition(version)) throw new Error(`Unknown Murmur edition: ${version}`);
-  if (version === NEXT_VERSION && chapter)
+  if ((version === NEXT_VERSION || version === OUTCOMES_VERSION) && chapter)
     throw Error('The three-week edition requires an explicit fresh local start.');
   if (chapter?.resume) {
     const resumed = restoreState(chapter.resume.source);
@@ -184,14 +186,14 @@ export function newGame(
   if (chapter && (version !== CAST_VERSION || chapter.edition !== CAST_VERSION || chapter.seed !== seed))
     throw Error('Wrong pinned cast chapter.');
   const cast =
-    version === CAST_VERSION || version === NEXT_VERSION
+    version === CAST_VERSION || version === NEXT_VERSION || version === OUTCOMES_VERSION
       ? chapter
         ? cloneCast(chapter.initial)
         : freshCast(seed, plainEnglish)
       : undefined;
   const person = cast?.people.dilan ?? makeDilan(seed, plainEnglish);
   if (listens({ version })) configureListening(person);
-  if (version === NEXT_VERSION)
+  if (version === NEXT_VERSION || version === OUTCOMES_VERSION)
     enablePromptings(person, {
       reading: 'inclination',
       readingSource: 'host:dilan',
@@ -249,7 +251,7 @@ export function ctxOf(s: GameState): Ctx {
         practice: (() => {
           const r = p.promptings?.responses.find((r) => r.id === ph.id);
           return r
-            ? s.version === NEXT_VERSION
+            ? s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION
               ? practiceAt(r, p.now, PRACTICE_HALF_LIFE_DAYS)
               : r.practice
             : 0;
@@ -262,7 +264,7 @@ export function ctxOf(s: GameState): Ctx {
 
 /** The card's moment, if one is open. */
 export const openMoment = (s: GameState): Moment | null =>
-  s.card ? castMoment(s, momentById(s.card.moment)) : null;
+  s.card ? castMoment(s, momentById(s.card.moment, s.version)) : null;
 
 export function optionsOf(s: GameState, m: Moment): Opt[] {
   const c = ctxOf(s);
@@ -290,7 +292,11 @@ function affordanceOf(s: GameState, o: Opt, m: Moment): Affordance {
   if (o.norms) aff.norms = o.norms.map((n) => ({ ...n }));
   if (o.followedBy) aff.followedBy = o.followedBy.map((f) => ({ ...f }));
   const keeps =
-    s.version === NEXT_VERSION && m.id === 'dinner-3' && o.action === 'dinner' ? ['aylin', 'mum'] : o.keeps;
+    (s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION) &&
+    m.id === 'dinner-3' &&
+    o.action === 'dinner'
+      ? ['aylin', 'mum']
+      : o.keeps;
   if (keeps) {
     const ids = keeps
       .map((k) => pendingId(p, LABEL[k as keyof typeof LABEL] ?? k))
@@ -484,7 +490,7 @@ function apply(s: GameState, inp: Input) {
   }
   if (inp.kind === 'say') {
     if (s.phase !== 'day' || !s.card) return;
-    const m = castMoment(s, momentById(s.card.moment));
+    const m = castMoment(s, momentById(s.card.moment, s.version));
     if (!optionsOf(s, m).some((o) => o.id === inp.option)) return;
     resolve(s, { option: inp.option, insist: inp.insist === true });
     return;
@@ -496,7 +502,8 @@ function apply(s: GameState, inp: Input) {
   if (inp.kind === 'next') {
     if (
       s.phase === 'end' &&
-      ((s.day === LAST_DAY && hasWeekTwo(s)) || (s.day === WEEK_TWO_LAST_DAY && s.version === NEXT_VERSION))
+      ((s.day === LAST_DAY && hasWeekTwo(s)) ||
+        (s.day === WEEK_TWO_LAST_DAY && (s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION)))
     ) {
       startWeekTwo(s);
       return;
@@ -518,7 +525,7 @@ export function step(s: GameState): void {
   } else {
     const c = ctxOf(s);
     while (s.queue.length > 0) {
-      const m = castMoment(s, momentById(s.queue[0] as string));
+      const m = castMoment(s, momentById(s.queue[0] as string, s.version));
       if (m.when && !m.when(ctxOf(s))) {
         if (getsUpAlone(s, m)) {
           const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(ctxOf(s)) : m.at);
@@ -543,7 +550,7 @@ export function step(s: GameState): void {
       endDay(s);
       return;
     }
-    const m = castMoment(s, momentById(id));
+    const m = castMoment(s, momentById(id, s.version));
     const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(c) : m.at);
     if (s.minute >= at && s.minute >= s.person.now) open(s, m);
   }
@@ -614,7 +621,7 @@ function reasonOf(c: Ctx, v: Verdict, pullWay: boolean): string {
 function resolve(s: GameState, said: { option: string; insist: boolean } | null) {
   const card = s.card;
   if (!card) return;
-  const m = momentById(card.moment);
+  const m = momentById(card.moment, s.version);
   const p = s.person;
   const c = ctxOf(s);
   if (p.now < s.minute) tick(p, s.minute);
@@ -712,7 +719,8 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
       ((s.version !== '0.4.2' &&
         s.version !== '0.5.0' &&
         s.version !== '0.6.0' &&
-        s.version !== NEXT_VERSION) ||
+        s.version !== NEXT_VERSION &&
+        s.version !== OUTCOMES_VERSION) ||
         chosen.phrase?.id === phrase.id)
     ) {
       answer.turnedAlone = phrase.text;
@@ -761,8 +769,8 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
     tick(p, a.endsAt);
     finish(p, outcomeOf(a, chosen, c));
     completed = true;
-    encounterLine = finishCastEncounter(s, m, chosen);
-    if (chosen.alsoDoes && s.version !== NEXT_VERSION)
+    encounterLine = finishOutcome(s, m, chosen) ?? finishCastEncounter(s, m, chosen);
+    if (chosen.alsoDoes && s.version !== NEXT_VERSION && s.version !== OUTCOMES_VERSION)
       hostAct(
         p,
         offer(chosen.alsoDoes.action, { duration: chosen.alsoDoes.duration, placeId: m.place }),
@@ -772,12 +780,12 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
   say(
     s,
     'narrator',
-    s.version === NEXT_VERSION && !completed
+    (s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION) && !completed
       ? 'She could not start that action. It remains undone.'
       : (encounterLine ?? text(chosen.done, c)),
   );
   if (answer.turnedAlone) say(s, 'dilan', `${answer.turnedAlone}.`);
-  if (s.version !== NEXT_VERSION || completed) m.after?.(s, chosen.id);
+  if ((s.version !== NEXT_VERSION && s.version !== OUTCOMES_VERSION) || completed) m.after?.(s, chosen.id);
   if (m.id.startsWith('bed-')) {
     let bed = p.now + (chosen.id === 'write' ? 10 : chosen.id === 'scroll' ? 20 : 0);
     if (s.flags.coffee === s.day) bed += 50;
@@ -792,18 +800,24 @@ function learnPhrase(s: GameState, ph: NonNullable<Opt['phrase']>, cue?: string)
   s.phrases.push({ id: ph.id, text: ph.text });
   const held: { id: string; kind: PromptingResponse['kind']; practice?: number; cue?: string }[] = (
     p.promptings?.responses ?? []
-  ).map((r) => ({ id: r.id, kind: r.kind, ...(s.version === NEXT_VERSION && r.cue ? { cue: r.cue } : {}) }));
+  ).map((r) => ({
+    id: r.id,
+    kind: r.kind,
+    ...((s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION) && r.cue ? { cue: r.cue } : {}),
+  }));
   held.push({
     id: ph.id,
     kind: ph.kind,
     practice: 0.1,
-    ...(s.version === NEXT_VERSION && cue ? { cue } : {}),
+    ...((s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION) && cue ? { cue } : {}),
   });
   enablePromptings(p, {
     reading: 'inclination',
     readingSource: 'host:dilan',
     responses: held,
-    ...(s.version === NEXT_VERSION ? { practiceHalfLifeDays: PRACTICE_HALF_LIFE_DAYS } : {}),
+    ...(s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION
+      ? { practiceHalfLifeDays: PRACTICE_HALF_LIFE_DAYS }
+      : {}),
   });
 }
 
@@ -891,7 +905,10 @@ function routine(s: GameState): Block[] {
   // Friday of week two: leaving at the close card (17:10) catches the 17:15 bus, home by 17:40.
   const earlyBus = s.day === 12 && s.flags.w2?.earlyBus === true;
   // Week three ends depot work only after a completed closing choice. The commute still takes 25 minutes.
-  const closeAt = s.version === NEXT_VERSION && s.day === 19 ? s.flags.w3?.closeAt : undefined;
+  const closeAt =
+    (s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION) && s.day === 19
+      ? s.flags.w3?.closeAt
+      : undefined;
   if (typeof closeAt === 'number') {
     const busAt = Math.max(t(17, 20), closeAt);
     blocks.push(work(t(13, 5), t(17, 10)));
@@ -983,7 +1000,11 @@ function hostAct(p: Person, aff: Affordance, at: number, needs?: Record<string, 
 function endDay(s: GameState) {
   const p = s.person;
   s.card = null;
-  if (s.day === LAST_DAY || s.day === WEEK_TWO_LAST_DAY || (s.version === NEXT_VERSION && s.day === 20)) {
+  if (
+    s.day === LAST_DAY ||
+    s.day === WEEK_TWO_LAST_DAY ||
+    ((s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION) && s.day === 20)
+  ) {
     s.final = finalPage(s);
     s.phase = 'end';
     return;
@@ -1009,7 +1030,7 @@ function fadePhrases(s: GameState) {
 
 function nextDay(s: GameState) {
   const p = s.person;
-  if (s.version !== NEXT_VERSION) fadePhrases(s);
+  if (s.version !== NEXT_VERSION && s.version !== OUTCOMES_VERSION) fadePhrases(s);
   const bed = Math.max(p.now, s.flags.bedAt ?? p.now);
   const wake = dayStart(s.day + 1) + WAKE - 1;
   if (p.now < bed) tick(p, bed);
@@ -1106,6 +1127,7 @@ function aboutYou(s: GameState): string {
 }
 
 function herLine(s: GameState): string {
+  if (s.version === OUTCOMES_VERSION && weekOf(s.day) === 3) return outcomeThreads(s).join(' ');
   if (s.version === NEXT_VERSION && weekOf(s.day) === 3) return thirdWeekHerLine(s);
   if (weekOf(s.day) === 2) return weekTwo.weekTwoHerLine(s) || `${DAY_NAMES[s.day]} is over.`;
   const f = s.flags;
@@ -1196,7 +1218,7 @@ function finalPage(s: GameState): Final {
   const pages = s.pages.filter((pg) => weekOf(pg.day) === weekOf(s.day));
   const first = pages[0]?.hands ?? { you: 0.45, pull: 0.62 };
   const unasked = [...new Set(pages.flatMap((pg) => pg.turnedAlone))];
-  const sent = s.flags.sent ?? 'delete';
+  const sent = s.version === OUTCOMES_VERSION && weekOf(s.day) === 3 ? 'kept' : (s.flags.sent ?? 'delete');
   const line =
     sent === 'send'
       ? 'Mum replied with a voice note eleven minutes long.'
@@ -1206,13 +1228,17 @@ function finalPage(s: GameState): Final {
   return {
     note:
       weekOf(s.day) === 3
-        ? String(s.flags.w3?.note ?? thirdWeekNote(ctxOf(s)))
+        ? s.version === OUTCOMES_VERSION
+          ? outcomeThreads(s).join(' ')
+          : String(s.flags.w3?.note ?? thirdWeekNote(ctxOf(s)))
         : weekOf(s.day) === 2
           ? String(s.flags.w2?.note ?? '')
           : voiceNote(s),
     threads:
       weekOf(s.day) === 3
-        ? thirdWeekThreads(s)
+        ? s.version === OUTCOMES_VERSION
+          ? outcomeThreads(s)
+          : thirdWeekThreads(s)
         : weekOf(s.day) === 2
           ? weekTwo.weekTwoThreads(s)
           : threadsOf(s),
@@ -1237,7 +1263,8 @@ export function canAnotherWeek(s: GameState): boolean {
   return (
     s.phase === 'end' &&
     listens(s) &&
-    (s.day === LAST_DAY || (s.version === NEXT_VERSION && s.day === WEEK_TWO_LAST_DAY))
+    (s.day === LAST_DAY ||
+      ((s.version === NEXT_VERSION || s.version === OUTCOMES_VERSION) && s.day === WEEK_TWO_LAST_DAY))
   );
 }
 
@@ -1380,7 +1407,7 @@ export function nextCardAt(s: GameState): number | null {
   if (s.phase !== 'day' || s.card) return null;
   const c = ctxOf(s);
   for (const id of s.queue) {
-    const m = castMoment(s, momentById(id));
+    const m = castMoment(s, momentById(id, s.version));
     if (m.when && !m.when(c)) continue;
     const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(c) : m.at);
     return Math.max(at, s.person.now);

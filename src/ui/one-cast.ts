@@ -96,7 +96,8 @@ function requireReturnEnvelope(incoming: PersonaEnvelope): void {
 export async function validateRun(json: GameState): Promise<GameState> {
   assertNotebookState(json);
   if (!json || !Array.isArray(json.inputs)) throw new Error('Not a notebook run.');
-  if (json.version === '0.6.0' || json.version === '0.7.0') return validateCanonicalRun(json);
+  if (json.version === '0.6.0' || json.version === '0.7.0' || json.version === '0.8.0')
+    return validateCanonicalRun(json);
   if (json.personaHead) await validatePersona(json.personaHead);
   let rebuilt: GameState;
   if (json.returnChapter) {

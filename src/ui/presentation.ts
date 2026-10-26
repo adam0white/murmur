@@ -77,7 +77,7 @@ export function cardThought(s: GameState, view: CardView): string | undefined {
   const t = s.thoughts?.findLast((t) => recallOf(t) === view.recalled);
   if (!t || !s.card) return;
   return t.surfacedAt === s.card.openedAt
-    ? `On ${DAY_NAMES[momentById(t.moment).day]}, you said ${quotedWords(t.ink, true)}`
+    ? `On ${DAY_NAMES[momentById(t.moment, s.version).day]}, you said ${quotedWords(t.ink, true)}`
     : undefined;
 }
 

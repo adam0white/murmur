@@ -166,7 +166,7 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
       s.person.lexicon?.plainEnglish ?? false,
     );
     if (listens(s)) {
-      const chosen = optionsOf(before, momentById(a.moment)).find((o) => o.id === a.chosen);
+      const chosen = optionsOf(before, momentById(a.moment, before.version)).find((o) => o.id === a.chosen);
       if (!chosen) return a.says;
       if (a.insisted) return a.says;
       const c = ctxOf(before);

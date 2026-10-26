@@ -1,4 +1,5 @@
 import { CAST_MOMENTS, CAST_VERSION } from './canonical-cast.ts';
+import { OUTCOME_MOMENTS } from './outcomes.ts';
 /**
  * The week, as moments. Content only: scene lines, the pull's lines, and what Dilan could do. Every tempting
  * option carries a `temptation` tag and a norm from HF's own catalog, so HF notices it as a prompt; options the
@@ -829,7 +830,11 @@ const wednesday: Moment[] = [
     at: at(19, 45),
     place: 'aylin',
     scene: (c) =>
-      (c.version === '0.4.2' || c.version === '0.5.0' || c.version === '0.6.0' || c.version === '0.7.0') &&
+      (c.version === '0.4.2' ||
+        c.version === '0.5.0' ||
+        c.version === '0.6.0' ||
+        c.version === '0.7.0' ||
+        c.version === '0.8.0') &&
       c.flags.route
         ? 'Dilan is in Aylin’s kitchen. She is fifteen minutes late after finishing the extra route. Aylin has saved her some dinner. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”'
         : 'Dilan is in Aylin’s kitchen. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”',
@@ -1396,15 +1401,50 @@ export const MOMENTS: Moment[] = [
 /** The last day of week one. Week two (edition 0.4.0) runs days 8-13; day 7 is an offstage Sunday. */
 export const LAST_DAY = 6;
 export const WEEK_TWO_LAST_DAY = 13;
-export const momentById = (id: string): Moment => {
-  const m = [...MOMENTS, ...CAST_MOMENTS, FRIDAY_HANDOVER, ...WEEK_THREE].find((x) => x.id === id);
+export const momentById = (id: string, version?: string): Moment => {
+  const m = [...MOMENTS, ...CAST_MOMENTS, FRIDAY_HANDOVER, ...WEEK_THREE, ...OUTCOME_MOMENTS].find(
+    (x) => x.id === id,
+  );
   if (!m) throw new Error(`no moment ${id}`);
-  return m;
+  // Queue entries retain IDs. Resolve the authored0.8 replacement at every later use.
+  // Other editions keep the exact original object and lookup path.
+  return version === '0.8.0' ? (momentsOf(m.day, version).find((x) => x.id === id) ?? m) : m;
 };
 export const momentsOf = (day: number, version?: string): Moment[] => [
-  ...(version === CAST_VERSION || version === '0.7.0' ? CAST_MOMENTS.filter((m) => m.day === day) : []),
+  ...(version === CAST_VERSION || version === '0.7.0' || version === '0.8.0'
+    ? CAST_MOMENTS.filter((m) => m.day === day)
+    : []),
   ...MOMENTS.filter((m) => m.day === day).map((m) =>
-    version === '0.7.0' && m.id === 'slump-5' ? FRIDAY_HANDOVER : m,
+    (version === '0.7.0' || version === '0.8.0') && m.id === 'slump-5' ? FRIDAY_HANDOVER : m,
   ),
   ...(version === '0.7.0' ? WEEK_THREE.filter((m) => m.day === day) : []),
+  ...(version === '0.8.0'
+    ? [
+        ...WEEK_THREE.filter((m) => m.day === day && /^(alarm|bus|bed)-/.test(m.id)).map((m) =>
+          m.id.startsWith('alarm-')
+            ? m
+            : m.id.startsWith('bus-')
+              ? {
+                  ...m,
+                  at: 20 * 60,
+                  scene:
+                    'Her planned work is over for the evening. On the bus, Dilan has time to call Mum or look at her phone.',
+                  options: (typeof m.options === 'function' ? [] : m.options).map((o) =>
+                    o.id === 'call'
+                      ? {
+                          ...o,
+                          done: 'Dilan called Mum and told her about her day. She kept the other people’s private details to herself.',
+                        }
+                      : o,
+                  ),
+                }
+              : {
+                  ...m,
+                  scene:
+                    'Dilan puts her bag down. She can write about what she actually did, or go to sleep.',
+                },
+        ),
+        ...OUTCOME_MOMENTS.filter((m) => m.day === day),
+      ].sort((a, b) => (a.at as number) - (b.at as number))
+    : []),
 ];
