@@ -29,14 +29,16 @@ The exact `?lab=1` query enables lab tools: run loading, downloading, seed contr
 
 Fresh play prepares applicable people together and admits the whole cast atomically. Unsupported, old or closed source heads refuse the start and offer fresh local play. Parent conflicts require an explicit alternate branch for the selected person. Local source archives and exact replayed notebooks are required for native returns; an imported file retains file origin through reload.
 
-| Receiving route in this source | Engine admission                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------------------ |
-| Murmur’s own canonical chapter | Retained 2.17.0/2.21.0 and current 2.23.0                                            |
-| Neighbours Ece (`noor`)        | Exact `neighbours-cast-1` / `neighbours-cast/1`; retained engines and current 2.23.0 |
-| Hearsay Dilan                  | Exact `hearsay-cast-6` / `hearsay-cast/1`; retained engines and current 2.23.0       |
-| Good Hands Aylin               | Exact `goodhands-6` / `goodhands-agency/1`; retained 2.17.0/2.21.0 only              |
+| Receiving route in this source | Engine admission                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| Murmur’s own canonical chapter | Retained 2.17.0/2.21.0 and current 2.23.0                                             |
+| Neighbours Ece (`noor`)        | Exact `neighbours-cast-1` / `neighbours-cast/1`; retained engines and current 2.23.0  |
+| Hearsay Dilan                  | Exact `hearsay-cast-6` / `hearsay-cast/1`; retained engines and current 2.23.0        |
+| Good Hands Aylin               | Exact `goodhands-6` / `goodhands-agency/1`; retained 2.17.0/2.21.0 and literal 2.23.0 |
 
-These are finite adapters, not general compatibility promises. Identity, calendar, duties, checkpoint and provenance checks still apply. Current Good Hands 2.23 receiving is an unshipped V3 follow-up. A Saturday departure can pause supported unfinished plans through an explicit replayed choice; pausing does not complete them. The ending offers a Hearsay visit. Fixture admission and generated source replay do not prove an ordinary played cross-host ownership journey.
+These are finite adapters, not general compatibility promises. Good Hands Aylin requires `goodhands-6`, `goodhands-agency/1`, `goodhands-agency-calendar/1` and role `aylin`. Its proven foreign engine is literal `2.23.0`; Murmur’s own current engine uses `ENGINE_VERSION`. This does not admit every 2.23 source or another role. Identity, checkpoint, norm, skill, body, calendar, duty and provenance checks still apply. A Saturday departure can pause supported unfinished plans through an explicit replayed choice; pausing does not complete them. The ending offers a Hearsay visit.
+
+The unchanged artifact from signed Good Hands source `509386298dfd89026c10bc6011d4f29e3323fb0c` has independent full-notebook, raw-state, RNG, checkpoint and production-builder replay proof. Retained claims, complete receiving replay, owned native re-entry and missing-notebook refusal have in-memory controls. These do not prove shared-server ownership, a human cross-host journey or a round trip.
 
 ## Development and delivery
 

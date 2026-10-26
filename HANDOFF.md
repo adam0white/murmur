@@ -2,11 +2,27 @@
 
 ## Remaining
 
-- V3 owns the finite signed Good Hands engine 2.23 Aylin receiver follow-up and four unused test-import warning groups. Neither is shipped in the source below.
+- Games-deferred owns the future richer eight-episode life mapping and SDK client 0.4.11 / kit 0.5.12 adoption. Neither is shipped in the source below. The host still pins client 0.4.10 / kit 0.5.11.
 - Games-deferred/plain4 own gameplay, design and Deferred work, including repeated Friday coffee and phrase practice. This documentation pass does not close those asks.
 - Adam accepts the fiction by playing. Owner acceptance remains 2026-11-03. Lab-panel rounds on HF3 builds are allowed under the playtest director; this docs worker runs no rounds. Friends’ playtests and Show HN remain paused.
 
 ## Current source and delivered receipt — 2026-10-25
+
+Source `80b3993a031f442d4bb7b20941f9a75dcd424be8` is edition 0.6.0, HF package 3.0.0, Person engine 2.23.0, client 0.4.10 and kit 0.5.11. TypeScript is 7.0.2; support requires TypeScript 7 or later. See [README](README.md) for play, storage and finite continuation routes.
+
+The finite Good Hands Aylin receiver is delivered. Actual signed producer `509386298dfd89026c10bc6011d4f29e3323fb0c` is admitted under `goodhands-6` / `goodhands-agency/1` / `goodhands-agency-calendar/1` / role `aylin` / literal engine `2.23.0`. All identity, checkpoint, norm, skill, body, calendar, duty and provenance guards remain. Foreign engine admission is distinct from Murmur’s own current `ENGINE_VERSION`; it is not general admission for other 2.23 sources or roles.
+
+The unchanged source artifact has independent full-notebook, raw-state, RNG, checkpoint and production-builder replay proof. Retained claims, complete receiving replay, owned native re-entry and missing-notebook refusal are proved in memory. No shared-server CAS, human receiving journey or round trip is claimed.
+
+The final receiver report records signed source, exact green CI `40246685141`, normal guarded deployment `0ec597c8-a8eb-424b-97d0-dea0afab3eeb`, matching live edition/HF/source with `dirty:false`, and eight public assets byte-exact against the clean build. The final normal lane passed 271 tests in 29 files in 309.10 seconds. Lint and typecheck exited 0. Four unused test-import warning groups were removed; 98 existing warnings remain. One independent medium Codex review found a test-only P2: a refusal fixture lacked valid importance. The corrected fixture reaches the specific source-duty refusal; its focused 10 tests passed.
+
+UI and CSS did not change. The receiver delivery reused the bounded Chrome/WebKit receipts for `92cdebd9fe73d59ccf40c7bdcbd66e8ed310b27e`, described below; it ran no duplicate browser round. This documentation delta needs no app deployment.
+
+Authoritative receiver evidence: `~/code/.lab-scratch/v3/murmur-aylin/report.md`, `STATUS` and `docsweb-facts.md`. Ongoing acceptance receipts: `~/code/.lab-scratch/cast/murmur.md`. Docs delta review and integration receipts: `~/code/.lab-scratch/docsweb/murmur-delta-report.md`. Do not edit the central HF ledger; route proposals to `~/code/.lab-scratch/cast/murmur-ledger.md`.
+
+## Previous delivery receipt — 2026-10-25, before the Aylin receiver follow-up
+
+The following receipt describes the earlier source and browser evidence. The current source section above supersedes its source and delivery values.
 
 Source `92cdebd9fe73d59ccf40c7bdcbd66e8ed310b27e` is edition 0.6.0, HF package 3.0.0, Person engine 2.23.0, client 0.4.10 and kit 0.5.11. The immutable local SDK artifacts are the 10/11 pair; publication of newer artifacts elsewhere is not host adoption. TypeScript is 7.0.2; support requires TypeScript 7 or later. See [README](README.md) for play, storage and finite continuation routes.
 
