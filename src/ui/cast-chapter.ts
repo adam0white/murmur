@@ -344,7 +344,7 @@ export function automaticCastCheckpoint(s: GameState | null, save: () => void): 
       const role = roleOf(c.castId),
         p = s.cast?.people[role],
         head = s.castHeads?.[c.castId];
-      if (!p || s.fileHistory) continue;
+      if (!p) continue;
       const scope = s.castHeadScopes?.[c.castId] ?? s.castScope;
       if (scope !== 'shared') continue;
       if (!p.body.alive && head && !head.terminal) {

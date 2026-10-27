@@ -237,4 +237,10 @@ it('automatically publishes an eligible owned living chapter once and leaves loc
   s.castHeadScopes = {};
   await automaticCastCheckpoint(s, () => {});
   expect(state.publish).toHaveBeenCalledTimes(writes);
+  // A deliberately owned alternate branch applies only to its selected person.
+  s.castHeadScopes[castId] = 'shared';
+  queueInput(s, { kind: 'cast-pause', role: 'dilan' });
+  await automaticCastCheckpoint(s, () => {});
+  expect(state.publish).toHaveBeenCalledTimes(writes + 1);
+  expect(state.publish.mock.calls.at(-1)?.[0].castId).toBe(castId);
 }, 15000);
