@@ -413,7 +413,7 @@ function title() {
     <p>You are one of the voices in Dilan’s head. Suggest what she should do from Monday to Saturday. Your words can change her choices. On Saturday, she looks back at her week.</p><p>${esc(castIntroduction())}</p>
     ${toast ? `<div class="${failureRetry ? 'start-error' : 'toast'}" role="alert"><p>${esc(toast)}</p>${failureRetry ? '<div class="failure-actions"><button id="start-retry">Try again</button><button id="start-feedback">Feedback</button></div>' : ''}</div>` : ''}
     </div><div class="other-ways-wrap"><button class="row" id="other-ways">Other ways to begin <span aria-hidden="true">▸</span></button></div>
-    <footer class="title-spacer" id="title-spacer"></footer>
+    <div class="title-spacer" id="title-spacer"></div>
     <div class="page-actions actions">
       ${saved ? `<p class="soft small">${esc(save?.state ? savedLocation(saved) : 'This older save keeps your answers, but not the exact saved minute. Resume opens its next choice.')}</p><button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved.day]?.slice(0, 3) ?? '')} ${clock(saved.minute)}</button>` : ''}
       <label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>

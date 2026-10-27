@@ -1032,7 +1032,15 @@ summary {
   font-size: 40px;
   margin: 20px 0 0;
 }
+/* The cover has one scrolling flow; prose must not shrink behind later rows. */
+.title {
+  overflow-y: auto;
+}
+.title > * {
+  flex: 0 0 auto;
+}
 .title .page-body {
+  overflow: visible;
   gap: 16px;
 }
 .title .subtitle {
@@ -1046,11 +1054,12 @@ summary {
   min-height: 44px;
 }
 .title .title-spacer {
-  flex: 1;
-  min-height: 0;
+  width: 100%;
+  max-width: 672px;
+  margin: 0 auto;
 }
-.title .title-spacer:has(.lk-telemetry-notice) {
-  flex: 0 0 auto;
+.title .title-spacer:empty {
+  display: none;
 }
 .other-ways-wrap {
   padding: 0 16px;
@@ -1236,6 +1245,9 @@ summary {
   height: 44px;
   padding: 0;
   border: 0;
+}
+.backpage > * {
+  flex-shrink: 0;
 }
 .backpage .row {
   min-height: 52px;
@@ -1476,7 +1488,7 @@ button:disabled {
   .other-ways-wrap {
     width: 100%;
     max-width: 672px;
-    margin: auto;
+    margin: 0 auto;
   }
   .backpage-wrap,
   .info-wrap {
@@ -1694,27 +1706,20 @@ body {
 .failure-actions button {
   flex: 1;
 }
-.title:has(.start-error) .page-body > p {
-  display: none;
-}
-.title:has(.start-error) .title-spacer {
-  flex: 0 0 auto;
-}
 
 .menu-links {
   display: flex;
   align-items: baseline;
-  gap: 16px;
-  position: relative;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.menu-links details[open] {
+  flex-basis: 100%;
 }
 .menu-links summary {
   cursor: pointer;
 }
 .debug-content {
-  position: absolute;
-  inset: auto 0 100%;
-  max-height: 50vh;
-  overflow: auto;
   padding: 12px;
   background: var(--paper);
   border: 1px solid var(--rope);

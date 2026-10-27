@@ -323,3 +323,48 @@ it('opts into sharing through one unchecked checkbox and sends the note', async 
     await page.close();
   }
 }, 30000);
+
+for (const viewport of [
+  { width: 375, height: 812 },
+  { width: 1280, height: 800 },
+]) {
+  it(`keeps the whole title and expanded Debug readable at ${viewport.width}`, async () => {
+    const page = await browser.newPage({ viewport });
+    try {
+      await page.goto(url);
+      await page.locator('#new').waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      // Check actual painted text, not merely its presence in the DOM.
+      for (const paragraph of await page.locator('.title .page-body > p').all()) {
+        await paragraph.scrollIntoViewIfNeeded();
+        expect(
+          await paragraph.evaluate((el) => {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            return [...range.getClientRects()].every((rect) => {
+              const x = rect.x + rect.width / 2,
+                y = rect.y + rect.height / 2;
+              return y >= 0 && y < innerHeight && el.contains(document.elementFromPoint(x, y));
+            });
+          }),
+        ).toBe(true);
+      }
+      await page.locator('#other-ways').scrollIntoViewIfNeeded();
+      const cast = await page.locator('.title .page-body > p').last().boundingBox();
+      const other = await page.locator('#other-ways').boundingBox();
+      expect(other!.y).toBeGreaterThanOrEqual(cast!.y + cast!.height);
+      await page.locator('#new').click();
+      await page.locator('#menu').click();
+      const resumeBefore = await page.locator('#bp-close').evaluate((el) => (el as HTMLElement).offsetTop);
+      await page.getByText('Debug', { exact: true }).click();
+      expect(await page.locator('#bp-close').evaluate((el) => (el as HTMLElement).offsetTop)).toBeGreaterThan(
+        resumeBefore,
+      );
+      const download = page.waitForEvent('download');
+      await page.locator('#bp-export').click();
+      expect((await download).suggestedFilename()).toMatch(/^two-voices-.*\.json$/);
+    } finally {
+      await page.close();
+    }
+  }, 30000);
+}

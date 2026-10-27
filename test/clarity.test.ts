@@ -41,6 +41,24 @@ async function firstChoice(page: Page, version = '0.2.1') {
 async function documentTargets(page: Page, height: number) {
   // Font loading can move the footer between separate protocol reads. Take all hitboxes in one layout.
   await page.evaluate(() => document.fonts.ready);
+  // The title is a scrolling document. Every control must be reachable and unobscured.
+  if (await page.locator('.title').count()) {
+    for (const target of await page.locator('button:visible, a:visible, summary:visible').all()) {
+      await target.scrollIntoViewIfNeeded();
+      const box = await target.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+      expect(box?.y).toBeGreaterThanOrEqual(0);
+      expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(height);
+      expect(
+        await target.evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+        }),
+      ).toBe(true);
+    }
+    return;
+  }
   const boxes = await page.locator('button:visible, a:visible, summary:visible').evaluateAll((els) =>
     els.map((el) => {
       const box = el.getBoundingClientRect();
