@@ -30,11 +30,11 @@ clearing one sends nothing and leaves your edited note unchanged. **Submit** com
 the selected words, optional verdict and current note. This is source behavior; its
 CI repair and live-delivery status are recorded in HANDOFF.
 
-The exact `?lab=1` query enables lab tools: run loading, downloading, seed controls, chapter/history/passport controls and pace settings. Slow changes gaps between choices, not the 64-second choice window. Downloaded runs preserve pinned admitted inputs for deterministic replay. Current exports require exact replay validation; incompatible older files may refuse with a start-fresh message. Loading never claims the latest shared heads.
+Gameplay is public. Other ways to begin offers a week-two start. The title offers the three-week and outcomes editions. The menu offers pace, New game and Download this run. Slow changes gaps between choices, not the 64-second choice window. Debug starts collapsed beside Lab privacy and contains seed, provenance, run loading and replay verification. Cross-game people carry over automatically through the central shelf; cast controls live there. Downloaded runs preserve pinned inputs. Loading validates exact replay and never claims the latest shared heads.
 
 ## Supported continuation routes
 
-Fresh play prepares applicable people together and admits the whole cast atomically. Unsupported, old or closed source heads refuse the start and offer fresh local play. Parent conflicts require an explicit alternate branch for the selected person. Local source archives and exact replayed notebooks are required for native returns; an imported file retains file origin through reload.
+Fresh play prepares applicable people together and admits the whole cast atomically. Unsupported, old or closed source heads refuse the start. Inspect and manage those people on the central shelf. Parent conflicts require an explicit alternate branch for the selected person. Local source archives and exact replayed notebooks are required for native returns; an imported file retains file origin through reload.
 
 | Receiving route in this source | Engine admission                                                                      |
 | ------------------------------ | ------------------------------------------------------------------------------------- |
