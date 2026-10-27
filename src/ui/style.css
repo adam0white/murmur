@@ -617,6 +617,24 @@ button:focus-visible {
 .phrase {
   display: inline-block;
 }
+.standing {
+  border-left: 4px solid var(--moss);
+  padding: 4px 0 4px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.standing-slipped {
+  border-left-color: var(--rope);
+}
+.standing-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 18px;
+}
+.standing-slipped .standing-title {
+  color: var(--rope);
+}
 .voicenote {
   border: 1.5px solid var(--ink);
   border-radius: 12px 10px 11px 9px;

@@ -35,6 +35,7 @@ import {
   weekOf,
 } from '../sim/game.ts';
 import { departureReleaseDescription } from '../sim/one-cast.ts';
+import { weekStanding } from '../sim/standing.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
 import { canonicalPersonControls, freshCanonicalWeek, heldCanonicalWeek } from './cast-chapter.ts';
 import { continuityControls, gateContinuity, installContinuity, invalidateContinuity } from './continuity.ts';
@@ -427,7 +428,7 @@ function title() {
       <button id="return-shelf">Continue with people saved in this browser</button><button id="held-cast">Resume an accepted chapter saved here</button><p id="return-status" class="soft small"></p>`
           : ''
       }
-      <label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
+      ${labMode ? '<label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label>' : ''}<button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
       <div id="new-confirm" hidden><p>Start a new game? This replaces your saved week.</p><div class="confirm-actions"><button id="confirm-new">Start new game</button><button id="cancel-new">Cancel</button></div></div>
       ${labMode ? credit() : ''}
     </div></div>`;
@@ -1198,6 +1199,8 @@ function ending() {
   screen = 'end';
   lab.screen('ending');
   lab.milestone('ending reached');
+  const standing = weekStanding(s);
+  if (standing) lab.milestone(`week ${standing.kind}`);
   app.innerHTML = `${header()}<div class="page notebook">
     ${toast ? `<div class="toast">${esc(toast)}</div>` : ''}
     <div class="page-body">${finalHtml(f)}
@@ -1281,8 +1284,10 @@ function finalHtml(f: Final): string {
   const unasked = f.unasked.map((x) => `<p class="notebook-text her">${esc(x)}.</p>`).join('');
   const finalInput = s && !secondWeek ? finalInputWords(s, records()) : undefined;
   const sentWord = f.sent === 'send' ? 'sent' : f.sent === 'call' ? 'called her instead' : 'deleted';
+  const standing = s ? weekStanding(s) : null;
   return `<h2 class="notebook-text dayhead">Saturday</h2>
     ${rule(61)}
+    ${standing ? `<div class="standing standing-${standing.kind}" role="status"><p class="standing-title">${esc(standing.title)}</p><p class="n">${esc(standing.line)}</p></div>` : ''}
     ${f.note ? `<div class="voicenote"><p class="label">voice note to Mum, ${sentWord}</p><p class="note">“${esc(f.note)}”</p></div>` : ''}
     ${finalInput ? `<p class="final-input notebook-text">${esc(finalInput)}</p>` : ''}
     <p class="n">${esc(f.line)}</p>
