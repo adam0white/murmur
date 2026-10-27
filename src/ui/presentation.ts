@@ -155,3 +155,21 @@ export function finalInputWords(_s: GameState, records: MomentRecord[]): string 
       : `You insisted on ${quotedWords(r.said.ink)} She chose ${quotedWords(r.chosen.ink)} anyway.`;
   return `You suggested: ${quotedWords(r.said.ink)} She chose ${quotedWords(r.chosen.ink)}`;
 }
+
+/** Who a name is, said once in plain words. The stored scene stays exact for replay. */
+const FIRST_MENTION: [string, string][] = [
+  ['Murat', 'Murat, her supervisor at the delivery depot,'],
+  ['Aylin', 'Aylin, her sister,'],
+];
+
+/** Glosses a name in the first scene that mentions it; later scenes read as written. */
+export function sceneWords(s: GameState, text: string, at: number): string {
+  let out = text;
+  for (const [name, gloss] of FIRST_MENTION) {
+    // One pattern for both checks: a mention that could not take the gloss does not count as said.
+    const mention = new RegExp(`\\b${name}\\b(?=\\s)`, 'u');
+    const said = s.log.some((l) => l.who === 'scene' && l.at < at && mention.test(l.text));
+    if (!said) out = out.replace(mention, gloss);
+  }
+  return out;
+}

@@ -20,6 +20,7 @@ import {
   conversationWords,
   finalInputWords,
   keptWords,
+  sceneWords,
 } from '../src/ui/presentation.ts';
 import { replyWords } from '../src/ui/reply.ts';
 
@@ -262,4 +263,17 @@ it('gives deferred and alternative choices complete sentences without changing t
     checked++;
   }
   expect(checked).toBeGreaterThan(0);
+});
+
+it('says who Aylin is in the first scene that names her, and leaves the stored scene exact', () => {
+  const s = newGame(42);
+  while (!s.log.some((l) => l.who === 'scene' && l.text.includes('Aylin'))) {
+    runToCard(s);
+    if (s.card) queueInput(s, { kind: 'quiet' });
+  }
+  const first = required(s.log.find((l) => l.who === 'scene' && l.text.includes('Aylin')));
+  const before = JSON.stringify(s);
+  expect(sceneWords(s, first.text, first.at)).toContain('Aylin, her sister,');
+  expect(sceneWords(s, first.text, first.at + 1)).toBe(first.text);
+  expect(JSON.stringify(s)).toBe(before);
 });

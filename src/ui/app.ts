@@ -63,6 +63,7 @@ import {
   conversationWords,
   finalInputWords,
   quotedWords,
+  sceneWords,
 } from './presentation.ts';
 import { replyWords } from './reply.ts';
 import { notebookTally } from './tally.ts';
@@ -843,7 +844,7 @@ function recordHtml(record: MomentRecord): string {
     : `You said nothing${record.quiet === 'timeout' ? ' because time ran out' : ''}. She chose ${esc(quotedWords(record.chosen.ink))}`;
   const a = record.answer;
   const reply = s ? replyWords(s, a) : undefined;
-  return `<p class="record-yours">${yours}</p>${reply ? `<p class="record-reply her notebook-text">${esc(attributedWords(reply))} <span class="who">she says.</span></p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She learned the words “${esc(a.learned)}.” She remembered them.</p>` : ''}`;
+  return `<p class="record-yours">${yours}</p>${reply ? `<p class="record-reply her notebook-text">${esc(attributedWords(reply))} <span class="who">she says.</span></p>` : ''}${thoughtHtml(a)}${a.learned ? `<p class="margin notebook-text">She keeps these words in mind: “${esc(a.learned)}.”</p>` : ''}`;
 }
 
 function drawJournal(lines: LogLine[]) {
@@ -862,7 +863,7 @@ function drawJournal(lines: LogLine[]) {
       const stamp = /^\d\d:\d\d/.test(l.text) ? '' : `<span class="jt">${clock(l.at)}</span> `;
       entries.push({
         key,
-        html: `${away ? '<p class="away">This happened while you were away.</p>' : ''}<p class="jl jscene">${stamp}${esc(l.text)}</p>`,
+        html: `${away ? '<p class="away">This happened while you were away.</p>' : ''}<p class="jl jscene">${stamp}${esc(sceneWords(s, l.text, l.at))}</p>`,
       });
       if (record) {
         const template = document.createElement('template');
@@ -980,7 +981,7 @@ function cardHtml(v: CardView): string {
     .join('');
   return `<div class="card ink-in">
     <div class="card-text">
-      <p class="scene">${esc(v.scene)}</p>
+      <p class="scene">${esc(sceneWords(s, v.scene, s.card?.openedAt ?? s.minute))}</p>
       ${resolve}${forecast}${pull}${recalled ? `<p class="stayed notebook-text">${esc(attributedWords(recalled))} <span class="who">she thinks.</span></p>` : ''}
       ${first && !v.borrowed ? '<p class="caption notebook-text other-voice">The pencil handwriting shows the other voice.</p>' : ''}
       ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}

@@ -372,6 +372,7 @@ button:focus-visible {
 }
 .caption.right {
   text-align: right;
+  text-wrap: balance;
 }
 .hush {
   align-self: flex-start;
