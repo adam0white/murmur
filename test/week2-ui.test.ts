@@ -50,7 +50,8 @@ async function importRun(page: Page, state: GameState) {
   await page.evaluate(() => {
     window.__murmur.fast = true;
   });
-  await page.locator('#other-ways').click();
+  await page.locator('#menu').click();
+  await page.getByText('Debug', { exact: true }).click();
   await page.locator('#file').setInputFiles({
     name: 'run.json',
     mimeType: 'application/json',
@@ -137,11 +138,9 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         );
         await snapshot(page, `week-two-monday-${size}`);
         await page.getByRole('button', { name: 'Game menu', exact: true }).click();
-        await page.locator('#bp-send').click();
         const pending = page.waitForEvent('download');
-        await page.locator('#feedback-download').click();
+        await page.locator('#bp-export').click();
         expect((await pending).suggestedFilename()).toBe('two-voices-42-week2-monday.json');
-        await page.locator('#feedback-back').click();
         await page.locator('#bp-close').click();
         await page.reload();
         await page.locator('#cont').click();

@@ -9,6 +9,7 @@ import {
 import { beforeEach, expect, it, vi } from 'vitest';
 import { cloneState, queueInput, runToCard } from '../src/sim/game.ts';
 import {
+  automaticCastCheckpoint,
   freshCanonicalWeek,
   heldCanonicalWeek,
   saveCastPerson,
@@ -16,6 +17,7 @@ import {
 } from '../src/ui/cast-chapter.ts';
 
 const state = vi.hoisted(() => ({
+  owner: undefined as object | undefined,
   inputs: [] as LifePreparation[],
   puts: 0,
   stale: false,
@@ -49,8 +51,8 @@ vi.mock('../src/ui/continuity.ts', () => ({
       throw Error('A loaded run must never read latest shelf.');
     },
   },
-  recordingEpochGuard: async () => ({}),
-  departureGuardCurrent: () => true,
+  recordingEpochGuard: async () => ({ owner: state.owner }),
+  departureGuardCurrent: (guard: { owner?: object }) => guard.owner === state.owner,
   publishPersona: state.publish,
 }));
 async function nativeAylin() {
@@ -107,6 +109,7 @@ async function nativeAylin() {
   );
 }
 beforeEach(() => {
+  state.owner = undefined;
   state.puts = 0;
   state.inputs = [];
   state.stale = false;
@@ -206,3 +209,32 @@ it('refuses a returning Hearsay Dilan whose native source index and archive are 
   await expect(freshCanonicalWeek(17, () => true)).rejects.toThrow(/source-bound notebook is missing/i);
   expect(state.puts).toBe(0);
 });
+
+it('automatically publishes an eligible owned living chapter once and leaves local files alone', async () => {
+  state.publish.mockImplementation(async (value: unknown) => value);
+  const s = await freshCanonicalWeek(17, () => true);
+  while (s.phase !== 'end') {
+    if (s.phase === 'evening') queueInput(s, { kind: 'next' });
+    else {
+      runToCard(s);
+      if (s.card) queueInput(s, { kind: 'quiet' });
+    }
+  }
+  // Explicit source choice resolves supported purposes; automatic publication must never make it.
+  queueInput(s, { kind: 'cast-pause', role: 'dilan' });
+  const before = structuredClone(s.inputs);
+  state.owner = s;
+  const castId = 'hf.cast.dilan.murmur';
+  await automaticCastCheckpoint(s, () => {});
+  expect(s.castHeads?.[castId]?.source.game).toBe('murmur');
+  expect(state.publish).toHaveBeenCalled();
+  expect(s.inputs).toEqual(before);
+  const writes = state.publish.mock.calls.length;
+  await automaticCastCheckpoint(s, () => {});
+  expect(state.publish).toHaveBeenCalledTimes(writes);
+  s.fileHistory = true;
+  s.castScope = 'file';
+  s.castHeadScopes = {};
+  await automaticCastCheckpoint(s, () => {});
+  expect(state.publish).toHaveBeenCalledTimes(writes);
+}, 15000);

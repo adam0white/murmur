@@ -8,6 +8,6 @@ Recording links play automatically under the single menu recording switch (owner
 
 Done means signed main, exact green CI, normal deployment, matching clean live release, one independent correctness/game-design review and genuine cross-origin source→target proof at360×690 and1280×800. Adam accepts the fiction by playing; owner acceptance remains2026-11-03. Current delivery receipts and remaining acceptance are in ~/code/.lab-scratch/cast/murmur.md. Ledger proposals go murmur-ledger.md there; do not edit the central HF ledger.
 
-Follow [the plain-English rules](docs/lab/plain-english.md) for player-facing copy. Display rewrites must preserve simulation data and deterministic replay. Lab controls require the exact `?lab=1` flag.
+Follow [the plain-English rules](docs/lab/plain-english.md) for player-facing copy. Display rewrites must preserve simulation data and deterministic replay. Every gameplay feature is public. Cross-game people carry over automatically through the central shelf, which owns cast controls. Only diagnostics belong in the collapsed Debug item beside Lab privacy. No query-string feature flags.
 
 Install with `pnpm install --frozen-lockfile`; keep `pnpm-lock.yaml`. Keep overrides and native build permissions in `pnpm-workspace.yaml`. `npm run` remains valid for scripts. This installer change requires the full lane, unchanged raw build bytes, reviewed signed source and exact green CI. It does not deploy the app or establish game readiness.

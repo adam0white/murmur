@@ -245,7 +245,8 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     try {
       await page.clock.install();
       await page.goto(`${origin}?lab=1`);
-      await page.locator('#other-ways').click();
+      await page.locator('#menu').click();
+      await page.getByText('Debug', { exact: true }).click();
       await page.locator('#file').setInputFiles({
         name: 'last-card.json',
         mimeType: 'application/json',
@@ -327,7 +328,8 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       const before = replay(example.seed, example.inputs, example.minute);
       expect(cardView(before)?.id).toBe('ece-4');
       await page.goto(`${origin}?lab=1`);
-      await page.locator('#other-ways').click();
+      await page.locator('#menu').click();
+      await page.getByText('Debug', { exact: true }).click();
       await page.locator('#file').setInputFiles({
         name: 'before.json',
         mimeType: 'application/json',
@@ -349,7 +351,8 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       while (after.minute < example.completion && after.phase === 'day') step(after);
       await page.locator('#menu').click();
       await page.locator('#bp-title').click();
-      await page.locator('#other-ways').click();
+      await page.locator('#menu').click();
+      await page.getByText('Debug', { exact: true }).click();
       await page.locator('#file').setInputFiles({
         name: 'after.json',
         mimeType: 'application/json',
@@ -394,7 +397,6 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
       const menu = page.getByRole('dialog', { name: 'Game menu' });
       expect(await menu.locator('h2').innerText()).toContain('Game menu');
-      await menu.locator('#bp-send').click();
       const pending = page.waitForEvent('download');
       await page.getByRole('button', { name: 'Download this run', exact: true }).click();
       const download = await pending;
@@ -632,7 +634,8 @@ describe('round 4 suggestion history', { timeout: 30_000 }, () => {
         );
         await page.getByRole('button', { name: 'Game menu', exact: true }).click();
         await page.locator('#bp-title').click();
-        await page.locator('#other-ways').click();
+        await page.locator('#menu').click();
+        await page.getByText('Debug', { exact: true }).click();
         await page.locator('#file').setInputFiles({
           name: 'reply.json',
           mimeType: 'application/json',
@@ -799,7 +802,8 @@ describe('edition persistence in the browser', { timeout: 30_000 }, () => {
     const page = await browser.newPage();
     try {
       await page.goto(`${origin}?lab=1`);
-      await page.locator('#other-ways').click();
+      await page.locator('#menu').click();
+      await page.getByText('Debug', { exact: true }).click();
       await page.locator('#file').setInputFiles({
         name: 'unknown.json',
         mimeType: 'application/json',
@@ -890,7 +894,8 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
     const page = await browser.newPage();
     try {
       await page.goto(`${origin}?lab=1`);
-      await page.locator('#other-ways').click();
+      await page.locator('#menu').click();
+      await page.getByText('Debug', { exact: true }).click();
       await page.locator('#file').setInputFiles({
         name: 'silent-week.json',
         mimeType: 'application/json',
@@ -980,6 +985,8 @@ it('opens a fully opaque menu immediately with motion enabled and labels the run
     expect(paint.opacity).toBe('1');
     expect(paint.background).toBe('rgb(41, 37, 30)');
     expect(paint.animation).toBe('none');
+    expect(await menu.locator('.menu-links details').getAttribute('open')).toBeNull();
+    await menu.getByText('Debug', { exact: true }).click();
     expect(await menu.locator('.provenance').innerText()).toMatch(/Week 1 · run 1 · edition 0.6.0/);
   } finally {
     await page.close();

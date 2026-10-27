@@ -1,3 +1,18 @@
+## No flags — 2026-10-27
+
+Gameplay is public without query switches. Other ways to begin starts week two. Pace,
+New game and the playtest download live in the menu. Both alternate editions and the
+cast introduction are public. Debug starts collapsed beside Lab privacy and holds
+seed, provenance, run loading, replay verification and the last failure detail.
+Cast controls live on the central shelf. Ordinary new games retain automatic atomic
+cast admission; imports retain their pinned inputs and file origin. This supersedes
+historical lab-only UI notes below. Adam’s fiction acceptance remains due 2026-11-03.
+Eligible completed shared chapters publish automatically without pausing purposes or
+forking parent conflicts. The central shelf still needs a host-action protocol for
+explicit selected-person pauses; unsupported unfinished purposes retain their source
+restrictions. Follow up by 2026-10-28. A new genuine cross-origin journey is unverified.
+Task delivery receipt: ~/code/.lab-scratch/codex/murmur-nofl.md.
+
 # Murmur handoff
 
 ## Week-two promises — edition 0.6.1, 2026-10-27

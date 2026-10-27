@@ -37,8 +37,8 @@ import {
 import { departureReleaseDescription } from '../sim/one-cast.ts';
 import { weekStanding } from '../sim/standing.ts';
 import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
-import { canonicalPersonControls, freshCanonicalWeek, heldCanonicalWeek } from './cast-chapter.ts';
-import { continuityControls, gateContinuity, installContinuity, invalidateContinuity } from './continuity.ts';
+import { freshCanonicalWeek } from './cast-chapter.ts';
+import { gateContinuity, installContinuity, invalidateContinuity } from './continuity.ts';
 import { required } from './dom.ts';
 import { showFeedback } from './feedback.ts';
 import { doneLine, journalLines, type MomentRecord, momentRecords } from './journal.ts';
@@ -47,14 +47,9 @@ import { assertNotebookState, compactNotebook, expandNotebook, savedLocation } f
 import {
   checkpoint,
   continuityMessage,
-  forkDeparture,
-  forkPendingReturn,
-  heldReturn,
   initOneCast,
-  personaFile,
   recordingState,
   releaseAndCheckpoint,
-  returnedChapter,
   validateRun,
 } from './one-cast.ts';
 import {
@@ -69,7 +64,7 @@ import {
 import { replyWords } from './reply.ts';
 import { notebookTally } from './tally.ts';
 
-const labMode = new URLSearchParams(location.search).get('lab') === '1';
+let diagnosticError = '';
 
 const SAVE = 'murmur-save-v1';
 /** Real seconds an open card lasts (its whole window). */
@@ -130,8 +125,9 @@ let failureRetry: (() => void) | null = null;
 
 function recordFailure(error: unknown, message: string, retry: () => void) {
   console.warn('Two Voices could not complete the action.', error);
-  toast = labMode ? (error instanceof Error ? error.message : String(error)) : message;
-  failureRetry = labMode ? null : retry;
+  diagnosticError = error instanceof Error ? error.message : String(error);
+  toast = message;
+  failureRetry = retry;
 }
 let wake: { release(): Promise<void> } | null = null;
 
@@ -347,7 +343,6 @@ function feedback(returnToMenu = false) {
     lab,
     getRun: compactRun,
     feedbackChoices: true,
-    download,
     close: () => {
       feedbackOpen = false;
       resumeClock();
@@ -366,7 +361,6 @@ function cue(lean: Lean, pushed: Lean): string {
 }
 
 function urlSeed(): number | null {
-  if (!labMode) return null;
   const v = new URLSearchParams(location.search).get('seed');
   if (v === null || !/^\d+$/.test(v)) return null;
   return Number(v) >>> 0;
@@ -416,21 +410,15 @@ function title() {
   }
   app.innerHTML = `${header()}<div class="page title"><div class="page-body">
     <h1>Two Voices</h1>
-    <p>You are one of the voices in Dilan’s head. Suggest what she should do from Monday to Saturday. Your words can change her choices. On Saturday, she looks back at her week.</p>${labMode ? `<p>${esc(castIntroduction())}</p>` : ''}
+    <p>You are one of the voices in Dilan’s head. Suggest what she should do from Monday to Saturday. Your words can change her choices. On Saturday, she looks back at her week.</p><p>${esc(castIntroduction())}</p>
     ${toast ? `<div class="${failureRetry ? 'start-error' : 'toast'}" role="alert"><p>${esc(toast)}</p>${failureRetry ? '<div class="failure-actions"><button id="start-retry">Try again</button><button id="start-feedback">Feedback</button></div>' : ''}</div>` : ''}
-    </div>${labMode ? '<div class="other-ways-wrap"><button class="row" id="other-ways">Lab tools <span aria-hidden="true">▸</span></button></div>' : ''}
+    </div><div class="other-ways-wrap"><button class="row" id="other-ways">Other ways to begin <span aria-hidden="true">▸</span></button></div>
     <footer class="title-spacer" id="title-spacer"></footer>
     <div class="page-actions actions">
       ${saved ? `<p class="soft small">${esc(save?.state ? savedLocation(saved) : 'This older save keeps your answers, but not the exact saved minute. Resume opens its next choice.')}</p><button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved.day]?.slice(0, 3) ?? '')} ${clock(saved.minute)}</button>` : ''}
-      ${
-        labMode
-          ? `<button id="fresh-authored">Play a fresh local week</button>
-      <button id="return-shelf">Continue with people saved in this browser</button><button id="held-cast">Resume an accepted chapter saved here</button><p id="return-status" class="soft small"></p>`
-          : ''
-      }
-      ${labMode ? '<label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label>' : ''}<button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
+      <label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
       <div id="new-confirm" hidden><p>Start a new game? This replaces your saved week.</p><div class="confirm-actions"><button id="confirm-new">Start new game</button><button id="cancel-new">Cancel</button></div></div>
-      ${labMode ? credit() : ''}
+      ${credit()}
     </div></div>`;
   toast = '';
   const retry = failureRetry;
@@ -463,22 +451,6 @@ function title() {
       title();
     }
   });
-  document.getElementById('held-cast')?.addEventListener('click', async () => {
-    const attempt = ++loadGeneration;
-    try {
-      const held = await heldCanonicalWeek();
-      if (!held) throw Error('No saved chapter with an accepted checkpoint is available.');
-      if (attempt !== loadGeneration) return;
-      invalidateContinuity();
-      s = held;
-      await gateContinuity(recordingState(s));
-      writeSave();
-      enter();
-    } catch (e) {
-      toast = String(e);
-      title();
-    }
-  });
   document.getElementById('new')?.addEventListener('click', () => {
     if (!save) newWeek(urlSeed() ?? randomSeed(), selectedEdition());
     else {
@@ -493,64 +465,12 @@ function title() {
     required(document.getElementById('new-confirm')).hidden = true;
     required(document.getElementById('new')).hidden = false;
   });
-  document
-    .getElementById('fresh-authored')
-    ?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed(), GAME_VERSION, false));
-  document.getElementById('return-shelf')?.addEventListener('click', async () => {
-    try {
-      const attempt = ++loadGeneration;
-      const arrived = await freshCanonicalWeek(urlSeed() ?? randomSeed(), () => attempt === loadGeneration);
-      if (attempt !== loadGeneration) return;
-      if (!arrived)
-        throw new Error('No supported return is on this browser’s shelf. Fresh play remains available.');
-      invalidateContinuity();
-      s = arrived;
-      await gateContinuity(recordingState(s));
-      writeSave();
-      enter();
-    } catch (error) {
-      const message = document.getElementById('return-status');
-      if (message) message.textContent = error instanceof Error ? error.message : String(error);
-    }
-  });
-  document.getElementById('held-return')?.addEventListener('click', async () => {
-    const attempt = ++loadGeneration;
-    try {
-      const held = await heldReturn();
-      if (attempt !== loadGeneration) return;
-      invalidateContinuity();
-      s = held;
-      await gateContinuity(recordingState(s));
-      if (attempt !== loadGeneration) return;
-      writeSave();
-      enter();
-    } catch (error) {
-      const message = document.getElementById('return-status');
-      if (message) message.textContent = String(error);
-    }
-  });
-  document.getElementById('return-fork')?.addEventListener('click', async () => {
-    try {
-      const attempt = ++loadGeneration;
-      const arrived = await forkPendingReturn(() => attempt === loadGeneration);
-      if (attempt !== loadGeneration) return;
-      if (!arrived) throw new Error('No supported return is available.');
-      invalidateContinuity();
-      s = arrived;
-      await gateContinuity(recordingState(s));
-      writeSave();
-      enter();
-    } catch (error) {
-      const message = document.getElementById('return-status');
-      if (message) message.textContent = String(error);
-    }
-  });
   document.getElementById('other-ways')?.addEventListener('click', () => {
     const { el, close } = overlay(
-      `<section class="other-ways" role="dialog" aria-modal="true" aria-label="Lab tools"><button data-close aria-label="Close other ways in">×</button><h2>Lab tools</h2><button id="second">Begin at the second week</button><p class="soft small">Her first week is played for you without advice. You start on Monday of the second week.</p><button id="load">Load a playtest run</button><input type="file" id="file" accept="application/json,.json" hidden /></section>`,
+      `<section class="other-ways" role="dialog" aria-modal="true" aria-label="Other ways to begin"><button data-close aria-label="Close other ways in">×</button><h2>Other ways to begin</h2><button id="second">Begin at the second week</button><p class="soft small">Her first week is played for you. You start on Monday of the second week.</p><div id="second-confirm" hidden><p>Start at the second week? This replaces your saved week.</p><button id="second-confirm-new">Start at week two</button><button id="second-cancel">Cancel</button></div></section>`,
       'backpage-wrap other-ways-overlay',
     );
-    el.querySelector('#second')?.addEventListener('click', () => {
+    const beginSecondWeek = () => {
       close();
       invalidateContinuity();
       ++loadGeneration;
@@ -559,8 +479,15 @@ function title() {
         writeSave();
         enter();
       });
+    };
+    el.querySelector('#second')?.addEventListener('click', () => {
+      if (save) required(el.querySelector<HTMLElement>('#second-confirm')).hidden = false;
+      else beginSecondWeek();
     });
-    bindImport(el.querySelector('#load'), el.querySelector('#file'));
+    el.querySelector('#second-confirm-new')?.addEventListener('click', beginSecondWeek);
+    el.querySelector('#second-cancel')?.addEventListener('click', () => {
+      required(el.querySelector<HTMLElement>('#second-confirm')).hidden = true;
+    });
   });
 }
 
@@ -1210,13 +1137,13 @@ function ending() {
         : s.version === '0.5.0'
           ? `<section><h2 class="notebook-text">A short visit</h2><p>Her week of deliveries is over. Dilan can visit Hatice’s tea garden in Istanbul. The people there are separate from the people in this story, even when they share a name. Aylin is still her sister. Mum, Ece and Murat from the depot remain part of her life.</p><p>She will pause these unfinished plans for the visit: ${esc(
               departureReleaseDescription(s).join(', ') || 'none',
-            )}. The unfinished shelf stays at home for this visit. When she returns, she will start these plans again. This week’s record keeps her earlier progress and any promises tied to a date. She cannot leave while an alarm, dinner or call promise remains unresolved. Paused work does not count as finished.</p><button id="depart">Pause unfinished plans and visit</button>${labMode ? '<button id="depart-fork">Explicitly fork this competing departure</button>' : ''}<p id="departure-status" role="status">${esc(continuityMessage())}</p><a href="https://hearsay.adamwhite.work/">Visit Hearsay</a></section>`
+            )}. The unfinished shelf stays at home for this visit. When she returns, she will start these plans again. This week’s record keeps her earlier progress and any promises tied to a date. She cannot leave while an alarm, dinner or call promise remains unresolved. Paused work does not count as finished.</p><button id="depart">Pause unfinished plans and visit</button><p id="departure-status" role="status">${esc(continuityMessage())}</p><a href="https://hearsay.adamwhite.work/">Visit Hearsay</a></section>`
           : ''
     }
     <details class="final-tally"><summary>See the tally</summary><div id="notebook-tally">${notebookTally(s, true)}</div></details>
     ${canAnotherWeek(s) ? '<p class="notebook-text soft">Monday will come again.</p>' : ''}</div>
     <div class="page-actions actions end-actions">
-      <div class="action-pair"><button id="send">Feedback</button>${labMode ? '<button id="export">Download this run</button>' : ''}</div>
+      <div class="action-pair"><button id="send">Feedback</button></div>
       <button class="${canAnotherWeek(s) ? '' : 'primary'}" id="again">New game</button><div id="end-confirm" hidden><p>Start a new game? This replaces your saved week.</p><button id="end-confirm-new">Start new game</button><button id="end-cancel-new">Cancel</button></div>
       ${canAnotherWeek(s) ? '<button class="primary" id="another">Another week</button>' : ''}
     </div></div>`;
@@ -1233,16 +1160,9 @@ function ending() {
       required(document.getElementById('departure-status')).textContent = String(error);
     }
   });
-  document.getElementById('depart-fork')?.addEventListener('click', async () => {
-    try {
-      if (!s) return;
-      await forkDeparture(s, writeSave);
-      required(document.getElementById('departure-status')).textContent = continuityMessage();
-    } catch (error) {
-      required(document.getElementById('departure-status')).textContent = String(error);
-    }
+  void checkpoint(s, writeSave).catch((error) => {
+    diagnosticError = error instanceof Error ? error.message : String(error);
   });
-  void checkpoint(s, writeSave);
   document.getElementById('another')?.addEventListener('click', () => {
     if (!s || !canAnotherWeek(s)) return;
     s = anotherWeek(s);
@@ -1257,7 +1177,6 @@ function ending() {
     required(document.getElementById('end-confirm')).hidden = true;
   });
   document.getElementById('end-confirm-new')?.addEventListener('click', () => newWeek(randomSeed()));
-  document.getElementById('export')?.addEventListener('click', download);
   document.getElementById('send')?.addEventListener('click', () => feedback());
 }
 
@@ -1337,14 +1256,20 @@ function backPage() {
     `<section class="backpage" role="dialog" aria-modal="true" aria-label="Game menu">
     <div class="menu-heading"><h2>Game menu${s && screen !== 'title' ? ` · ${esc(DAY_NAMES[s.day]?.slice(0, 3) ?? '')} ${clock(s.minute)}` : ''}</h2><button data-close aria-label="Close game menu">×</button></div>
     ${screen === 'day' ? '<p class="soft small">Time is paused while this menu is open.</p>' : ''}
-    ${labMode ? `<fieldset class="menu-speed"><legend>Pace between moments</legend><p class="caption">Every choice allows 64 seconds. Slow changes only the time between choices.</p>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>` : ''}
+    ${`<fieldset class="menu-speed"><legend>Pace between moments</legend><p class="caption">Every choice allows 64 seconds. Slow changes only the time between choices.</p>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>`}
     <button class="row" id="bp-send">Feedback <span aria-hidden="true">▸</span></button>
     <button class="row" id="bp-fullscreen">Full screen</button>
-    ${s ? '<button class="row" id="bp-new">New game</button><div id="bp-confirm" hidden><p>Start a new game? This replaces your saved week.</p><button id="bp-confirm-new">Start new game</button><button id="bp-cancel-new">Cancel</button></div>' : ''}
-    ${labMode && screen !== 'title' ? '<button class="row" id="bp-title">To the title page</button>' : ''}
+    <button class="row" id="bp-new">New game</button><div id="bp-confirm" hidden><p>Start a new game? This replaces your saved week.</p><button id="bp-confirm-new">Start new game</button><button id="bp-cancel-new">Cancel</button></div>
+    ${screen !== 'title' ? '<button class="row" id="bp-title">To the title page</button>' : ''}
     <a class="row" href="https://human.adamwhite.work/games/">All games</a>
-    ${labMode ? `<p class="soft small provenance">${s ? `Week ${weekOf(s.day)} · run ${s.seed} · edition ${s.version} · ` : ''}Dilan is from the <a href="https://human.adamwhite.work/">Human Framework ${FRAMEWORK_VERSION}</a></p>` : ''}
-    <div class="menu-footer"><div id="menu-recording"></div><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a></div>
+    <a class="row" href="https://human.adamwhite.work/lab/people/">People between games</a>
+    ${s ? '<button class="row" id="bp-export">Download this run</button>' : ''}
+    <div class="menu-footer"><div id="menu-recording"></div><div class="menu-links"><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a><details><summary>Debug</summary><div class="debug-content">
+      <p class="soft small provenance">${s ? `Week ${weekOf(s.day)} · run ${s.seed} · edition ${s.version} · ` : ''}Human Framework ${FRAMEWORK_VERSION}</p>
+      <button id="load">Load a playtest run</button><input type="file" id="file" accept="application/json,.json" hidden />
+      ${s ? '<button id="bp-replay">Verify replay</button>' : ''}<p id="debug-status" role="status"></p>
+      <pre>${esc(diagnosticError)}</pre>
+    </div></details></div></div>
     <button class="primary" id="bp-close">${screen === 'title' ? 'Close' : 'Resume'}</button>
   </section>`,
     'backpage-wrap',
@@ -1354,64 +1279,19 @@ function backPage() {
   );
   activePanel = { kind: 'menu', close };
   el.querySelector('#menu-recording')?.append(telemetryToggle(lab));
-  if (labMode) el.querySelector('#menu-recording')?.append(continuityControls());
-  if (labMode && s?.cast) el.querySelector('#menu-recording')?.append(canonicalPersonControls(s, writeSave));
-  const passport = document.createElement('div');
-  passport.innerHTML =
-    '<button id="passport-export">Download Dilan’s passport</button><button id="passport-import">Import a returned passport</button><button id="passport-fork">Explicitly fork the selected competing return</button><input type="file" id="passport-file" accept=".json" hidden><p id="passport-status" role="status"></p>';
-  if (labMode && !s?.cast) el.querySelector('#menu-recording')?.append(passport);
-  passport.querySelector('#passport-export')?.addEventListener('click', async () => {
+  bindImport(el.querySelector('#load'), el.querySelector('#file'));
+  el.querySelector('#bp-export')?.addEventListener('click', download);
+  el.querySelector('#bp-replay')?.addEventListener('click', async () => {
+    if (!s) return;
     try {
-      if (!s) throw new Error('Play Dilan’s week first.');
-      const envelope = await personaFile(s);
-      writeSave();
-      downloadJSON(envelope, 'dilan-passport.json');
+      const pinned = cloneState(s);
+      const rebuilt = await validateRun(pinned);
+      required(el.querySelector('#debug-status')).textContent =
+        fingerprint(rebuilt) === fingerprint(pinned)
+          ? 'Replay matches this run.'
+          : 'Replay differs from this run.';
     } catch (error) {
-      required(passport.querySelector('#passport-status')).textContent = String(error);
-    }
-  });
-  passport
-    .querySelector('#passport-import')
-    ?.addEventListener('click', () => (passport.querySelector('#passport-file') as HTMLInputElement).click());
-  passport.querySelector('#passport-fork')?.addEventListener('click', async () => {
-    const attempt = ++loadGeneration;
-    try {
-      const returned = await forkPendingReturn(() => attempt === loadGeneration);
-      if (attempt !== loadGeneration) return;
-      if (!returned) throw new Error('No competing return is selected.');
-      invalidateContinuity();
-      s = returned;
-      await gateContinuity(recordingState(s), true);
-      if (attempt !== loadGeneration) return;
-      writeSave();
-      close();
-      enter();
-    } catch (error) {
-      const message = passport.querySelector('#passport-status');
-      if (message) message.textContent = String(error);
-    }
-  });
-  passport.querySelector('#passport-file')?.addEventListener('change', async (event) => {
-    try {
-      const file = (event.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      const attempt = ++loadGeneration;
-      const returned = await returnedChapter(
-        JSON.parse(await file.text()),
-        'file',
-        false,
-        () => attempt === loadGeneration,
-      );
-      if (attempt !== loadGeneration) return;
-      if (!returned) throw new Error('This is not a returned Dilan passport.');
-      invalidateContinuity();
-      s = returned;
-      await gateContinuity(recordingState(s), true);
-      writeSave();
-      close();
-      enter();
-    } catch (error) {
-      required(passport.querySelector('#passport-status')).textContent = String(error);
+      required(el.querySelector('#debug-status')).textContent = String(error);
     }
   });
   el.querySelector('#bp-new')?.addEventListener('click', () => {

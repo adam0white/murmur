@@ -14,7 +14,6 @@ export function showFeedback(options: {
   lab: typeof gameLab;
   getRun: () => unknown | Promise<unknown>;
   feedbackChoices?: boolean;
-  download: () => void;
   close: () => void;
 }) {
   const { app, lab } = options;
@@ -62,8 +61,7 @@ export function showFeedback(options: {
         <label for="feedback-name">Your name or tester ID</label><input type="text" id="feedback-name" maxlength="60" autocomplete="off" value="${esc(remembered)}" />
         <p class="soft small">This name labels past and future feedback and play history sent from this device. Leave it empty to stay unnamed.</p>
       </details>
-      <details class="feedback-preview"><summary>What is sent</summary><p>We send your note and any verdict or name you enter. With recording off, we send no saved game or linked play history.</p>${new URLSearchParams(location.search).get('lab') === '1' ? '<pre id="feedback-preview"></pre>' : ''}<a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noreferrer">Lab privacy</a></details>
-      ${new URLSearchParams(location.search).get('lab') === '1' ? '<button type="button" id="feedback-download">Download this run</button>' : ''}
+      <details class="feedback-preview"><summary>What is sent</summary><p>We send your note and any verdict or name you enter. With recording off, we send no saved game or linked play history.</p><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noreferrer">Lab privacy</a></details>
       <p role="status" id="feedback-status"></p>
     </div>
     <div class="feedback-actions page-actions"><button class="primary" id="feedback-send">Submit</button></div>
@@ -111,20 +109,11 @@ export function showFeedback(options: {
   };
   const refresh = () => {
     send.disabled = !sent && sending;
-    const preview = {
-      note: note.value,
-      verdict: verdict || undefined,
-      name: name.value.trim() || undefined,
-      run: lab.telemetryOn ? 'Complete replayable notebook, losslessly compressed on Submit.' : undefined,
-    };
-    const previewNode = wrap.querySelector('#feedback-preview');
-    if (previewNode) previewNode.textContent = JSON.stringify(preview, null, 2);
   };
   const syncPreference = refresh;
   wrap.addEventListener('input', refresh);
   wrap.addEventListener('change', refresh);
   wrap.querySelector('#feedback-back')?.addEventListener('click', close);
-  wrap.querySelector('#feedback-download')?.addEventListener('click', options.download);
   wrap.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       event.stopPropagation();

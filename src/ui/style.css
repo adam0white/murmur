@@ -1700,3 +1700,26 @@ body {
 .title:has(.start-error) .title-spacer {
   flex: 0 0 auto;
 }
+
+.menu-links {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  position: relative;
+}
+.menu-links summary {
+  cursor: pointer;
+}
+.debug-content {
+  position: absolute;
+  inset: auto 0 100%;
+  max-height: 50vh;
+  overflow: auto;
+  padding: 12px;
+  background: var(--paper);
+  border: 1px solid var(--rope);
+}
+.debug-content pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

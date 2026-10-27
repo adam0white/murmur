@@ -21,7 +21,13 @@ import { type CastReturnArchive, prepareCastChapter, validateCastChapter } from 
 import { createCastHistorySource, createCastSource } from '../sim/cast-source.ts';
 import { cloneState, GAME_VERSION, newGame, queueInput, replay, step } from '../sim/game.ts';
 import type { GameState } from '../sim/types.ts';
-import { departureGuardCurrent, publishPersona, recordingEpochGuard, shelf } from './continuity.ts';
+import {
+  type DepartureGuard,
+  departureGuardCurrent,
+  publishPersona,
+  recordingEpochGuard,
+  shelf,
+} from './continuity.ts';
 
 declare const __MURMUR_BUILD__: string;
 const source = { game: 'murmur', build: __MURMUR_BUILD__, engine: ENGINE_VERSION, rules: CAST_VERSION };
@@ -260,9 +266,11 @@ async function saveCastPersonNow(
   role: CastRole,
   save: () => void,
   options: { pause?: boolean; fork?: boolean },
+  fixedGuard?: DepartureGuard,
 ): Promise<PersonaEnvelope> {
-  if (pending) throw Error('A person checkpoint is already being saved.');
-  const guard = await recordingEpochGuard();
+  const guard = fixedGuard ?? (await recordingEpochGuard());
+  if (fixedGuard && (guard.owner !== s || !departureGuardCurrent(guard)))
+    throw Error('The loaded run changed before its checkpoint.');
   if (options.pause) queueInput(s, { kind: 'cast-pause', role });
   const prefix = cloneState(s),
     cast = canonicalCast(`hf.cast.${role}.murmur`),
@@ -325,20 +333,22 @@ async function saveCastPersonNow(
   save();
   return accepted;
 }
-/** Visibility saves never pause purposes or invent eligibility. Only actual owned deaths publish automatically. */
+/** Observe eligible shared chapters automatically. Never pause purposes, fork conflicts, or publish imported files. */
 export function automaticCastCheckpoint(s: GameState | null, save: () => void): Promise<void> {
   if (!s?.cast || !shelf.enabled || pending || saving) return pending ?? Promise.resolve();
   pending = (async () => {
+    const guard = await recordingEpochGuard();
+    if (guard.owner !== s || !departureGuardCurrent(guard)) return;
     for (const c of CAST) {
+      if (!departureGuardCurrent(guard)) return;
       const role = roleOf(c.castId),
         p = s.cast?.people[role],
         head = s.castHeads?.[c.castId];
-      if (!p || !head) continue;
+      if (!p || s.fileHistory) continue;
       const scope = s.castHeadScopes?.[c.castId] ?? s.castScope;
       if (scope !== 'shared') continue;
-      if (!p.body.alive && !head.terminal) {
-        const guard = await recordingEpochGuard(),
-          closed = await closePersonaBranch(head, source, p.now);
+      if (!p.body.alive && head && !head.terminal) {
+        const closed = await closePersonaBranch(head, source, p.now);
         localStorage.setItem(`murmur-cast-source:${closed.revision}`, JSON.stringify(cloneState(s)));
         const accepted = await publishPersona(closed, { guard });
         if (!departureGuardCurrent(guard)) return;
@@ -353,6 +363,17 @@ export function automaticCastCheckpoint(s: GameState | null, save: () => void): 
           explicitFork: false,
         };
         save();
+      } else if (p.body.alive && s.phase === 'end') {
+        const saved = head && s.castSources?.[head.revision];
+        if (saved?.inputCount === s.inputs.length && saved.minute === s.minute) continue;
+        // Projection is read-only and refuses unfinished activities, purposes, or unsupported editions.
+        try {
+          await createCastSource(s, role);
+        } catch {
+          continue;
+        }
+        if (!departureGuardCurrent(guard)) return;
+        await saveCastPersonNow(s, role, save, {}, guard);
       }
     }
   })().finally(() => {
