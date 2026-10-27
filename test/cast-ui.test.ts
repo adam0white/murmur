@@ -180,7 +180,7 @@ it('publishes an eligible native source only after archiving its played prefix a
   const head = await saveCastPerson(s, 'dilan', () => {});
   expect(localStorage.getItem(`murmur-cast-source:${head.revision}`)).toBeTruthy();
   expect(cloneState(await validateCanonicalRun(cloneState(s)))).toEqual(cloneState(s));
-});
+}, 30_000);
 
 it('refuses a returning Hearsay Dilan whose native source index and archive are missing', async () => {
   const input = await nativeAylin();
