@@ -17,6 +17,7 @@ export const LABEL = {
   alarm: 'my alarm',
   mum: 'my call to Mum',
   aylin: 'my word to Aylin',
+  bedtime: 'my bedtime',
 } as const;
 
 /** Describe actual review outcomes without turning semantic commitment labels into sentences. */
@@ -25,6 +26,7 @@ export function promiseReview(kept: string[], missed: string[], ruminating: bool
     [LABEL.alarm]: 'get up when the alarm rang',
     [LABEL.mum]: 'make time to talk to Mum',
     [LABEL.aylin]: 'stay for dinner with Aylin',
+    [LABEL.bedtime]: 'put the phone away before bed',
     'my board practice with Ece': 'practise routing deliveries with Ece',
     'my word to Ece': 'help Ece close the depot',
   };
@@ -37,6 +39,7 @@ export function promiseReview(kept: string[], missed: string[], ruminating: bool
     [LABEL.alarm]: 'got up when the alarm rang',
     [LABEL.mum]: 'made time to talk to Mum',
     [LABEL.aylin]: 'stayed for dinner with Aylin',
+    [LABEL.bedtime]: 'put the phone away before bed',
     'my board practice with Ece': 'practised routing deliveries with Ece',
     'my word to Ece': 'helped Ece close the depot',
   };
@@ -140,8 +143,8 @@ export function makeDilan(seed: number, plainEnglish = true): Person {
   return p;
 }
 
-/** The same alarm and Mum windows for each five-day working week; Aylin is a one-off. */
-export function renewDailyPromises(p: Person, firstDay: number): void {
+/** Renew the five-day alarm and call promises. The new second week promises attention, not just dialling. */
+export function renewDailyPromises(p: Person, firstDay: number, attention = false): void {
   const until = dayStart(firstDay + 4) + 1439;
   promise(p, {
     kind: 'promise',
@@ -159,11 +162,26 @@ export function renewDailyPromises(p: Person, firstDay: number): void {
     kind: 'promise',
     toId: 'mum',
     label: LABEL.mum,
-    actions: ['call-mum'],
+    actions: [attention ? 'listen-to-mum' : 'call-mum'],
     from: dayStart(firstDay) + 17 * 60 + 30,
     until: dayStart(firstDay) + 21 * 60 + 30,
     importance: 0.55,
     recurEvery: 1440,
     recurUntil: until,
+  });
+}
+
+/** This week she has promised herself a bedtime: either writing or lights out keeps it. */
+export function promiseBedtime(p: Person, firstDay: number): void {
+  promise(p, {
+    kind: 'promise',
+    toId: 'self',
+    label: LABEL.bedtime,
+    actions: ['write', 'lights-out'],
+    from: dayStart(firstDay) + 21 * 60 + 30,
+    until: dayStart(firstDay) + 21 * 60 + 55,
+    importance: 0.15,
+    recurEvery: 1440,
+    recurUntil: dayStart(firstDay + 4) + 1439,
   });
 }

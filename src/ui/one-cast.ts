@@ -1,3 +1,4 @@
+import { isCanonicalEdition } from '../sim/edition.ts';
 import { automaticCastCheckpoint, validateCanonicalRun } from './cast-chapter.ts';
 import { assertNotebookState } from './notebook.ts';
 /** Murmur's authored crossing. Transport and recording remain separate from the deterministic week. */
@@ -96,7 +97,7 @@ function requireReturnEnvelope(incoming: PersonaEnvelope): void {
 export async function validateRun(json: GameState): Promise<GameState> {
   assertNotebookState(json);
   if (!json || !Array.isArray(json.inputs)) throw new Error('Not a notebook run.');
-  if (json.version === '0.6.0' || json.version === '0.7.0' || json.version === '0.8.0')
+  if (isCanonicalEdition(json.version) || json.version === '0.7.0' || json.version === '0.8.0')
     return validateCanonicalRun(json);
   if (json.personaHead) await validatePersona(json.personaHead);
   let rebuilt: GameState;

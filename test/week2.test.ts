@@ -313,7 +313,7 @@ describe('the second week edition', () => {
     const alarm = weekTwo.WEEK_TWO.find((m) => m.day === 8 && m.id.startsWith('alarm-'));
     if (!alarm) throw new Error('Expected the authored Monday alarm');
     const threshold = (weekTwo as typeof weekTwo & { FEET_ALONE_FROM?: number }).FEET_ALONE_FROM ?? 0.35;
-    const strong = play(newGame(1000), 'tap');
+    const strong = play(newGame(1000, '0.6.0'), 'tap');
     queueInput(strong, { kind: 'next' });
     const weak = restoreState(cloneState(strong));
     for (const [s, practice] of [
@@ -381,12 +381,15 @@ describe('the second week edition', () => {
             [LABEL.alarm, WAKE - 5, WAKE + 20],
             [LABEL.mum, 17 * 60 + 30, 21 * 60 + 30],
           ] as const) {
-            expect(
-              s.person.agenda.commitments.some(
-                (c) =>
-                  c.label === label && c.from === dayStart(day) + from && c.until === dayStart(day) + until,
-              ),
-            ).toBe(true);
+            // HF retains only twelve closed instances. Daily pages own the full week's results.
+            const page = s.pages.find((p) => p.day === day);
+            expect([...(page?.kept ?? []), ...(page?.missed ?? [])]).toContain(label);
+            for (const c of s.person.agenda.commitments.filter(
+              (c) => c.label === label && c.from >= dayStart(day) && c.from < dayStart(day + 1),
+            )) {
+              expect(c.from).toBe(dayStart(day) + from);
+              expect(c.until).toBe(dayStart(day) + until);
+            }
           }
         }
         expect(canAnotherWeek(s)).toBe(false);

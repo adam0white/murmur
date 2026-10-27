@@ -22,7 +22,7 @@ type Policy = 'silent' | 'oppose' | 'insist' | 'pull' | 'reader' | 'picky' | 'te
 const RANK = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 } as const;
 
 /** What each bot says at a card, or null for silence. */
-function choose(s: GameState, policy: Policy): { option: string; insist?: boolean } | null {
+export function choose(s: GameState, policy: Policy): { option: string; insist?: boolean } | null {
   const v = cardView(s);
   if (!v || policy === 'silent') return null;
   const not = v.options.filter((o) => !o.isPull);
@@ -189,166 +189,169 @@ function run(seed: number, policy: Policy, version: string) {
   };
 }
 
-const seeds = Number(process.argv.find((a) => a.startsWith('seeds='))?.slice(6) ?? 8);
-if (!Number.isInteger(seeds) || seeds < 1) throw new Error('seeds must be a positive integer');
-const policies = (process.argv
-  .find((a) => a.startsWith('p='))
-  ?.slice(2)
-  .split(',') ?? [
-  'silent',
-  'oppose',
-  'insist',
-  'pull',
-  'reader',
-  'picky',
-  'teach',
-  'edge',
-  'tap',
-]) as Policy[];
-const versions = process.argv
-  .find((a) => a.startsWith('v='))
-  ?.slice(2)
-  .split(',') ?? ['0.2.1', '0.3.0', WEEK_TWO_EDITION];
-const rows = versions.flatMap((version) =>
-  policies.flatMap((policy) => Array.from({ length: seeds }, (_, i) => run(1000 + i, policy, version))),
-);
-const definitions = {
-  againstLeanTap:
-    'A plain (not insisted) suggestion whose cardView lean is not yes. Lean is the deterministic forecast verdict classification at the decision minute, not the sampled result. The forecast uses a cloned state ticked to s.minute exactly as resolve does; policies read that same clone. Includes pull-aligned suggestions; nonPullAgainst is reported separately.',
-  landed:
-    'answer.chosen equals suggested option. heard additionally requires verdict assented or complied; the two counts are separate.',
-  calibration:
-    'Only naturally selected ordinary taps with finite likelihood, including zero vetoes. Expected=sum(likelihood), residual=actual-expected; Brier=mean((landed-likelihood)^2). No claim of independent trials, unbiased card coverage, or causal edition effect.',
-  surfaced:
-    'A retained thought has surfacedAt strictly later than its original at. All thoughts remain in per-run JSON, including those with no later matching opportunity.',
-  policy:
-    'Same code for both editions. tap selects highest likelihood across every option, ties in card order; legacy falls back to lean rank. reader and edge preserve their historical decision rules, using likelihood only to break equal-lean choices when available.',
-};
-const mean = (
-  rs: typeof rows,
-  key: 'kept' | 'missed' | 'prompts' | 'pullWonPrompts' | 'alone' | 'borrowed' | 'holds' | 'silent',
-) => rs.reduce((n, r) => n + r[key], 0) / rs.length;
-const rate = (n: number, d: number) => (d ? n / d : null);
-const calibration = (taps: (typeof rows)[number]['taps']) => {
-  const ts = taps.filter((t) => t.likelihood !== undefined && Number.isFinite(t.likelihood));
-  const expected = ts.reduce((n, t) => n + Number(t.likelihood), 0);
-  const actual = ts.filter((t) => t.landed).length;
-  return {
-    n: ts.length,
-    actual,
-    expected,
-    residual: actual - expected,
-    rate: rate(actual, ts.length),
-    brier: rate(
-      ts.reduce((n, t) => n + (Number(t.landed) - Number(t.likelihood)) ** 2, 0),
-      ts.length,
-    ),
-  };
-};
-const summaries = versions.flatMap((version) =>
-  policies.map((policy) => {
-    const rs = rows.filter((r) => r.version === version && r.policy === policy);
-    const taps = rs.flatMap((r) => r.taps);
-    const against = taps.filter((t) => t.against);
-    const thoughts = rs.flatMap((r) => r.thoughts);
-    const moods = [...new Set(taps.map((t) => t.mood))].map((mood) => {
-      const ts = taps.filter((t) => t.mood === mood);
-      return {
-        mood,
-        n: ts.length,
-        landed: ts.filter((t) => t.landed).length,
-        heard: ts.filter((t) => t.heard).length,
-        calibration: calibration(ts),
-      };
-    });
-    return {
-      version,
-      policy,
-      runs: rs.length,
-      ended: rs.every((r) => r.ended),
-      kept: mean(rs, 'kept'),
-      missed: mean(rs, 'missed'),
-      prompts: mean(rs, 'prompts'),
-      pullWonPrompts: mean(rs, 'pullWonPrompts'),
-      alone: mean(rs, 'alone'),
-      borrowed: mean(rs, 'borrowed'),
-      holds: mean(rs, 'holds'),
-      silent: mean(rs, 'silent'),
-      taps: taps.length,
-      landed: taps.filter((t) => t.landed).length,
-      heard: taps.filter((t) => t.heard).length,
-      against: against.length,
-      againstLanded: against.filter((t) => t.landed).length,
-      againstAssentedAndLanded: against.filter((t) => t.landed && t.heard).length,
-      againstLandingShare: rate(against.filter((t) => t.landed).length, against.length),
-      nonPullAgainst: against.filter((t) => !t.pull).length,
-      nonPullAgainstLanded: against.filter((t) => !t.pull && t.landed).length,
-      nonPullAgainstAssentedAndLanded: against.filter((t) => !t.pull && t.landed && t.heard).length,
-      gentleRefusals: taps.filter((t) => !t.landed).length,
-      retained: thoughts.length,
-      surfaced: thoughts.filter((t) => t.surfacedAt !== undefined && t.surfacedAt > t.at).length,
-      calibration: calibration(taps),
-      probabilityBands: [
-        { label: '0 (veto or impossible)', min: 0, max: 0 },
-        { label: '(0, .1)', min: 0, max: 0.1 },
-        { label: '[.1, .5)', min: 0.1, max: 0.5 },
-        { label: '[.5, 1)', min: 0.5, max: 1 },
-        { label: '1 (certain)', min: 1, max: 1 },
-      ].map((band) => ({
-        band: band.label,
-        ...calibration(
-          taps.filter((t) => {
-            const p = t.likelihood;
-            return (
-              p !== undefined &&
-              (band.min === band.max
-                ? p === band.min
-                : p < band.max && (band.min === 0 ? p > 0 : p >= band.min))
-            );
-          }),
-        ),
-      })),
-      moods,
-      ...(version === WEEK_TWO_EDITION
-        ? {
-            weekTwo: {
-              prompts: rs.reduce((n, r) => n + (r.weekTwo?.prompts ?? 0), 0) / rs.length,
-              pullWonPrompts: rs.reduce((n, r) => n + (r.weekTwo?.pullWonPrompts ?? 0), 0) / rs.length,
-              kept: rs.reduce((n, r) => n + (r.weekTwo?.kept ?? 0), 0) / rs.length,
-              missed: rs.reduce((n, r) => n + (r.weekTwo?.missed ?? 0), 0) / rs.length,
-              morningsAlone: rs.reduce((n, r) => n + (r.weekTwo?.morningsAlone ?? 0), 0) / rs.length,
-              flags: Object.fromEntries(
-                [...new Set(rs.flatMap((r) => Object.keys(r.weekTwo?.flags ?? {})))].sort().map((key) => {
-                  const counts: Record<string, number> = {};
-                  for (const r of rs) {
-                    const value = JSON.stringify(r.weekTwo?.flags[key]) ?? '(absent)';
-                    counts[value] = (counts[value] ?? 0) + 1;
-                  }
-                  return [key, counts];
-                }),
-              ),
-            },
-          }
-        : {}),
-    };
-  }),
-);
-console.log('edition policy  kept missed prompts pullWon holds taps against land% retained surfaced');
-for (const s of summaries)
-  console.log(
-    `${s.version} ${s.policy.padEnd(7)} ${s.kept.toFixed(1)} ${s.missed.toFixed(1)} ${s.prompts.toFixed(1)} ${s.pullWonPrompts.toFixed(1)} ${s.holds.toFixed(1)} ${s.taps} ${s.against} ${s.againstLandingShare === null ? '-' : (100 * s.againstLandingShare).toFixed(1)} ${s.retained} ${s.surfaced}`,
+function main() {
+  const seeds = Number(process.argv.find((a) => a.startsWith('seeds='))?.slice(6) ?? 8);
+  if (!Number.isInteger(seeds) || seeds < 1) throw new Error('seeds must be a positive integer');
+  const policies = (process.argv
+    .find((a) => a.startsWith('p='))
+    ?.slice(2)
+    .split(',') ?? [
+    'silent',
+    'oppose',
+    'insist',
+    'pull',
+    'reader',
+    'picky',
+    'teach',
+    'edge',
+    'tap',
+  ]) as Policy[];
+  const versions = process.argv
+    .find((a) => a.startsWith('v='))
+    ?.slice(2)
+    .split(',') ?? ['0.2.1', '0.3.0', WEEK_TWO_EDITION];
+  const rows = versions.flatMap((version) =>
+    policies.flatMap((policy) => Array.from({ length: seeds }, (_, i) => run(1000 + i, policy, version))),
   );
-if (versions.includes(WEEK_TWO_EDITION)) {
-  console.log('week two: edition policy prompts pullWon kept missed morningsAlone flags(value:count)');
-  for (const s of summaries) {
-    const w = s.weekTwo;
-    if (!w) continue;
+  const definitions = {
+    againstLeanTap:
+      'A plain (not insisted) suggestion whose cardView lean is not yes. Lean is the deterministic forecast verdict classification at the decision minute, not the sampled result. The forecast uses a cloned state ticked to s.minute exactly as resolve does; policies read that same clone. Includes pull-aligned suggestions; nonPullAgainst is reported separately.',
+    landed:
+      'answer.chosen equals suggested option. heard additionally requires verdict assented or complied; the two counts are separate.',
+    calibration:
+      'Only naturally selected ordinary taps with finite likelihood, including zero vetoes. Expected=sum(likelihood), residual=actual-expected; Brier=mean((landed-likelihood)^2). No claim of independent trials, unbiased card coverage, or causal edition effect.',
+    surfaced:
+      'A retained thought has surfacedAt strictly later than its original at. All thoughts remain in per-run JSON, including those with no later matching opportunity.',
+    policy:
+      'Same code for both editions. tap selects highest likelihood across every option, ties in card order; legacy falls back to lean rank. reader and edge preserve their historical decision rules, using likelihood only to break equal-lean choices when available.',
+  };
+  const mean = (
+    rs: typeof rows,
+    key: 'kept' | 'missed' | 'prompts' | 'pullWonPrompts' | 'alone' | 'borrowed' | 'holds' | 'silent',
+  ) => rs.reduce((n, r) => n + r[key], 0) / rs.length;
+  const rate = (n: number, d: number) => (d ? n / d : null);
+  const calibration = (taps: (typeof rows)[number]['taps']) => {
+    const ts = taps.filter((t) => t.likelihood !== undefined && Number.isFinite(t.likelihood));
+    const expected = ts.reduce((n, t) => n + Number(t.likelihood), 0);
+    const actual = ts.filter((t) => t.landed).length;
+    return {
+      n: ts.length,
+      actual,
+      expected,
+      residual: actual - expected,
+      rate: rate(actual, ts.length),
+      brier: rate(
+        ts.reduce((n, t) => n + (Number(t.landed) - Number(t.likelihood)) ** 2, 0),
+        ts.length,
+      ),
+    };
+  };
+  const summaries = versions.flatMap((version) =>
+    policies.map((policy) => {
+      const rs = rows.filter((r) => r.version === version && r.policy === policy);
+      const taps = rs.flatMap((r) => r.taps);
+      const against = taps.filter((t) => t.against);
+      const thoughts = rs.flatMap((r) => r.thoughts);
+      const moods = [...new Set(taps.map((t) => t.mood))].map((mood) => {
+        const ts = taps.filter((t) => t.mood === mood);
+        return {
+          mood,
+          n: ts.length,
+          landed: ts.filter((t) => t.landed).length,
+          heard: ts.filter((t) => t.heard).length,
+          calibration: calibration(ts),
+        };
+      });
+      return {
+        version,
+        policy,
+        runs: rs.length,
+        ended: rs.every((r) => r.ended),
+        kept: mean(rs, 'kept'),
+        missed: mean(rs, 'missed'),
+        prompts: mean(rs, 'prompts'),
+        pullWonPrompts: mean(rs, 'pullWonPrompts'),
+        alone: mean(rs, 'alone'),
+        borrowed: mean(rs, 'borrowed'),
+        holds: mean(rs, 'holds'),
+        silent: mean(rs, 'silent'),
+        taps: taps.length,
+        landed: taps.filter((t) => t.landed).length,
+        heard: taps.filter((t) => t.heard).length,
+        against: against.length,
+        againstLanded: against.filter((t) => t.landed).length,
+        againstAssentedAndLanded: against.filter((t) => t.landed && t.heard).length,
+        againstLandingShare: rate(against.filter((t) => t.landed).length, against.length),
+        nonPullAgainst: against.filter((t) => !t.pull).length,
+        nonPullAgainstLanded: against.filter((t) => !t.pull && t.landed).length,
+        nonPullAgainstAssentedAndLanded: against.filter((t) => !t.pull && t.landed && t.heard).length,
+        gentleRefusals: taps.filter((t) => !t.landed).length,
+        retained: thoughts.length,
+        surfaced: thoughts.filter((t) => t.surfacedAt !== undefined && t.surfacedAt > t.at).length,
+        calibration: calibration(taps),
+        probabilityBands: [
+          { label: '0 (veto or impossible)', min: 0, max: 0 },
+          { label: '(0, .1)', min: 0, max: 0.1 },
+          { label: '[.1, .5)', min: 0.1, max: 0.5 },
+          { label: '[.5, 1)', min: 0.5, max: 1 },
+          { label: '1 (certain)', min: 1, max: 1 },
+        ].map((band) => ({
+          band: band.label,
+          ...calibration(
+            taps.filter((t) => {
+              const p = t.likelihood;
+              return (
+                p !== undefined &&
+                (band.min === band.max
+                  ? p === band.min
+                  : p < band.max && (band.min === 0 ? p > 0 : p >= band.min))
+              );
+            }),
+          ),
+        })),
+        moods,
+        ...(version === WEEK_TWO_EDITION
+          ? {
+              weekTwo: {
+                prompts: rs.reduce((n, r) => n + (r.weekTwo?.prompts ?? 0), 0) / rs.length,
+                pullWonPrompts: rs.reduce((n, r) => n + (r.weekTwo?.pullWonPrompts ?? 0), 0) / rs.length,
+                kept: rs.reduce((n, r) => n + (r.weekTwo?.kept ?? 0), 0) / rs.length,
+                missed: rs.reduce((n, r) => n + (r.weekTwo?.missed ?? 0), 0) / rs.length,
+                morningsAlone: rs.reduce((n, r) => n + (r.weekTwo?.morningsAlone ?? 0), 0) / rs.length,
+                flags: Object.fromEntries(
+                  [...new Set(rs.flatMap((r) => Object.keys(r.weekTwo?.flags ?? {})))].sort().map((key) => {
+                    const counts: Record<string, number> = {};
+                    for (const r of rs) {
+                      const value = JSON.stringify(r.weekTwo?.flags[key]) ?? '(absent)';
+                      counts[value] = (counts[value] ?? 0) + 1;
+                    }
+                    return [key, counts];
+                  }),
+                ),
+              },
+            }
+          : {}),
+      };
+    }),
+  );
+  console.log('edition policy  kept missed prompts pullWon holds taps against land% retained surfaced');
+  for (const s of summaries)
     console.log(
-      `${s.version} ${s.policy.padEnd(7)} ${w.prompts.toFixed(1)} ${w.pullWonPrompts.toFixed(1)} ${w.kept.toFixed(1)} ${w.missed.toFixed(1)} ${w.morningsAlone.toFixed(1)} ${JSON.stringify(w.flags)}`,
+      `${s.version} ${s.policy.padEnd(7)} ${s.kept.toFixed(1)} ${s.missed.toFixed(1)} ${s.prompts.toFixed(1)} ${s.pullWonPrompts.toFixed(1)} ${s.holds.toFixed(1)} ${s.taps} ${s.against} ${s.againstLandingShare === null ? '-' : (100 * s.againstLandingShare).toFixed(1)} ${s.retained} ${s.surfaced}`,
     );
+  if (versions.includes(WEEK_TWO_EDITION)) {
+    console.log('week two: edition policy prompts pullWon kept missed morningsAlone flags(value:count)');
+    for (const s of summaries) {
+      const w = s.weekTwo;
+      if (!w) continue;
+      console.log(
+        `${s.version} ${s.policy.padEnd(7)} ${w.prompts.toFixed(1)} ${w.pullWonPrompts.toFixed(1)} ${w.kept.toFixed(1)} ${w.missed.toFixed(1)} ${w.morningsAlone.toFixed(1)} ${JSON.stringify(w.flags)}`,
+      );
+    }
   }
+  if (process.argv.includes('rows')) for (const r of rows) console.log(JSON.stringify(r));
+  const jsonPath = process.argv.find((a) => a.startsWith('json='))?.slice(5);
+  if (jsonPath)
+    writeFileSync(jsonPath, `${JSON.stringify({ definitions, seeds, summaries, rows }, null, 2)}\n`);
 }
-if (process.argv.includes('rows')) for (const r of rows) console.log(JSON.stringify(r));
-const jsonPath = process.argv.find((a) => a.startsWith('json='))?.slice(5);
-if (jsonPath)
-  writeFileSync(jsonPath, `${JSON.stringify({ definitions, seeds, summaries, rows }, null, 2)}\n`);
+if (process.argv[1]?.endsWith('/measure.ts')) main();

@@ -30,9 +30,9 @@ function week(s: GameState, opened: { id: string; at: number }[]) {
     }
   }
 }
-it('keeps 0.6 default and plays six third-week days only on explicit 0.7', () => {
+it('keeps the two-week default and plays six third-week days only on explicit 0.7', () => {
   // One complete campaign supplies the chronology and departure controls; replay still covers every input.
-  expect(newGame(17).version).toBe('0.6.0');
+  expect(newGame(17).version).toBe('0.6.1');
   let s = newGame(17, '0.7.0');
   const opened: { id: string; at: number }[] = [];
   week(s, opened);

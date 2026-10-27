@@ -48,12 +48,14 @@ import {
   LABEL,
   makeDilan,
   PULL,
+  promiseBedtime,
   promiseReview,
   REVIEW_AT,
   renewDailyPromises,
   WAKE,
   YOU,
 } from './dilan.ts';
+import { isCanonicalEdition, PROMISE_EDITION } from './edition.ts';
 import {
   configureListening,
   keepSuggestion,
@@ -86,7 +88,7 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = CAST_VERSION;
+export const GAME_VERSION = PROMISE_EDITION;
 export const NEXT_VERSION = '0.7.0';
 /** Pinned0.7 continuous scale: one day of disuse retains0.8. Old editions keep their nightly rule. */
 export const PRACTICE_HALF_LIFE_DAYS = 3.1062837195053903;
@@ -120,6 +122,7 @@ export const WEEK_TWO_EDITION = '0.4.0';
 const hasWeekTwo = (s: GameState) =>
   s.version === '0.4.2' ||
   s.version === '0.5.0' ||
+  s.version === CAST_VERSION ||
   s.version === WEEK_TWO_EDITION ||
   s.version === '0.4.1' ||
   s.version === GAME_VERSION ||
@@ -183,10 +186,10 @@ export function newGame(
     resumed.castChapter = structuredClone(chapter);
     return resumed;
   }
-  if (chapter && (version !== CAST_VERSION || chapter.edition !== CAST_VERSION || chapter.seed !== seed))
+  if (chapter && (!isCanonicalEdition(version) || chapter.edition !== CAST_VERSION || chapter.seed !== seed))
     throw Error('Wrong pinned cast chapter.');
   const cast =
-    version === CAST_VERSION || version === NEXT_VERSION || version === OUTCOMES_VERSION
+    isCanonicalEdition(version) || version === NEXT_VERSION || version === OUTCOMES_VERSION
       ? chapter
         ? cloneCast(chapter.initial)
         : freshCast(seed, plainEnglish)
@@ -584,10 +587,11 @@ function open(s: GameState, m: Moment) {
   }
 }
 
-/** The authored alarm is absent because her learned phrase is strong enough this morning. */
+/** Old editions force a learned morning. New promises still go through an HF decision. */
 function getsUpAlone(s: GameState, m: Moment): boolean {
   return (
     weekOf(s.day) === 2 &&
+    s.version !== PROMISE_EDITION &&
     m.id.startsWith('alarm-') &&
     (ctxOf(s).phrases.find((ph) => ph.id === 'feet')?.practice ?? 0) >= FEET_ALONE_FROM
   );
@@ -718,7 +722,7 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
       phrase &&
       ((s.version !== '0.4.2' &&
         s.version !== '0.5.0' &&
-        s.version !== '0.6.0' &&
+        !isCanonicalEdition(s.version) &&
         s.version !== NEXT_VERSION &&
         s.version !== OUTCOMES_VERSION) ||
         chosen.phrase?.id === phrase.id)
@@ -1063,7 +1067,8 @@ function nextDay(s: GameState) {
 function pageOf(s: GameState): Page {
   const p = s.person;
   const r = p.review?.last;
-  const today = r && r.day === Math.floor(p.now / 1440);
+  const reviewDay = s.version === PROMISE_EDITION ? dayStart(s.day) + REVIEW_AT : p.now;
+  const today = r && r.day === Math.floor(reviewDay / 1440);
   const st = s.stats;
   const page: Page = {
     day: s.day,
@@ -1304,7 +1309,8 @@ function startWeekTwo(s: GameState) {
     nextDay(s);
   }
   delete s.flags.bedAt;
-  renewDailyPromises(s.person, firstDay);
+  renewDailyPromises(s.person, firstDay, s.version === PROMISE_EDITION);
+  if (s.version === PROMISE_EDITION) promiseBedtime(s.person, firstDay);
   if (s.castChapter?.resume && s.cast) {
     for (const role of ['dilan', 'aylin', 'ece', 'murat'] as const) {
       const p = s.cast.people[role];

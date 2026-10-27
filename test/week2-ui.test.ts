@@ -77,7 +77,7 @@ describe('a played first week', () => {
     'plays and replays seed %i through the normal inputs',
     (seed) => {
       const s = playedFirstWeek(seed);
-      expect(s.version).toBe('0.6.0');
+      expect(s.version).toBe('0.6.1');
       expect(s.phase).toBe('end');
       expect(s.day).toBe(6);
       expect(s.inputs.some((i) => i.kind === 'say' && i.insist)).toBe(false);
@@ -227,7 +227,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       await page.locator('#bp-title').click();
       await page.locator('#new').click();
       await page.locator('#confirm-new').click();
-      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.6.0');
+      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.6.1');
       expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(1);
     } finally {
       await page.close();

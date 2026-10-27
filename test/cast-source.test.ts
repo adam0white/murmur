@@ -51,7 +51,7 @@ describe('exact native return', () => {
   // while exercising a distinct replay path with the same pinned source.
   beforeAll(async () => {
     const { cardView } = await import('../src/sim/game.ts');
-    const s = newGame(17, '0.6.0');
+    const s = newGame(17, '0.6.1');
     s.castScope = 'shared';
     while (s.phase !== 'end') {
       if (s.phase === 'evening') {
@@ -93,6 +93,7 @@ describe('exact native return', () => {
   });
 
   it('restores the physical outcomes and continues the same native week', () => {
+    expect(returned.version).toBe('0.6.1');
     expect(returned.flags.shelf).toBe(2);
     expect(returned.cast?.discoveries).toEqual(source.cast?.discoveries);
     expect(returned.chosen).toEqual(source.chosen);

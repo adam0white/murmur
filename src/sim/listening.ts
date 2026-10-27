@@ -8,6 +8,7 @@ import {
   type Suggestion,
   type SuggestionResolution,
 } from '@adam0white/human-framework';
+import { isCanonicalEdition } from './edition.ts';
 import type { GameState, Opt } from './types.ts';
 
 const LISTENING_EDITION = '0.3.0';
@@ -15,7 +16,7 @@ const LISTENING_EDITION = '0.3.0';
 export const listens = (s: GameState | { version: string }) =>
   s.version === '0.8.0' ||
   s.version === '0.7.0' ||
-  s.version === '0.6.0' ||
+  isCanonicalEdition(s.version) ||
   s.version === '0.5.0' ||
   s.version === LISTENING_EDITION ||
   s.version === '0.4.0' ||

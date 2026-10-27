@@ -1,3 +1,4 @@
+import { isCanonicalEdition } from '../sim/edition.ts';
 import { assertNotebookState } from './notebook.ts';
 /** Current canonical UI transport. Only explicit new chapters claim; files never acquire ownership by loading. */
 
@@ -18,7 +19,7 @@ import {
 import { CAST, CAST_VERSION, type CastRole, roleOf } from '../sim/canonical-cast.ts';
 import { type CastReturnArchive, prepareCastChapter, validateCastChapter } from '../sim/cast-chapter.ts';
 import { createCastHistorySource, createCastSource } from '../sim/cast-source.ts';
-import { cloneState, newGame, queueInput, replay, step } from '../sim/game.ts';
+import { cloneState, GAME_VERSION, newGame, queueInput, replay, step } from '../sim/game.ts';
 import type { GameState } from '../sim/types.ts';
 import { departureGuardCurrent, publishPersona, recordingEpochGuard, shelf } from './continuity.ts';
 
@@ -46,7 +47,7 @@ export async function freshCanonicalWeek(seed: number, isCurrent: () => boolean)
         return shelf.request<T>(request);
       const chapter = structuredClone(prepared);
       chapter.claims = request.envelopes;
-      const run = newGame(chapter.seed, CAST_VERSION, chapter);
+      const run = newGame(chapter.seed, GAME_VERSION, chapter);
       run.castHeads = Object.fromEntries(chapter.claims.map((h) => [h.castId, h]));
       run.castScope = 'shared';
       const key = `murmur-held-cast:${crypto.randomUUID()}`;
@@ -138,7 +139,7 @@ export async function freshCanonicalWeek(seed: number, isCurrent: () => boolean)
   if (!isCurrent()) throw Error('The selected chapter changed. Choose again.');
   if (result && prepared) {
     prepared.claims = result.claims;
-    const s = newGame(prepared.seed, CAST_VERSION, prepared);
+    const s = newGame(prepared.seed, GAME_VERSION, prepared);
     s.castHeads = Object.fromEntries(result.claims.map((h) => [h.castId, h]));
     s.castScope = 'shared';
     return s;
@@ -158,7 +159,10 @@ function simulationOnly(s: GameState) {
 }
 export async function validateCanonicalRun(json: GameState): Promise<GameState> {
   assertNotebookState(json);
-  if ((json.version !== CAST_VERSION && json.version !== '0.7.0' && json.version !== '0.8.0') || !json.cast)
+  if (
+    (!isCanonicalEdition(json.version) && json.version !== '0.7.0' && json.version !== '0.8.0') ||
+    !json.cast
+  )
     throw Error('This notebook uses an older cast edition. Start fresh.');
   if (json.castChapter) await validateCastChapter(json.castChapter, json.seed);
   const rebuilt = replay(

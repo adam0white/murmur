@@ -10,7 +10,8 @@ import {
   snapshot,
 } from '@adam0white/human-framework';
 import { canonicalPersona } from '@adam0white/lab-client';
-import { CAST_VERSION, type CastRole } from './canonical-cast.ts';
+import type { CastRole } from './canonical-cast.ts';
+import { isCanonicalEdition } from './edition.ts';
 import type { GameState } from './types.ts';
 
 const identity = (ids: string[]) => Object.fromEntries(ids.map((id) => [id, id]));
@@ -23,7 +24,7 @@ export async function castDigest(value: unknown): Promise<string> {
 export async function createCastSource(s: GameState, role: CastRole) {
   if (s.version === '0.7.0')
     throw Error('The three-week edition has no supported source passport yet. Keep its full notebook.');
-  if (s.version !== CAST_VERSION || !s.cast || s.phase !== 'end' || ![6, 13].includes(s.day) || s.card)
+  if (!isCanonicalEdition(s.version) || !s.cast || s.phase !== 'end' || ![6, 13].includes(s.day) || s.card)
     throw Error('A native checkpoint needs an actually played completed Saturday boundary.');
   const p = s.cast.people[role];
   if (!p.body.alive) throw Error('This actual death needs terminal closure, not an alive passport.');
@@ -76,7 +77,7 @@ function projectCastPerson(p: import('@adam0white/human-framework').Person) {
 export function releaseCastSource(s: GameState, role: CastRole): void {
   if (s.version === '0.7.0')
     throw Error('The three-week edition has no supported source departure yet. Keep its full notebook.');
-  if (s.version !== CAST_VERSION || !s.cast || s.phase !== 'end' || ![6, 13].includes(s.day))
+  if (!isCanonicalEdition(s.version) || !s.cast || s.phase !== 'end' || ![6, 13].includes(s.day))
     throw Error('Pause at an actually completed Saturday boundary.');
   const p = s.cast.people[role];
   const goals = p.agenda.goals.filter((g) => g.status === 'active');
@@ -177,7 +178,7 @@ export async function createCastHistorySource(s: GameState) {
     limitations: [
       ...old.limitations,
       `${history.selection.omittedEpisodeIds.length} source episodes remain only in the full archive.`,
-      'Supported story source: Murmur0.6.0 only. Third-week0.7 sources are not admitted by this finite dialect.',
+      'Supported story source: Murmur0.6.0 and0.6.1 (the notebook pins the simulation edition). Third-week0.7 sources are not admitted by this finite dialect.',
       'Source references retain source meanings. They create no destination acquaintance, trust, qualification or publicly told fact.',
       'This source has empty beliefs, commitments and debt; no nonempty transport coverage is claimed.',
     ],

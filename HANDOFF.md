@@ -1,5 +1,13 @@
 # Murmur handoff
 
+## Week-two promises — edition 0.6.1, 2026-10-27
+
+HF stays at 3.0.0. Fresh runs use 0.6.1; existing editions keep their replay rules. Week two now offers every alarm through HF, requires attention after dialling Mum, and adds five bedtime promises with writing or sleep as valid choices. Scrolling consumes 150 minutes. Late reviews stay attached to their authored day. The finite canonical passport projection remains 0.6.0; native notebooks and returns retain their actual simulation edition.
+
+Twenty paired seeds per policy and edition: week-one careless/careful slipped weeks remain 16/20 and 0/20; week-two careless rises from 3/20 to 18/20, careful stays 0/20. All forty paired first-week full-state hashes match after normalizing only the edition. Careless misses 57.7% of individual second-week promises; careful keeps 77.3%. The coordinator's original percentages describe slipped weeks, not individual promises.
+
+See `docs/design.md` for rules, sampler definitions, measurements and Deferred status. Delivery receipts and remaining work are recorded in `~/code/.lab-scratch/codex/murmur-week2.md`. Adam's acceptance of feel remains 2026-11-03. This task runs no playtests and changes neither HF packages nor the central site.
+
 ## Dependency installation — 2026-10-26
 
 Use pnpm 12.14.0 and shared Node 26.12.0. Install with `pnpm install --frozen-lockfile`; `npm run` remains valid. The pnpm lock imports the existing npm lock with exact versions preserved. Overrides and native build permissions live in `pnpm-workspace.yaml`. Do not regenerate an npm lock or install a runtime per worktree. This configuration change requires full lane, unchanged raw build bytes, reviewed signed source and exact green CI; it does not deploy the app or establish game readiness.

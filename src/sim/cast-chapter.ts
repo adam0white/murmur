@@ -20,6 +20,7 @@ import {
 } from '@adam0white/lab-client';
 import { CAST_VERSION, type CastState, cloneCast, freshCast, roleOf } from './canonical-cast.ts';
 import { createCastSource } from './cast-source.ts';
+import { isCanonicalEdition } from './edition.ts';
 import { cloneState, replay, step } from './game.ts';
 import type { GameState } from './types.ts';
 
@@ -235,7 +236,7 @@ export async function prepareCastChapter(
     }
 
     if (
-      source.version !== CAST_VERSION ||
+      !isCanonicalEdition(source.version) ||
       !source.cast ||
       source.phase !== 'end' ||
       source.day !== 6 ||

@@ -128,6 +128,8 @@ Cost and risk: more uncertainty makes her less predictable. Retained words add r
 
 ## Deferred (target: 2026-11-03)
 
+- Week-two difficulty: resolved by edition 0.6.1 (2026-10-27), measured below. Adam's acceptance of feel remains 2026-11-03; playtests remain owner-deferred. The weekly standing threshold is unchanged.
+
 - Replace Friday’s repeated coffee card (fun review 2; target 2026-11-03): a new competing obligation changes the decisions and needs its own authored situation, edition boundary and playtest; this round preserves live 0.3.0 runs.
 - More campaigns, including a second week. **Reconciled2026-10-26:** week two already exists; the further campaign is the optional0.7 third-week candidate below, pending review/delivery and Adam’s play.
 - Other people as HF persons (Ece, Mum). **Reconciled2026-10-26:** Ece already has a canonical HF person. Mum remains background; any foreground allocation change is Adam’s input for2026-11-03. This candidate adds no person.
@@ -290,3 +292,39 @@ Client0.4.11 and kit0.5.12 use the exact verified immutable release artifacts on
 GDI702 is a separate explicit murmur-cast/2 / murmur-calendar/2 source projection from supported0.6 Aylin only. It maps the last eight actual source episodes, preserves source references and declares a zero producer clock offset. It archives and discloses omitted episode IDs and unsupported stores. The actual92cdebd source has200episodes and empty beliefs/commitments/debt; nonempty transport is not proved. Oldv1 is unchanged. No source reference awards trust, acquaintance, skills, work or public knowledge. The original92cdebd notebook/build remains historical; a later signed producer commit implements this dialect. The offline export script requires that signed clean producer. Good Hands receiver work and genuine cross-origin proof remain separate.
 
 Deferred reconciliation: a second week and canonical Ece already exist. Do not build them again. Mum remains an unnamed background parent; there is no41st maintained person. Foreground allocation and real owner/player taste remain Adam's inputs for2026-11-03. GDI027/028/030/031/032/574/575/576/689/702 are implemented in this candidate pending review/delivery; this does not close their delivery or taste acceptance. No new player/model round, outreach, service or allocation change occurred.
+
+## Week-two promises (edition 0.6.1, 2026-10-27)
+
+Technical done: signed main, exact green CI, normal guarded deployment and a matching clean live release. Adam accepts feel; his 2026-11-03 acceptance stays separate. HF remains pinned to 3.0.0. No playtest is part of this change.
+
+The coordinator's 75–92.5% and 5/20 figures describe **weeks that slipped**, not individual missed promises (`~/code/.lab-scratch/claude-builds/pmg-followups.md`). The standing reader slips a week when no more than 55% of its promises were kept. This edition leaves that threshold and week one's rules intact.
+
+Cause from source: `renewDailyPromises` renews only alarm and Mum, with two Ece promises added only when chosen. A learned Feet phrase bypassed the whole second-week alarm decision and completed its promise automatically. Calling Mum had four hours of slack, and starting the ordinary call fulfilled the whole obligation. Week two inherited habits, phrases and resolves, then offered recovery without a bedtime obligation. Consequently random play could keep promises through the host's automatic actions and one good selection. Narrowing the call window made matters easier by raising HF deadline pressure; a larger pull term was not a reliable difficulty control.
+
+The new rules keep the first week's difficulty edge:
+
+- A learned phrase still participates in HF, but never removes a week-two alarm decision. The player can suggest getting up; Dilan can also choose it herself through HF.
+- Mum expects twenty minutes of attention. Dialling takes three action minutes; a concrete video distraction then offers listening for the remaining seventeen, ending early, or watching while she talks. Only listening completes the promise and grants the call's former benefits. Thursday's full call at home remains a valid way to keep it. The original 17:30–21:30 window remains.
+- Five daily bedtime promises accept either writing or lights out, from 21:30 to 21:55. Rest is a valid choice. Continued video watching takes 150 rather than 75 minutes, reducing sleep before the next alarm.
+- A late night can cross midnight. Its evening page uses the authored day's review, so missed promises cannot disappear merely because the host clock passed midnight.
+
+Replay and continuity: only 0.6.1 gets these rules. Existing editions retain their complete simulation paths. New local and shared canonical starts use 0.6.1; a resumed source keeps its original edition. The finite cast/passport projection stays 0.6.0; the full notebook retains its actual simulation edition, and native returns replay that edition rather than relabelling it. This does not upgrade the optional 0.7/0.8 campaigns.
+
+Measurement: `node scripts/measure-promises.ts 0.6.0,0.6.1 /absolute/result.json`, seeds 2000–2019, twenty runs per policy and edition, both weeks in each run. Careless makes a seeded random option choice, with 15% silence and 30% insistence. Its host LCG is reset from the seed for each week and never uses Dilan's RNG. Careful calls the existing `scripts/measure.ts` edge driver on the same ticked decision clone as the original measure. The original coordinator's random sampler was not retained; these are paired measurements with a documented sampler, not a claim of byte-identical reproduction of its 5/20.
+
+| Edition | Policy   | Week | Slipped weeks | Missed / all promises | Missed share |
+| ------- | -------- | ---: | ------------: | --------------------: | -----------: |
+| 0.6.0   | careless |    1 |         16/20 |               114/220 |        51.8% |
+| 0.6.0   | careless |    2 |          3/20 |                76/234 |        32.5% |
+| 0.6.0   | careful  |    1 |          0/20 |                16/220 |         7.3% |
+| 0.6.0   | careful  |    2 |          0/20 |                11/236 |         4.7% |
+| 0.6.1   | careless |    1 |         16/20 |               114/220 |        51.8% |
+| 0.6.1   | careless |    2 |         18/20 |               192/333 |        57.7% |
+| 0.6.1   | careful  |    1 |          0/20 |                16/220 |         7.3% |
+| 0.6.1   | careful  |    2 |          0/20 |                77/339 |        22.7% |
+
+All forty paired first-week complete-state hashes matched. Careless second-week slipped weeks rose from 3/20 to 18/20; careful stayed at 0/20. Careless missed most individual second-week promises (57.7%); careful kept 77.3%. Those are separate metrics.
+
+The first-week full-state hashes are compared across editions after normalizing only the edition field. The two focused tests pin first-week equality, the second-week rules and complete replay, plus one careful headless control. Existing legacy exports and a new-edition native source return remain covered. No test matrix is added. These driver results establish rule separation, not human acceptance.
+
+Tradeoff: five extra promises change the denominator, and a connected call adds one decision. Keeping a bedtime is not a score for Dilan's worth. Older notebooks retain their old difficulty. Revert fresh starts by restoring GAME_VERSION and package version to 0.6.0; retain the 0.6.1 branch for existing notebooks.

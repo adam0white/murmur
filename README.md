@@ -2,6 +2,8 @@
 
 [Play Two Voices](https://murmur.adamwhite.work/). You suggest what Dilan should do during an ordinary week. She can agree, refuse or choose another action. Her other inner voice offers its own advice.
 
+Fresh runs use edition 0.6.1 on HF 3.0.0. Week two adds a bedtime promise and asks Dilan to finish a call after dialling. Saved editions keep their original rules and replay.
+
 ## How to play
 
 1. Choose **Start**, or **Resume** to open the week saved in this browser. Starting a new game asks before replacing a saved week.

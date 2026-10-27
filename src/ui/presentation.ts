@@ -1,3 +1,4 @@
+import { isCanonicalEdition } from '../sim/edition.ts';
 /** Read-only projections of the recorded 0.3.0 story. Never change advice or replay state. */
 import { type CardView, DAY_NAMES } from '../sim/game.ts';
 import { momentById } from '../sim/moments.ts';
@@ -53,7 +54,7 @@ export function attributedWords(text: string): string {
 
 /** A little more of completed calls; the stored log and legacy editions stay exact. */
 export function conversationWords(s: GameState, text: string): string {
-  if (s.version !== '0.4.2' && s.version !== '0.5.0' && s.version !== '0.6.0') return text;
+  if (s.version !== '0.4.2' && s.version !== '0.5.0' && !isCanonicalEdition(s.version)) return text;
   const extra: Record<string, string> = {
     'They talked for twenty minutes. Mum told her about the neighbour’s roof. Dilan laughed twice.':
       '“He says he can patch it himself,” Mum said. “He said that before the rain, too.”',

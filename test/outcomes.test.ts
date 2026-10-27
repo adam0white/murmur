@@ -54,7 +54,7 @@ beforeAll(() => {
 }, 20_000);
 
 it('offers a distinct optional outcomes week while keeping the existing editions', () => {
-  expect(newGame(17).version).toBe('0.6.0');
+  expect(newGame(17).version).toBe('0.6.1');
   expect(momentsOf(15, '0.8.0').map((m) => m.id)).toContain('old-record-15');
   expect(momentsOf(15, '0.7.0').map((m) => m.id)).toContain('floor-15');
   expect(momentsOf(15, '0.7.0').map((m) => m.id)).not.toContain('old-record-15');

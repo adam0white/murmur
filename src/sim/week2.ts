@@ -1,6 +1,7 @@
 /** Week two: what being depended on does to an ordinary week. Week one's last page is fact. */
 import { promise, releaseCommitment as release } from '@adam0white/human-framework';
 import { DAY0, LABEL } from './dilan.ts';
+import { isCanonicalEdition } from './edition.ts';
 import type { Ctx, GameState, Moment, Opt } from './types.ts';
 
 const at = (h: number, m = 0) => h * 60 + m;
@@ -8,7 +9,7 @@ const absolute = (day: number, minute: number) => DAY0 + (day - 1) * 1440 + minu
 const dayLine = (c: Ctx, lines: string[]) => lines[c.weekday - 1] ?? lines[0] ?? '';
 // Copy-only variation belongs to the new edition; exported older runs keep their words.
 const routineWords = (legacy: string, nights: string[]) => (c: Ctx) =>
-  c.version === '0.4.1' || c.version === '0.4.2' || c.version === '0.5.0' || c.version === '0.6.0'
+  c.version === '0.4.1' || c.version === '0.4.2' || c.version === '0.5.0' || isCanonicalEdition(c.version)
     ? dayLine(c, nights)
     : legacy;
 const w2 = (s: GameState) => (s.flags.w2 ??= {});
