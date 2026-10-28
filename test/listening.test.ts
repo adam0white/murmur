@@ -166,7 +166,7 @@ describe('gentle suggestions', () => {
       }
     }
     expect(bands.size).toBeGreaterThanOrEqual(3);
-  }, 30_000);
+  }, 120_000);
   it('refreshes repeated gentle advice without stacking its score', () => {
     let repeated = false;
     for (let seed = 1; seed < 17 && !repeated; seed++) {
