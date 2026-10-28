@@ -3,7 +3,7 @@
  * Scope: a pure reader of the week's evening pages. It writes nothing, so saves, exports and replay hashes are
  * unchanged. Owner aim (2026-10-27): careless play loses well over half the time, and the loss names its cost.
  */
-import { LABEL } from './dilan.ts';
+import { LABEL } from './dilan-content.ts';
 import { weekOf } from './game.ts';
 import type { GameState } from './types.ts';
 

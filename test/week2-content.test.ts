@@ -1,8 +1,8 @@
-import { advanceAgenda, onFinished } from '@adam0white/human-framework';
+import { advanceAgenda, onFinished } from '@adam0white/human-framework-legacy';
 import { describe, expect, it } from 'vitest';
-import { DAY0, makeDilan } from '../src/sim/dilan.ts';
-import { MOMENTS } from '../src/sim/moments.ts';
-import type { Ctx, Final, GameState, Moment } from '../src/sim/types.ts';
+import { DAY0, makeDilan } from '../src/legacy/dilan.ts';
+import { MOMENTS } from '../src/legacy/moments.ts';
+import type { Ctx, Final, GameState, Moment } from '../src/legacy/types.ts';
 import {
   FEET_ALONE_FROM,
   upAloneLine,
@@ -10,7 +10,7 @@ import {
   weekTwoHerLine,
   weekTwoLine,
   weekTwoThreads,
-} from '../src/sim/week2.ts';
+} from '../src/legacy/week2.ts';
 
 const closing = {
   send: 'Mum replied with a voice note eleven minutes long.',

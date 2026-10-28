@@ -1,7 +1,7 @@
-import { practiceAt, responseCueMatches } from '@adam0white/human-framework';
+import { practiceAt, responseCueMatches } from '@adam0white/human-framework-legacy';
 import { expect, it } from 'vitest';
-import { LABEL } from '../src/sim/dilan.ts';
-import { newGame, PRACTICE_HALF_LIFE_DAYS, queueInput, runToCard } from '../src/sim/game.ts';
+import { LABEL } from '../src/legacy/dilan.ts';
+import { newGame, PRACTICE_HALF_LIFE_DAYS, queueInput, runToCard } from '../src/legacy/game.ts';
 
 it('one completed birthday dinner keeps both real promises without a synthetic call', () => {
   const s = newGame(17, '0.7.0');
@@ -32,9 +32,9 @@ it('an actual learned alarm response cannot serve gossip and uses only the publi
 });
 
 it('does not turn a late meal into keeping the new arrival deadline', async () => {
-  const { WEEK_THREE } = await import('../src/sim/week3.ts');
-  const { dayStart } = await import('../src/sim/dilan.ts');
-  const { advanceAgenda, onFinished } = await import('@adam0white/human-framework');
+  const { WEEK_THREE } = await import('../src/legacy/week3.ts');
+  const { dayStart } = await import('../src/legacy/dilan.ts');
+  const { advanceAgenda, onFinished } = await import('@adam0white/human-framework-legacy');
   const s = newGame(17, '0.7.0');
   WEEK_THREE.find((m) => m.id === 'arrival-17')!.after!(s, 'promise');
   const c = s.person.agenda.commitments.find((c) => c.label === 'my six o’clock help for Aylin')!;

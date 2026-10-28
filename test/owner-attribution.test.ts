@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
-import { cardView, queueInput, replay } from '../src/sim/game.ts';
-import type { Input } from '../src/sim/types.ts';
+import { cardView, queueInput, replay } from '../src/legacy/game.ts';
+import type { Input } from '../src/legacy/types.ts';
 
 // Owner's minimal prefix to Friday's car-park call. No private replay fixture required.
 const inputs = [

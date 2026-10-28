@@ -1,8 +1,8 @@
 import type { Browser } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
-import { playedFirstWeek } from '../src/sim/firstweek.ts';
-import { anotherWeek, cloneState, queueInput, runToCard } from '../src/sim/game.ts';
+import { playedFirstWeek } from '../src/legacy/firstweek.ts';
+import { anotherWeek, cloneState, queueInput, runToCard } from '../src/legacy/game.ts';
 import { expandNotebook } from '../src/ui/notebook.ts';
 import { chooseSeed, launchBrowser } from './browser.ts';
 
@@ -140,7 +140,10 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
       expect(extra.name).toBe('tester');
       if (mode === 'linked')
         expect((await expandNotebook(extra.run)).state).toEqual(
-          await page.evaluate(() => JSON.parse(JSON.stringify(window.__murmur.state))),
+          await page.evaluate(async () => {
+            const { cloneState } = await new Function('return import("/src/sim/game.ts")')();
+            return cloneState(window.__murmur.state!);
+          }),
         );
       else expect(extra.run).toBeUndefined();
       expect(calls[0][1]).toContain('Verdict: keep');
@@ -185,6 +188,7 @@ it('offers privacy beside the recording switch and yields journal room before sc
     await page.locator('#bp-close').click();
     await page.evaluate(() => (window.__murmur.fast = true));
     await page.locator('#cont').click();
+    await page.waitForFunction(() => window.__murmur.view()?.id === 'bus-10');
     expect(await page.evaluate(() => window.__murmur.view()?.id)).toBe('bus-10');
     expect((await page.locator('#journal').boundingBox())!.height).toBeLessThan(112);
   } finally {

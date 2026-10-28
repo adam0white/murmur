@@ -33,9 +33,12 @@ it('renders quiet choices without sending; ordinary Submit keeps recording-off p
     await chooseSeed(page, 17);
     await page.locator('#next-edition').check();
     await page.locator('#new').click();
-    expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.7.0');
+    expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.9.1');
     await page.locator('#hush').waitFor();
-    const raw = await page.evaluate(() => JSON.parse(JSON.stringify(window.__murmur.state)));
+    const raw = await page.evaluate(async () => {
+      const { cloneState } = await new Function('return import("/src/sim/game.ts")')();
+      return cloneState(window.__murmur.state!);
+    });
     expect(JSON.parse(JSON.stringify(cloneState(await validateRun(raw))))).toEqual(raw);
     await page.locator('#info').click();
     const progress = await page.locator('#timer').getAttribute('stroke-dasharray');

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { cardView, fingerprint, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
-import type { Input } from '../src/sim/types.ts';
-import { doneLine, journalLines } from '../src/ui/journal.ts';
+import { cardView, fingerprint, queueInput, replay, runToCard, step } from '../src/legacy/game.ts';
+import type { Input } from '../src/legacy/types.ts';
+import { doneLine, journalLines } from '../src/legacy/ui/journal.ts';
 
 // Minimal Tuesday prefixes from the owner's runs; private replay files are not fixtures.
 // r-1hc66srngy

@@ -1,6 +1,6 @@
 import { canonicalCast } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
-import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
+import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/legacy/game.ts';
 
 describe('canonical chapter fiction', () => {
   it('starts four actual people with canonical profiles and no imported secrets', () => {

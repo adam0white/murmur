@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
-import { cardView, fingerprint, newGame, queueInput, runToCard, step } from '../src/sim/game.ts';
-import { weekStanding } from '../src/sim/standing.ts';
-import type { GameState } from '../src/sim/types.ts';
+import { cardView, fingerprint, newGame, queueInput, runToCard, step } from '../src/legacy/game.ts';
+import { weekStanding } from '../src/legacy/standing.ts';
+import type { GameState } from '../src/legacy/types.ts';
 
 function week(seed: number, say: (s: GameState) => { option: string; insist?: boolean } | null) {
   const s = newGame(seed);

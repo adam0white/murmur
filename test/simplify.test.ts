@@ -1,7 +1,7 @@
 import type { Browser } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
-import { newGame } from '../src/sim/game.ts';
+import { newGame } from '../src/legacy/game.ts';
 import { launchBrowser } from './browser.ts';
 
 let browser: Browser;
@@ -19,6 +19,8 @@ afterAll(async () => {
 });
 it('offers gameplay without a flag and keeps diagnostics collapsed beside privacy', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
+  // Exercise the real current first-week generation and complete replay, not a seeded UI substitute.
+  page.setDefaultTimeout(90000);
   try {
     await page.goto(url);
     await page.locator('#new').waitFor();
@@ -53,7 +55,7 @@ it('offers gameplay without a flag and keeps diagnostics collapsed beside privac
   } finally {
     await page.close();
   }
-}, 30000);
+}, 150000);
 for (const [width, height] of [
   [360, 690],
   [820, 1180],

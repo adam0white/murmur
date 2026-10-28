@@ -9,8 +9,8 @@ import {
   restoreState,
   runToCard,
   step,
-} from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
+} from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
 
 function answer(s: GameState): void {
   if (s.phase === 'evening') queueInput(s, { kind: 'next' });

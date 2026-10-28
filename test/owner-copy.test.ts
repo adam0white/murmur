@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ctxOf, newGame } from '../src/sim/game.ts';
-import { momentById } from '../src/sim/moments.ts';
-import type { Answer, Ctx, Opt } from '../src/sim/types.ts';
-import { replyWords } from '../src/ui/reply.ts';
+import { ctxOf, newGame } from '../src/legacy/game.ts';
+import { momentById } from '../src/legacy/moments.ts';
+import type { Answer, Ctx, Opt } from '../src/legacy/types.ts';
+import { replyWords } from '../src/legacy/ui/reply.ts';
 
 function completion(option: Opt, c: Ctx) {
   return typeof option.done === 'function' ? option.done(c) : option.done;

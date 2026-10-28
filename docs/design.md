@@ -8,7 +8,29 @@
 
 **Done for the first playable** (set 2026-10-19 by the coordinator's brief; the owner accepts feel separately): five played weekdays and a Saturday morning, an ending, a playtest export that replays, tests, a headless measure, at least three source-unread playtests recorded verbatim with their findings applied, live at https://murmur.adamwhite.work and listed in the HF games collection.
 
-## HF 4 port — 2026-10-28
+## Current HF 4 implementation — 2026-10-28
+
+Application/default edition 0.9.0 uses released HF 4.7.0, client 0.5.3 and kit 0.5.21. Client and kit use the exact GitHub release tar URLs in package.json. Optional 0.9.1 adds the third week; 0.9.2 is the separate outcomes edition. Historical editions retain the original HF 3.0.0 simulation under an explicit alias and `src/legacy`. Historical raw golden fixtures stay unchanged. Current public replay forwards both retained chapter and plain-English setting.
+
+One HF run owns the four people. Current reads use public inspection; choices, promptings, learned responses, review-style changes and practice decay use public framework inputs/tuning. The host authors scenes, physical actions and settlement. Companion offers are authored per slot and recorded before ordinary independent decisions. A request alone does not establish private disclosure, a joint repair, a visit agreement or a fulfilled promise. Current option previews keep the supported person perspective.
+
+Retained portable-person v2 admission captures source identity and life clocks and clears receiving defaults that could overwrite incoming norms, goals or duties. The full detached opening validates before an atomic whole-cast claim. Provenance-bearing opening facts declare local host places and historical vocabulary. Foreign historical places/actions/sources use explicit namespaces and calendar maps; they do not create source people or assert present co-location. Unsupported pending source references refuse. A supported incoming duty remains a duty.
+
+Current snapshots preserve every complete JSON value without rounding or omission. Saves synchronously record an exact input-reconstruction checkpoint and then compress the complete notebook. Reload verifies complete host values and the HF full hash. The title reads validated host metadata for its saved-location label; full Resume still validates the archive and replay. Complete source prefixes enter one IndexedDB store. The write transaction must commit before localStorage receives a small receipt or publication starts. Abort/failure preserves prior custody and the current save and refuses publication. Old unsupported source-prefix formats refuse explicitly; they are not silently migrated or deleted.
+
+Only the host's unused recent-completion diagnostic list is bounded to 64 names. Complete accepted action inputs and settlements remain in the authoritative archive. Actual action completion and full replay controls cover that distinction. Source checkpoint projection observes a completed Saturday and an idle person; it never advances time or clears purposes to make export succeed. Files retain file origin and no branch ownership. Exact-parent conflicts never fork implicitly.
+
+Technical evidence: the actual default two-week and optional 0.9.1 three-week controls passed complete JSON cold restore, complete host replay and HF replay. Final three-week JSON is 20,205,038 bytes; two-week JSON is 13,270,626 bytes. Complete three-week WebKit save/normal Resume and exact source readback passed at 360×690 and 1280×800. A native transaction abort preserved the prior complete source and save and made zero publication calls. The controlled transport rejected publication; this is not shared acceptance or a genuine cross-origin journey. Reviewed candidate HF/client file bytes match the official released artifacts, allowing that evidence to carry forward. Kit0.5.21 adds the shared `PEOPLE_ACROSS_GAMES` caption/export; the installed release gets a separate short load/label check.
+
+A later normal-gate repair corrected a real host-validator defect: it added an absent ownership field and dropped explicit false metadata. The validator now preserves captured field presence and values exactly. A fast strict complete-snapshot regression failed before that fix and passed afterward; the actual current week-two Debug replay case also passed afterward. This is a changed validator path, separate from the unchanged HF/gameplay payload behind the earlier whole-game proofs.
+
+Limits: both WebKit probes accepted a second complete compressed notebook, correcting the earlier quota-exceeded hypothesis; maximum quota is unmeasured. Highest observed WebKit RSS was 4,458,688 KiB (~4.57 GB decimal / 4.25 GiB), not an instrumented absolute peak. The full browser check took 961.21 seconds; responsiveness and low-memory behavior are unproved. No whole-game0.9.2 outcomes proof is claimed. Exact CI/deployment receipts are delivery work; the root verified central deployment `6f88bd0a5aa5118ae7457689fd491c34d42ec80b` with HF 4.7.0 and dirty:false (`hf-unblock-b-published/receipt.json`). A genuine cross-origin journey and Adam's 2026-11-03 fiction acceptance remain separate.
+
+### Historical HF 4.5.1 contract probe — superseded
+
+The following block records the original4.5.1 findings and then-current pins. The blocker status and November17 recheck were superseded by released4.7.0 and the implementation above. Preserve the probes as history, not as current refusal or delivery status.
+
+#### Original HF 4 port probe — 2026-10-28
 
 Remaining: HF needs runtime inputs for learning prompting responses and changing review style, plus supported fast practice decay, before this game can move from HF 3.0.0. Recheck the published contracts on **2026-11-17**. Adam accepts fiction and feel separately.
 

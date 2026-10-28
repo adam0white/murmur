@@ -1,16 +1,16 @@
 import { readFileSync } from 'node:fs';
-import { promise, snapshot } from '@adam0white/human-framework';
+import { promise, snapshot } from '@adam0white/human-framework-legacy';
 import { canonicalPersona } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
-import { fingerprint, newGame, queueInput, replay, runToCard } from '../src/sim/game.ts';
+import { fingerprint, newGame, queueInput, replay, runToCard } from '../src/legacy/game.ts';
 import {
   createOneCastDeparture,
   type DilanTransfer,
   installOneCastReturn,
   prepareOneCastReturn,
   releaseOneCastDeparture,
-} from '../src/sim/one-cast.ts';
-import type { GameState } from '../src/sim/types.ts';
+} from '../src/legacy/one-cast.ts';
+import type { GameState } from '../src/legacy/types.ts';
 
 const legacy = JSON.parse(readFileSync(new URL('./fixtures/legacy-one-cast.json', import.meta.url), 'utf8'));
 

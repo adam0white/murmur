@@ -2,9 +2,9 @@ import { mkdir } from 'node:fs/promises';
 import type { Browser, Page } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { playedFirstWeek } from '../src/sim/firstweek.ts';
-import { anotherWeek, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
+import { playedFirstWeek } from '../src/legacy/firstweek.ts';
+import { anotherWeek, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
 import type { tester } from '../src/ui/app.ts';
 import { chooseSeed, launchBrowser } from './browser.ts';
 
@@ -154,6 +154,8 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
 
     it(`offers a played first week from the cover on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
+      // This current HF4 path actually plays the first week; the old30s locator deadline expired.
+      page.setDefaultTimeout(60000);
       try {
         await page.goto(`${origin}`);
         await chooseSeed(page, 1003);
@@ -161,6 +163,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         await page.getByRole('button', { name: 'Begin at the second week', exact: true }).click();
         // Straight to Monday of the second week: no recap page of answers the player never gave.
         await page.locator('#hush').waitFor();
+        expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.9.0');
         expect(await page.evaluate(() => window.__murmur.state?.seed)).toBe(1003);
         expect(await page.evaluate(() => window.__murmur.state?.past?.length)).toBe(1);
         expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(8);
@@ -168,7 +171,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       } finally {
         await page.close();
       }
-    });
+    }, 120000);
 
     it(`renders both weeks and no empty voice note on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
@@ -227,7 +230,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       await page.locator('#bp-title').click();
       await page.locator('#new').click();
       await page.locator('#confirm-new').click();
-      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.6.1');
+      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.9.0');
       expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(1);
     } finally {
       await page.close();

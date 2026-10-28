@@ -2,12 +2,12 @@ import {
   type CalendarPersonaSnapshot,
   DEFAULT_NORMS,
   projectCalendarPersona,
-} from '@adam0white/human-framework';
+} from '@adam0white/human-framework-legacy';
 import { createPersona, initialPersonaLife, preparePersonaLife } from '@adam0white/lab-client';
 import { expect, it } from 'vitest';
-import { freshCast } from '../src/sim/canonical-cast.ts';
-import { prepareCastChapter, validateCastChapter } from '../src/sim/cast-chapter.ts';
-import { cardView, cloneState, newGame, queueInput, replay, runToCard } from '../src/sim/game.ts';
+import { freshCast } from '../src/legacy/canonical-cast.ts';
+import { prepareCastChapter, validateCastChapter } from '../src/legacy/cast-chapter.ts';
+import { cardView, cloneState, newGame, queueInput, replay, runToCard } from '../src/legacy/game.ts';
 
 async function source() {
   const p = freshCast(93).people.aylin;

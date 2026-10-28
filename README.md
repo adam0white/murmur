@@ -2,7 +2,7 @@
 
 [Play Two Voices](https://murmur.adamwhite.work/). You suggest what Dilan should do during an ordinary week. She can agree, refuse or choose another action. Her other inner voice offers its own advice.
 
-Fresh runs use edition 0.6.1 on HF 3.0.0. Week two adds a bedtime promise and asks Dilan to finish a call after dialling. Saved editions keep their original rules and replay.
+Fresh runs use edition 0.9.0 on HF 4.7.0 and contain two authored weeks. Optional edition 0.9.1 adds a third week; 0.9.2 is the separate outcomes edition. Historical notebooks retain their original rules through the pinned HF 3 replay path. Unsupported older cast imports refuse with a fresh-start option.
 
 ## How to play
 
@@ -21,7 +21,7 @@ The canonical cast is Dilan (33, revision 2), Aylin (36), Ece (24) and Murat (27
 
 ## Saves, recording and lab tools
 
-The current week is saved in this origin’s browser local storage. A save contains its edition, seed, input log and state. Resume validates the run. Failed admission or loading preserves the saved week. Browser storage and exported files are distinct; loading a file does not grant ownership of a shared continuation.
+The current week is saved in this origin’s browser localStorage as a complete compressed notebook. A synchronous input checkpoint preserves an exact reconstruction path if compression fails. Resume validates the complete archive and host replay. Complete source notebooks use IndexedDB; source receipts enter localStorage only after their transaction commits. Storage failures refuse publication. Failed admission or loading preserves the saved week. Browser storage and exported files are distinct; loading a file does not grant ownership of a shared continuation.
 
 The first-visit notice explains recording and linked play across games on this device. One menu recording switch controls both. Explicitly turning it on opts in despite DNT/GPC. Character analysis has its own opt-in. With recording off, feedback offers an unticked choice to share this play; leaving it unticked sends the note without the saved run or linked history. See [Lab privacy](https://human.adamwhite.work/lab/privacy/).
 
@@ -30,9 +30,17 @@ clearing one sends nothing and leaves your edited note unchanged. **Submit** com
 the selected words, optional verdict and current note. This is source behavior; its
 CI repair and live-delivery status are recorded in HANDOFF.
 
-Gameplay is public. Other ways to begin offers a week-two start. The title offers the three-week and outcomes editions. The menu offers pace, New game and Download this run. Slow changes gaps between choices, not the 64-second choice window. Debug starts collapsed beside Lab privacy and contains seed, provenance, run loading and replay verification. Cross-game people carry over automatically through the central shelf; cast controls live there. Downloaded runs preserve pinned inputs. Loading validates exact replay and never claims the latest shared heads.
+Gameplay is public. **People across games** links to the central page. Other ways to begin offers a week-two start. The title offers the three-week and outcomes editions. The menu offers pace, New game and Download this run. Slow changes gaps between choices, not the 64-second choice window. Debug starts collapsed beside Lab privacy and contains seed, provenance, run loading and replay verification. Cross-game people carry over automatically through the central shelf; cast controls live there. Downloaded runs preserve pinned inputs. Loading validates exact replay and never claims the latest shared heads.
 
 ## Supported continuation routes
+
+Default fresh play prepares applicable people together and validates retained portable-person v2 admission before the atomic cast claim. Source identity, revision, captured life clock, norms, duties, calendar and reference mappings remain part of admission. Local places have declared host meanings. Foreign historical places and actions retain explicit namespaces; they do not assert physical presence here. Incomplete or unsupported passports refuse without acquiring ownership.
+
+Completed Saturday checkpoints observe an idle person through public inspection. They do not advance the run, clear responsibilities or grant another person's assent. Complete source custody commits before publication. Parent conflicts require an explicit alternate branch for the selected person. Imported files keep file origin through reload; loading them never claims the latest shared heads. Cross-game controls remain on the central **People across games** page.
+
+### Historical HF 3 adapters
+
+The following records describe the retained historical adapters in `src/legacy`; they are not current HF 4 admission guarantees.
 
 Fresh play prepares applicable people together and admits the whole cast atomically. Unsupported, old or closed source heads refuse the start. Inspect and manage those people on the central shelf. Parent conflicts require an explicit alternate branch for the selected person. Local source archives and exact replayed notebooks are required for native returns; an imported file retains file origin through reload.
 
@@ -49,7 +57,7 @@ The unchanged artifact from signed Good Hands source `509386298dfd89026c10bc6011
 
 ## Development and delivery
 
-Use shared Node 26.12.0 (`.node-version` and `.nvmrc`) and pnpm 12.14.0 with `/opt/homebrew/bin` first on PATH. Install with `pnpm install --frozen-lockfile`; run `npm run dev`. This host pins game edition 0.6.0, HF package 3.0.0 (Person engine 2.23.0), lab client 0.4.11 and lab kit 0.5.12. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
+Use shared Node 26.12.0 (`.node-version` and `.nvmrc`) and pnpm 12.14.0 with `/opt/homebrew/bin` first on PATH. Install with `pnpm install --frozen-lockfile`; run `npm run dev`. Application release and default edition are 0.9.0. HF is pinned to registry package 4.7.0. Client 0.5.3 and kit 0.5.21 use exact GitHub release tar URLs in package.json; neither SDK pin claims npm publication or npm provenance. The explicit historical HF 3.0.0 alias remains. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
 
 Before each commit, run the normal lane under the shared lock:
 

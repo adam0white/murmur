@@ -4,7 +4,7 @@ import {
   DEFAULT_NORMS,
   projectCalendarPersona,
   snapshot,
-} from '@adam0white/human-framework';
+} from '@adam0white/human-framework-legacy';
 import { canonicalPersona } from '@adam0white/lab-client';
 import { expect, it } from 'vitest';
 import {
@@ -12,8 +12,8 @@ import {
   createCastHistorySource,
   createCastSource,
   createHistoryProjection,
-} from '../src/sim/cast-source.ts';
-import { cloneState, newGame, replay, step } from '../src/sim/game.ts';
+} from '../src/legacy/cast-source.ts';
+import { cloneState, newGame, replay, step } from '../src/legacy/game.ts';
 
 it('projects eight exact signed source episodes and discloses the other192 without changing source', async () => {
   const source = JSON.parse(

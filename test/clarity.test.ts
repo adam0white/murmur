@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import type { Browser, Page } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
-import type { Input } from '../src/sim/types.ts';
+import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/legacy/game.ts';
+import type { Input } from '../src/legacy/types.ts';
 import { chooseSeed, launchBrowser } from './browser.ts';
 
 let server: ViteDevServer;
@@ -425,7 +425,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       if (!stream) throw new Error('Run download has no stream');
       for await (const chunk of stream) chunks.push(Buffer.from(chunk));
       const run = JSON.parse(Buffer.concat(chunks).toString());
-      const { replay, fingerprint, restoreState } = await import('../src/sim/game.ts');
+      const { replay, fingerprint, restoreState } = await import('../src/legacy/game.ts');
       expect(fingerprint(replay(run.seed, run.inputs, run.state.minute))).toBe(
         fingerprint(restoreState(run.state)),
       );
@@ -848,7 +848,7 @@ describe('design round remembered words', { timeout: 30_000 }, () => {
         const game = (
           window as unknown as {
             __murmur: {
-              start(seed: number): void;
+              start(seed: number, version: string): void;
               say(option: string): void;
               quiet(): void;
               skipToCard(): void;
@@ -859,7 +859,7 @@ describe('design round remembered words', { timeout: 30_000 }, () => {
         ).__murmur;
         for (let seed = 1; seed <= 16; seed++) {
           game.fast = false;
-          game.start(seed);
+          game.start(seed, '0.3.0');
           game.skipToCard();
           game.say('up');
           if (game.state.answer.stayed) return game.state.answer.stayed;

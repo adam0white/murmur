@@ -1,4 +1,4 @@
-import { tick } from '@adam0white/human-framework';
+import { tick } from '@adam0white/human-framework-legacy';
 import { describe, expect, it } from 'vitest';
 import {
   cardView,
@@ -9,9 +9,9 @@ import {
   queueInput,
   replay,
   runToCard,
-} from '../src/sim/game.ts';
-import type { Answer, GameState } from '../src/sim/types.ts';
-import { replyWords } from '../src/ui/reply.ts';
+} from '../src/legacy/game.ts';
+import type { Answer, GameState } from '../src/legacy/types.ts';
+import { replyWords } from '../src/legacy/ui/reply.ts';
 
 function answer(s: GameState): Answer {
   expect(s.answer).not.toBeNull();

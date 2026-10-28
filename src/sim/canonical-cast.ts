@@ -1,32 +1,20 @@
 /** Four maintained people. Private clues require a completed chosen encounter, never a passport. */
-import {
-  begin,
-  createPerson,
-  decide,
-  finish,
-  MINUTES_PER_YEAR,
-  type Person,
-  seedTie,
-  snapshot,
-  tick,
-} from '@adam0white/human-framework';
 import { castForGame } from '@adam0white/lab-client';
-import { DAY0, makeDilan, WAKE } from './dilan.ts';
+import { playEncounter } from './hf4-encounter.ts';
+import { readDilan } from './hf4-read.ts';
 import type { GameState, Moment, Opt } from './types.ts';
-
-export const CAST_VERSION = '0.6.0';
+export const CAST_VERSION = '0.9.0';
 export const CAST = castForGame('murmur');
 export type CastRole = 'dilan' | 'aylin' | 'ece' | 'murat';
 export const roleOf = (castId: string): CastRole => {
-  const role = CAST.find((c) => c.castId === castId)?.castId.split('.')[2];
-  if (!role || !['dilan', 'aylin', 'ece', 'murat'].includes(role)) throw Error('Not a Murmur cast identity.');
-  return role as CastRole;
+  const c = CAST.find((c) => c.castId === castId);
+  if (!c) throw new Error('Not a Murmur cast identity.');
+  return c.castId.split('.')[2] as CastRole;
 };
 export interface CastState {
   pauses?: Partial<
     Record<CastRole, { at: number; purposes: { id: string; label: string; progress: number }[] }>
   >;
-  people: Record<CastRole, Person>;
   discoveries: { person: CastRole; at: number; line: string }[];
   encounters: { person: CastRole; at: number; action: string }[];
   assignments: Partial<Record<CastRole, string>>;
@@ -34,37 +22,8 @@ export interface CastState {
   places: Partial<Record<CastRole, string>>;
   extraWork: Partial<Record<CastRole, boolean>>;
 }
-export function freshCast(seed: number, plainEnglish = true): CastState {
-  const people = {} as CastState['people'];
-  for (const c of CAST) {
-    const role = roleOf(c.castId);
-    const now = DAY0 + WAKE - 1;
-    const p =
-      role === 'dilan'
-        ? makeDilan(seed, plainEnglish)
-        : createPerson({
-            lexicon: { plainEnglish },
-            id: role,
-            name: c.name,
-            seed: seed ^ (c.age * 7919),
-            now,
-            bornAt: now - c.age * MINUTES_PER_YEAR,
-            sex: role === 'murat' ? 'male' : 'female',
-            traits: { ...c.traits },
-            values: { ...c.values },
-          });
-    p.traits = { ...c.traits };
-    p.values = { ...c.values };
-    if (role === 'dilan' || role === 'aylin') {
-      seedTie(p, { otherId: role === 'dilan' ? 'aylin' : 'dilan', roles: ['sibling'] });
-      seedTie(p, { otherId: 'mum', roles: ['parent'] });
-    }
-    if (role === 'dilan') seedTie(p, { otherId: 'ece', roles: ['colleague'] });
-    if (role === 'ece') seedTie(p, { otherId: 'dilan', roles: ['colleague'] });
-    people[role] = p;
-  }
+export function freshCast(_seed: number): CastState {
   return {
-    people,
     discoveries: [],
     encounters: [],
     assignments: Object.fromEntries(CAST.map((c) => [roleOf(c.castId), c.assignments[0] ?? c.work])),
@@ -127,104 +86,36 @@ export function castOptions(s: GameState, m: Moment, base: Opt[]): Opt[] {
     },
   ];
 }
-/** Ordinary offscreen meals, work and sleep, through the same HF action protocol. No passport or life catch-up calls this. */
-function companionRoutine(p: Person, until: number, cast: CastState, role: CastRole): void {
-  while (p.now < until && p.body.alive) {
-    const hour = (p.now % 1440) / 60;
-    const action =
-      hour < 7 || hour >= 22
-        ? 'sleep'
-        : (hour >= 7 && hour < 8) || (hour >= 12 && hour < 13) || (hour >= 18 && hour < 19)
-          ? 'meal'
-          : hour >= 8 && hour < 17
-            ? 'work'
-            : 'rest';
-    const duration = Math.min(until - p.now, 30);
-    const needs =
-      action === 'meal'
-        ? { food: 0.6, water: 0.7 }
-        : action === 'work'
-          ? { competence: 0.05, water: 0.25 }
-          : { water: 0.15, autonomy: 0.1 };
-    const aff = {
-      id: `routine-${p.now}`,
-      label: action === 'work' ? (cast.assignments[role] ?? action) : action,
-      placeId:
-        action === 'work'
-          ? role === 'aylin'
-            ? 'kitchen'
-            : cast.assignments[role] === 'courier round'
-              ? 'delivery district'
-              : 'depot'
-          : 'home',
-      action,
-      duration,
-      mode: action === 'sleep' ? ('sleep' as const) : ('awake' as const),
-      effort: action === 'sleep' ? 0 : 0.02,
-      advertises: needs,
-    };
-    const rec = decide(p, [aff]);
-    const activity = rec.chosenAffordanceId === aff.id ? begin(p, aff, rec) : null;
-    if (activity) {
-      tick(p, activity.endsAt);
-      finish(p, { affordanceId: aff.id, action, status: 'completed', at: p.now, needs });
-    } else tick(p, p.now + duration);
-  }
-}
-/** Called only after HF finishes the selected Dilan action. Third-person state reflects the encounter. */
+/** Dilan's completed action alone cannot establish another person's assent or private disclosure. */
 export function finishCastEncounter(s: GameState, m: Moment, chosen: Opt): string | undefined {
   if (!s.cast) return;
-  const sharedShelf = m.id === 'shelf-visit-6' && chosen.id === 'repair-with-aylin';
-  const role = sharedShelf
-    ? 'aylin'
-    : (Object.keys(clues).find((id) => chosen.id === `reveal-${id}`) as CastRole | undefined);
-  if (!role) return;
-  const c = sharedShelf
-    ? { moment: m.id, line: typeof chosen.done === 'string' ? chosen.done : '' }
-    : clues[role];
-  if (m.id !== c.moment) throw Error('Wrong discovery encounter.');
-  if (role !== 'dilan') {
-    const p = s.cast.people[role];
-    // The participant actually spends this bounded encounter with Dilan. No friendship or qualification is granted.
-    if (p.now < s.person.now - chosen.duration)
-      companionRoutine(p, s.person.now - chosen.duration, s.cast, role);
-    if (p.activity || !p.body.alive)
-      return 'They could not finish the conversation. No private confidence was shared.';
-    const aff = {
-      id: `encounter-${m.id}`,
-      label: 'talk with Dilan',
-      action: sharedShelf ? 'shelf' : 'chat',
-      effort: 0.05,
-      duration: chosen.duration + (sharedShelf ? (chosen.alsoDoes?.duration ?? 0) : 0),
-      placeId: m.place,
-      advertises: { belonging: 0.7, meaning: 0.3 },
-    };
-    const decision = decide(p, [aff]);
-    const activity = decision.chosenAffordanceId === aff.id ? begin(p, aff, decision) : null;
-    if (!activity) return 'They could not finish the conversation. No private confidence was shared.';
-    tick(p, activity.endsAt);
-    finish(p, {
-      affordanceId: aff.id,
-      action: aff.action,
-      status: 'completed',
-      at: p.now,
-      needs: { belonging: 0.2 },
-    });
+  if (m.id === 'shelf-visit-6' && chosen.id === 'repair-with-aylin') {
+    if (!playEncounter(s, 'aylin', 'shelf', chosen.duration, m.place))
+      return 'Dilan worked on the shelf. Aylin did not join the repair; they did not finish it together.';
+    return typeof chosen.done === 'string' ? chosen.done : undefined;
   }
-  s.cast.encounters.push({ person: role, at: s.person.now, action: chosen.action });
-  if (!sharedShelf && !s.cast.discoveries.some((x) => x.person === role))
-    s.cast.discoveries.push({ person: role, at: s.person.now, line: c.line });
-  return c.line;
+  const role = Object.keys(clues).find((id) => chosen.id === `reveal-${id}`) as CastRole | undefined;
+  if (!role || m.id !== clues[role].moment) return;
+  if (role !== 'dilan' && !playEncounter(s, role, 'chat', chosen.duration, m.place))
+    return 'Dilan made the request. No completed reply from the other person was recorded.';
+  const agreed = role === 'dilan' && playEncounter(s, 'aylin', 'call-aylin', chosen.duration, m.place);
+  if (agreed) s.flags.shelfVisitAgreed = true;
+  const line =
+    role === 'dilan' && !agreed
+      ? clues.dilan.line.replace(
+          'They agreed to inspect it together;',
+          'Dilan proposed inspecting it together; no reply was completed;',
+        )
+      : clues[role].line;
+  s.cast.encounters.push({ person: role, at: readDilan(s.hf.run).at / 60_000, action: chosen.action });
+  if (!s.cast.discoveries.some((x) => x.person === role))
+    s.cast.discoveries.push({ person: role, at: s.minute, line });
+  return line;
 }
 export function castIntroduction(): string {
   return 'Dilan, 33, delivers parcels in Istanbul. Her sister Aylin, 36, cooks school lunches and private meals. Ece, 24, works the depot routes while studying logistics and lives with her aunt. Murat, 27, used to work as a grill cook. He is now a junior supervisor at the depot. Their work does not end when Dilan goes home.';
 }
-export function cloneCast(cast: CastState): CastState {
-  const result = structuredClone(cast);
-  for (const role of Object.keys(result.people) as CastRole[])
-    result.people[role] = snapshot(cast.people[role]);
-  return result;
-}
+export const cloneCast = (cast: CastState): CastState => structuredClone(cast);
 
 /** Life place and assignment change actual scene/affordance context, not the person's occupation. */
 export function castScene(s: GameState, m: Moment, base: string): string {
@@ -240,52 +131,11 @@ export function castScene(s: GameState, m: Moment, base: string): string {
 }
 
 /** Source checkpoints observe these already-lived states; they never advance a person to pass a gate. */
-export function advanceCast(s: GameState, at: number): void {
-  if (!s.cast) return;
-  for (const role of ['aylin', 'ece', 'murat'] as const)
-    companionRoutine(s.cast.people[role], at, s.cast, role);
+export function advanceCast(_s: GameState, _at: number): void {
+  /* Shared HF run owns companion time. */
 }
 
-export const CAST_MOMENTS: Moment[] = [
-  {
-    id: 'shelf-visit-6',
-    day: 6,
-    at: 8 * 60 + 15,
-    window: 20,
-    place: 'home',
-    when: (c) => c.chosen['shelf-4'] === 'reveal-dilan',
-    scene:
-      'It is Saturday. Aylin has come for the short visit they agreed on to look at the shelf. The boxes are off the uneven support. “Show me what catches,” she says. She has not come to take over.',
-    pull: { to: 'leave-shelf', line: 'Have cake. Leave the shelf for another day.' },
-    options: [
-      {
-        id: 'repair-with-aylin',
-        ink: 'Stay beside her. Repair the support and finish the shelf together.',
-        label: 'repair the shelf with Aylin',
-        action: 'shelf',
-        duration: 60,
-        alsoDoes: { action: 'shelf', duration: 30 },
-        effort: 0.25,
-        advertises: { competence: 0.3, belonging: 0.25 },
-        gives: { competence: 0.3, belonging: 0.25 },
-        done: 'Dilan stayed while Aylin held the support. They repaired it and finished the shelf. The crooked edge remained visible inside; they put a book on it together.',
-      },
-      {
-        id: 'leave-shelf',
-        ink: 'Have cake together. Say plainly that the repair will wait.',
-        label: 'leave the repair for now',
-        action: 'chat',
-        duration: 20,
-        advertises: { belonging: 0.2 },
-        gives: { belonging: 0.2 },
-        done: 'They had cake. Dilan said the shelf was still unfinished instead of pretending that asking for help had finished it.',
-      },
-    ],
-    after: (s, chosen) => {
-      if (chosen === 'repair-with-aylin') s.flags.shelf = 2;
-    },
-  },
-];
+export { CAST_MOMENTS } from './cast-moments.ts';
 export function castMoment(s: GameState, m: Moment): Moment {
   if (!s.cast || m.id !== 'route-3' || s.cast.extraWork.dilan !== false) return m;
   const original = m.options;

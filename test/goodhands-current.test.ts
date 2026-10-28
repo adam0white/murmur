@@ -1,13 +1,13 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { ENGINE_VERSION } from '@adam0white/human-framework';
+import { ENGINE_VERSION } from '@adam0white/human-framework-legacy';
 import { canonicalPersona, createPersona, preparePersonaLife } from '@adam0white/lab-client';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { prepareCastChapter, validateCastChapter } from '../src/sim/cast-chapter.ts';
-import { createCastSource } from '../src/sim/cast-source.ts';
-import { cloneState, newGame, queueInput, replay, runToCard } from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
-import { validateCanonicalRun } from '../src/ui/cast-chapter.ts';
+import { prepareCastChapter, validateCastChapter } from '../src/legacy/cast-chapter.ts';
+import { createCastSource } from '../src/legacy/cast-source.ts';
+import { cloneState, newGame, queueInput, replay, runToCard } from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
+import { validateCanonicalRun } from '../src/legacy/ui/cast-chapter.ts';
 
 vi.mock('../src/ui/continuity.ts', () => ({
   shelf: {},

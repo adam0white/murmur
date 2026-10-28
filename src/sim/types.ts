@@ -1,4 +1,20 @@
-import type { FollowOn, NeedId, NormTag, Person, PromptingResponseKind } from '@adam0white/human-framework';
+type NeedId =
+  | 'food'
+  | 'water'
+  | 'sleep'
+  | 'rest'
+  | 'relief'
+  | 'safety'
+  | 'belonging'
+  | 'esteem'
+  | 'autonomy'
+  | 'competence'
+  | 'leisure'
+  | 'meaning';
+type NormTag = { normId: string; relation: 'fulfills' | 'violates' };
+type FollowOn = { label?: string; duration: number; effort: number; focus?: number };
+type PromptingResponseKind = 'refuge' | 'redirect' | 'leave';
+
 import type { PersonaEnvelope } from '@adam0white/lab-client';
 import type { CastSourceRecord } from '../ui/cast-chapter.ts';
 import type { DepartureReceipt } from './one-cast.ts';
@@ -92,6 +108,7 @@ export interface Flags {
   bowling?: boolean;
   gym?: boolean;
   shelf?: number;
+  shelfVisitAgreed?: boolean;
   wrote?: number;
   wroteTonight?: boolean;
   bedAt?: number;
@@ -214,9 +231,12 @@ export interface ReturnChapter {
   prefixMinute: number;
   envelope: PersonaEnvelope;
   departure: PersonaEnvelope;
-  initialPerson: Person;
+  initialPerson: unknown;
 }
 export interface GameState {
+  /** One authoritative HF4 community run and its persisted host counters. */
+  hf: import('./hf4-game.ts').MurmurHf4;
+  plainEnglish: boolean;
   castHeadScopes?: Record<string, 'shared' | 'local' | 'file'>;
   castSources?: Record<string, CastSourceRecord>;
   castChapter?: import('./cast-chapter.ts').CastChapter;
@@ -235,7 +255,6 @@ export interface GameState {
   day: number;
   phase: 'day' | 'evening' | 'end';
   minute: number;
-  person: Person;
   inputs: Input[];
   applied: number;
   queue: string[];
@@ -261,3 +280,8 @@ export interface GameState {
     surfacedAt?: number;
   }[];
 }
+
+/** A notebook stores the complete HF archive, never an opaque live run handle. */
+export type GameStateSnapshot = Omit<GameState, 'hf'> & {
+  hf: import('./hf4-session.ts').MurmurSessionArchive;
+};

@@ -1,10 +1,10 @@
 import { expect, it } from 'vitest';
 import { playWeek } from '../scripts/measure-promises.ts';
-import { DAY0, dayStart, LABEL } from '../src/sim/dilan.ts';
-import { anotherWeek, cloneState, newGame, replay, runToCard, step } from '../src/sim/game.ts';
-import { momentById } from '../src/sim/moments.ts';
-import { weekStanding } from '../src/sim/standing.ts';
-import type { GameState } from '../src/sim/types.ts';
+import { DAY0, dayStart, LABEL } from '../src/legacy/dilan.ts';
+import { anotherWeek, cloneState, newGame, replay, runToCard, step } from '../src/legacy/game.ts';
+import { momentById } from '../src/legacy/moments.ts';
+import { weekStanding } from '../src/legacy/standing.ts';
+import type { GameState } from '../src/legacy/types.ts';
 
 const totals = (s: GameState) => {
   const pages = s.pages.filter((p) => p.day >= 8);

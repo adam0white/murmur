@@ -1,4 +1,4 @@
-import { createPerson, DEFAULT_NORMS, projectCalendarPersona } from '@adam0white/human-framework';
+import { createPerson, DEFAULT_NORMS, projectCalendarPersona } from '@adam0white/human-framework-legacy';
 import {
   canonicalCast,
   createPersona,
@@ -7,14 +7,14 @@ import {
   preparePersonaLife,
 } from '@adam0white/lab-client';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { cloneState, queueInput, runToCard } from '../src/sim/game.ts';
+import { cloneState, queueInput, runToCard } from '../src/legacy/game.ts';
 import {
   automaticCastCheckpoint,
   freshCanonicalWeek,
   heldCanonicalWeek,
   saveCastPerson,
   validateCanonicalRun,
-} from '../src/ui/cast-chapter.ts';
+} from '../src/legacy/ui/cast-chapter.ts';
 
 const state = vi.hoisted(() => ({
   owner: undefined as object | undefined,
