@@ -52,3 +52,31 @@ it('previews the offered choice through HF without changing any full state value
   expect(view.options.every((o) => o.lean !== 'unknown' && o.pushed !== 'unknown')).toBe(true);
   expect(game.fingerprint(state)).toBe(before);
 });
+
+it('previews low-trust insistence with the same suggestion that holding submits', () => {
+  const state = game.newGame(17);
+  for (let card = 0; card < 4; card++) {
+    game.runToCard(state);
+    const view = game.cardView(state)!;
+    const option = view.options.find((choice) => !choice.isPull) ?? view.options[0]!;
+    game.queueInput(state, { kind: 'say', option: option.id, insist: true });
+  }
+  game.runToCard(state);
+  expect(game.insistCarries(state)).toBe(false);
+  const before = game.fingerprint(state);
+  const view = game.cardView(state)!;
+  const readings = {
+    assented: 'yes',
+    complied: 'if pushed',
+    deferred: 'later',
+    modified: 'rather not',
+    refused: 'no',
+    commanded: 'no',
+  };
+  for (const option of view.options) {
+    const held = game.restoreState(game.cloneState(state));
+    game.queueInput(held, { kind: 'say', option: option.id, insist: true });
+    expect(option.pushed).toBe(readings[held.answer!.verdict!]);
+  }
+  expect(game.fingerprint(state)).toBe(before);
+});

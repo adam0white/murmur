@@ -154,8 +154,8 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
 
     it(`offers a played first week from the cover on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
-      // This current HF4 path actually plays the first week; the old30s locator deadline expired.
-      page.setDefaultTimeout(60000);
+      // Actual HF4 generation exceeds60s on CI; the generation+Debug route passes with90s.
+      page.setDefaultTimeout(90000);
       try {
         await page.goto(`${origin}`);
         await chooseSeed(page, 1003);
@@ -171,7 +171,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       } finally {
         await page.close();
       }
-    }, 120000);
+    }, 150000);
 
     it(`renders both weeks and no empty voice note on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });

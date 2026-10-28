@@ -13,7 +13,7 @@ export function previewChoice(
     place: string;
     options: readonly Opt[];
     pull: { option: string; strength: number; borrowed: boolean };
-    said: { option: string; insist: boolean };
+    said: { option: string; insist: boolean; strength?: number };
     fulfills: Readonly<Record<string, readonly string[]>>;
     advances?: Readonly<Record<string, readonly string[]>>;
   },

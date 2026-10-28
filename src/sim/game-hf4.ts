@@ -216,6 +216,16 @@ export function optionsOf(s: GameState, m: Moment): Opt[] {
 const INSIST_FROM = 0.45;
 export const insistCarries = (s: GameState) => trustOf(s, YOU) >= INSIST_FROM;
 
+/** Preview and submission use the same trust-dependent advice strength. */
+function suggestionFor(s: GameState, said: { option: string; insist: boolean }) {
+  const carried = !said.insist || insistCarries(s);
+  return {
+    option: said.option,
+    insist: said.insist && carried,
+    ...(!carried ? { strength: SAY / 2 } : {}),
+  };
+}
+
 /** Thursday on, the pull borrows your ink where she trusts you more than it. */
 /**
  * Thursday on, the pull sometimes borrows your ink: once a day at most, where she trusts you more than it. Which
@@ -330,7 +340,7 @@ export function cardView(s: GameState): CardView | null {
       place: m.place,
       options: opts,
       pull,
-      said: { option: option.id, insist },
+      said: suggestionFor(s, { option: option.id, insist }),
       fulfills,
       advances,
     });
@@ -579,7 +589,7 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
     ]),
   );
   const at = Math.max(s.minute * 60_000, reading.at + 1);
-  const carried = !said?.insist || trustOf(s, YOU) >= INSIST_FROM;
+  const carried = !said?.insist || insistCarries(s);
   const result = playHf4Moment(s.hf, {
     cardId: m.id,
     at,
@@ -596,15 +606,7 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
       ),
       borrowed: card.borrowed,
     },
-    ...(said
-      ? {
-          said: {
-            option: said.option,
-            insist: said.insist && carried,
-            ...(!carried ? { strength: SAY / 2 } : {}),
-          },
-        }
-      : {}),
+    ...(said ? { said: suggestionFor(s, said) } : {}),
     fulfills,
     advances,
   });
