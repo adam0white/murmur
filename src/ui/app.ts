@@ -1,13 +1,13 @@
+import { canonicalPersona } from '@adam0white/lab-client';
 /**
  * The Two Voices UI: plain DOM over the pure sim. The UI reads state and queues inputs; it never changes the sim
  * directly. Real time drives sim minutes, continuously: fast between cards (dead time skipped quickly), strongly
  * slowed while a card is open (never a hard pause), then a short readable beat after each answer.
  */
 
-import { FRAMEWORK_VERSION } from '@adam0white/human-framework';
-import { telemetryNotice, telemetryToggle } from '@adam0white/lab-kit';
+import { PEOPLE_ACROSS_GAMES, telemetryNotice, telemetryToggle } from '@adam0white/lab-kit';
 import { castIntroduction } from '../sim/canonical-cast.ts';
-import { PULL, YOU } from '../sim/dilan.ts';
+import { PULL, YOU } from '../sim/dilan-content.ts';
 import { playedFirstWeek } from '../sim/firstweek.ts';
 import {
   anotherWeek,
@@ -36,7 +36,7 @@ import {
 } from '../sim/game.ts';
 import { departureReleaseDescription } from '../sim/one-cast.ts';
 import { weekStanding } from '../sim/standing.ts';
-import type { Answer, Final, GameState, Input, LogLine, Page } from '../sim/types.ts';
+import type { Answer, Final, GameState, GameStateSnapshot, Input, LogLine, Page } from '../sim/types.ts';
 import { freshCanonicalWeek } from './cast-chapter.ts';
 import { gateContinuity, installContinuity, invalidateContinuity } from './continuity.ts';
 import { required } from './dom.ts';
@@ -64,6 +64,8 @@ import {
 import { replyWords } from './reply.ts';
 import { notebookTally } from './tally.ts';
 
+declare const __HUMAN_FRAMEWORK_VERSION__: string;
+
 let diagnosticError = '';
 
 const SAVE = 'murmur-save-v1';
@@ -83,7 +85,7 @@ interface Save {
   version?: string;
   seed: number;
   inputs: Input[];
-  state?: GameState;
+  state?: GameStateSnapshot;
 }
 
 const notice = telemetryNotice();
@@ -140,10 +142,32 @@ installContinuity(
 
 // ---------- save ----------
 
-function readSave(): Save | null {
+async function readSave(): Promise<Save | null> {
   try {
     const raw = localStorage.getItem(SAVE);
-    const sv = raw ? (JSON.parse(raw) as Save) : null;
+    const parsed = raw ? JSON.parse(raw) : null;
+    let sv: Save | null = parsed;
+    if (parsed?.format === 'murmur-notebook/1') sv = (await expandNotebook(parsed)) as unknown as Save;
+    if (parsed?.format === 'murmur-replay-save/1') {
+      const host = parsed.host as Omit<GameStateSnapshot, 'hf'>;
+      const rebuilt = replay(
+        host.seed,
+        host.inputs,
+        host.minute,
+        host.version,
+        host.castChapter,
+        host.plainEnglish,
+      );
+      if (host.phase !== 'day' && rebuilt.phase === 'day') step(rebuilt);
+      for (const key of ['castHeads', 'castScope', 'castHeadScopes', 'castSources', 'fileHistory'] as const) {
+        if (host[key] !== undefined) Object.assign(rebuilt, { [key]: structuredClone(host[key]) });
+      }
+      const state = cloneState(rebuilt),
+        { hf, ...rebuiltHost } = state;
+      if (hf.run.hashes.full !== parsed.hfHash || canonicalPersona(rebuiltHost) !== canonicalPersona(host))
+        throw new Error('The saved input checkpoint does not reconstruct exactly.');
+      sv = { format: 'murmur-save/2', version: host.version, seed: host.seed, inputs: host.inputs, state };
+    }
     if (sv && 'format' in sv && sv.format !== 'murmur-save/2') throw Error('Unsupported save format.');
     if (
       sv?.format &&
@@ -163,21 +187,45 @@ function readSave(): Save | null {
     return null;
   }
 }
+let saveGeneration = 0;
+let latestSave: Promise<void> = Promise.resolve();
 function writeSave() {
   if (!s) return;
+  const generation = ++saveGeneration;
   try {
-    const text = JSON.stringify({
+    const state = cloneState(s);
+    const payload = {
       format: 'murmur-save/2',
       version: s.version,
       seed: s.seed,
-      inputs: s.inputs,
-      state: cloneState(s),
-    });
-    localStorage.setItem(SAVE, text);
-    lab.captureSave(JSON.parse(text));
-  } catch {}
+      inputs: state.inputs,
+      state,
+    };
+    if ('hf' in state) {
+      // This explicit intermediate format reconstructs every HF value, including the archive hash.
+      // It is written synchronously so a reload during compression cannot lose the last input.
+      const { hf, ...host } = state;
+      localStorage.setItem(
+        SAVE,
+        JSON.stringify({ format: 'murmur-replay-save/1', host, hfHash: hf.run.hashes.full }),
+      );
+      latestSave = compactNotebook(payload)
+        .then((compact) => {
+          if (generation === saveGeneration) localStorage.setItem(SAVE, JSON.stringify(compact));
+        })
+        .catch((error) => {
+          if (generation === saveGeneration)
+            diagnosticError = `Full archive compression: ${String(error)}. The exact input checkpoint remains saved.`;
+        });
+    } else localStorage.setItem(SAVE, JSON.stringify(payload));
+    lab.captureSave(payload);
+  } catch (error) {
+    diagnosticError = `Could not save this input: ${String(error)}`;
+    toast = 'This choice could not be saved. Download this run before closing the page.';
+  }
 }
 function clearSave() {
+  ++saveGeneration;
   try {
     localStorage.removeItem(SAVE);
   } catch {}
@@ -226,9 +274,9 @@ const rule = (key: number) =>
   `<svg class="rule" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path d="${wob(2, 3, 298, 3, key, 1)}"/></svg>`;
 const header = (_menu = true, when = false) =>
   `<header class="top"><span class="when">${when || screen !== 'title' ? `<span class="dayname notebook-text"><span id="dayname" class="long">${s ? DAY_NAMES[s.day] : ''}</span><span id="dayshort" class="short">${s ? DAY_NAMES[s.day]?.slice(0, 3) : ''}</span></span> <span class="clock" id="clock">${s ? (screen === 'evening' ? '· in bed' : screen === 'end' ? '· week is done' : clock(s.minute)) : ''}</span><span class="week-label" id="week-label" ${!s || weekOf(s.day) < 2 ? 'hidden' : ''}> · ${s && weekOf(s.day) === 3 ? 'third' : 'second'} week</span>` : '<a href="https://human.adamwhite.work/games/">All games</a>'}</span><div class="top-controls"><button class="info-btn" id="info" aria-label="Information">i</button><button class="menu-btn" id="menu" aria-label="Game menu">≡</button></div></header>${when ? `<div class="state-strip" role="status"><span id="state-words"></span><svg class="timer" viewBox="0 0 300 6" preserveAspectRatio="none" aria-hidden="true"><path id="timer" pathLength="100" d="${wob(2, 3, 298, 3, 1, 1)}"/></svg></div>` : ''}`;
-const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 };
+const RANK: Record<Lean, number> = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0, unknown: -1 };
 const credit = () =>
-  `<p class="credit soft small">Dilan is a person from the <a href="https://human.adamwhite.work/">Human Framework ${FRAMEWORK_VERSION}</a>.</p>`;
+  `<p class="credit soft small">Dilan is a person from the <a href="https://human.adamwhite.work/">Human Framework ${__HUMAN_FRAMEWORK_VERSION__}</a>.</p>`;
 
 function holdClock() {
   clockHolds++;
@@ -353,6 +401,7 @@ function feedback(returnToMenu = false) {
 
 /** Her mood about each option, in a few words: never a number, never odds. */
 function cue(lean: Lean, pushed: Lean): string {
+  if (lean === 'unknown') return 'She has not formed a view yet.';
   if (lean === 'yes') return 'She is willing.';
   if (lean === 'if pushed') return 'She might agree, but she would not like it.';
   if (pushed === 'yes' || pushed === 'if pushed') return 'She would agree only if you insist.';
@@ -380,7 +429,7 @@ export async function start() {
     runKey: () => s?.seed ?? 'title',
     getLogs: () => s?.log.slice(-40).map((line) => line.text) ?? [],
   });
-  if (!s) title();
+  if (!s) await title();
   finishStartup();
 }
 
@@ -389,7 +438,7 @@ function expireToast() {
   if (alert) setTimeout(() => alert.remove(), 4000);
 }
 
-function title() {
+async function title() {
   feedbackOpen = false;
   clockHolds = 0;
   menuPausedAt = null;
@@ -398,8 +447,8 @@ function title() {
   releaseWake();
   screen = 'title';
   lab.screen('title');
-  const save = readSave();
-  let saved: GameState | null = null;
+  const save = await readSave();
+  let saved: GameState | GameStateSnapshot | null = null;
   try {
     saved =
       save?.state ??
@@ -439,7 +488,7 @@ function title() {
     try {
       if (!saved) return;
       const attempt = ++loadGeneration;
-      const loaded = await validateRun(saved);
+      const loaded = await validateRun(save?.state ?? cloneState(saved as GameState));
       if (attempt !== loadGeneration) return;
       invalidateContinuity();
       s = loaded;
@@ -493,7 +542,7 @@ function title() {
 }
 
 function selectedEdition() {
-  if (document.querySelector<HTMLInputElement>('#outcomes-edition')?.checked) return '0.8.0';
+  if (document.querySelector<HTMLInputElement>('#outcomes-edition')?.checked) return '0.9.2';
   return document.querySelector<HTMLInputElement>('#next-edition')?.checked ? NEXT_VERSION : GAME_VERSION;
 }
 async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
@@ -511,7 +560,7 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
     if (attempt === loadGeneration) {
       recordFailure(
         error,
-        readSave()
+        (await readSave())
           ? 'We could not start a new game. Your saved week is still here.'
           : 'We could not start the game. You can try again or send Feedback.',
         () => {
@@ -525,7 +574,7 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   if (attempt !== loadGeneration) return;
   clearSave();
   s = next;
-  if (!useShelf || localDevelopment || version === '0.8.0') s.castScope = 'local';
+  if (!useShelf || localDevelopment || version === '0.9.2') s.castScope = 'local';
   await gateContinuity(recordingState(s));
   writeSave();
   enter();
@@ -546,7 +595,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
         version?: string;
         seed: number;
         inputs: Input[];
-        state?: GameState;
+        state?: GameStateSnapshot;
       };
       if (typeof ex.seed !== 'number' || !Array.isArray(ex.inputs)) throw new Error('not a run');
       const version = ex.version ?? ex.state?.version ?? LEGACY_VERSION;
@@ -565,12 +614,11 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       if (ex.state && ex.state.phase !== 'day' && r.phase === 'day' && r.minute === until) step(r);
       let note = 'The saved run was replayed.';
       if (ex.state) {
-        let want = '';
-        try {
-          want = fingerprint(restoreState(ex.state));
-        } catch {
-          want = fingerprint(ex.state);
-        }
+        // validateRun already cold-restores and compares the complete current snapshot.
+        // Compare its full JSON here without creating another HF run for a status line.
+        const want = version.startsWith('0.9.')
+          ? canonicalPersona(ex.state)
+          : fingerprint(restoreState(ex.state));
         note =
           fingerprint(r) === want
             ? 'The saved run was replayed. It matches the file.'
@@ -888,9 +936,8 @@ function drawSheet() {
 function cardHtml(v: CardView): string {
   if (!s) return '';
   const recalled = cardThought(s, v);
-  const p = s.person;
-  const tYou = trustOf(p, YOU);
-  const tPull = trustOf(p, PULL);
+  const tYou = trustOf(s, YOU);
+  const tPull = trustOf(s, PULL);
   const first = s.day === 1 && v.id === 'alarm-1';
   // Holding helps only while she trusts you enough; when a hold would land worse than a tap, say so in words.
   const pushSore = v.options.some((o) => RANK[o.pushed] < RANK[o.lean]);
@@ -1265,10 +1312,10 @@ function backPage() {
     <button class="row" id="bp-new">New game</button><div id="bp-confirm" hidden><p>Start a new game? This replaces your saved week.</p><button id="bp-confirm-new">Start new game</button><button id="bp-cancel-new">Cancel</button></div>
     ${screen !== 'title' ? '<button class="row" id="bp-title">To the title page</button>' : ''}
     <a class="row" href="https://human.adamwhite.work/games/">All games</a>
-    <a class="row" href="https://human.adamwhite.work/lab/people/">People between games</a>
+    <a class="row" href="https://human.adamwhite.work/lab/people/">${esc(PEOPLE_ACROSS_GAMES)}</a>
     ${s ? '<button class="row" id="bp-export">Download this run</button>' : ''}
     <div class="menu-footer"><div id="menu-recording"></div><div class="menu-links"><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a><details><summary>Debug</summary><div class="debug-content">
-      <p class="soft small provenance">${s ? `Week ${weekOf(s.day)} · run ${s.seed} · edition ${s.version} · ` : ''}Human Framework ${FRAMEWORK_VERSION}</p>
+      <p class="soft small provenance">${s ? `Week ${weekOf(s.day)} · run ${s.seed} · edition ${s.version} · ` : ''}Human Framework ${__HUMAN_FRAMEWORK_VERSION__}</p>
       <label>Seed for next game <input id="debug-seed" inputmode="numeric" pattern="[0-9]*" value="${esc(debugSeed)}" placeholder="Random" /></label>
       <button id="load">Load a playtest run</button><input type="file" id="file" accept="application/json,.json" hidden />
       ${s ? '<button id="bp-replay">Verify replay</button>' : ''}<p id="debug-status" role="status"></p>
@@ -1294,7 +1341,8 @@ function backPage() {
       const pinned = cloneState(s);
       const rebuilt = await validateRun(pinned);
       required(el.querySelector('#debug-status')).textContent =
-        fingerprint(rebuilt) === fingerprint(pinned)
+        fingerprint(rebuilt) ===
+        (pinned.version.startsWith('0.9.') ? canonicalPersona(pinned) : fingerprint(restoreState(pinned)))
           ? 'Replay matches this run.'
           : 'Replay differs from this run.';
     } catch (error) {
@@ -1403,6 +1451,9 @@ document.addEventListener('visibilitychange', () => {
  * gaps are skipped at once and cards stay open until answered or skipped.
  */
 export const tester = {
+  async flushSave() {
+    await latestSave;
+  },
   get ready() {
     return startupReady;
   },

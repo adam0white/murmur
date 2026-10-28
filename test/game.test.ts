@@ -11,8 +11,8 @@ import {
   runToCard,
   step,
   trustOf,
-} from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
+} from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
 
 type Policy = (s: GameState) => { option: string; insist?: boolean } | null;
 

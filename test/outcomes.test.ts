@@ -9,11 +9,11 @@ import {
   restoreState,
   runToCard,
   step,
-} from '../src/sim/game.ts';
-import { momentsOf } from '../src/sim/moments.ts';
-import type { GameState } from '../src/sim/types.ts';
-import { compactNotebook, expandNotebook } from '../src/ui/notebook.ts';
-import { validateRun } from '../src/ui/one-cast.ts';
+} from '../src/legacy/game.ts';
+import { momentsOf } from '../src/legacy/moments.ts';
+import type { GameState } from '../src/legacy/types.ts';
+import { compactNotebook, expandNotebook } from '../src/legacy/ui/notebook.ts';
+import { validateRun } from '../src/legacy/ui/one-cast.ts';
 
 const hash = (x: unknown) => createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const choices: Record<string, string> = {

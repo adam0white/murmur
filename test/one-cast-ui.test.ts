@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { snapshot } from '@adam0white/human-framework';
+import { snapshot } from '@adam0white/human-framework-legacy';
 import { createPersona, type PersonaEnvelope, validatePersona } from '@adam0white/lab-client';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { anotherWeek, cloneState, fingerprint, newGame, queueInput, runToCard } from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
-import { momentRecords } from '../src/ui/journal.ts';
+import { anotherWeek, cloneState, fingerprint, newGame, queueInput, runToCard } from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
+import { momentRecords } from '../src/legacy/ui/journal.ts';
 
 const transport = vi.hoisted(() => ({
   shelf: { enabled: true, ready: Promise.resolve(true), request: vi.fn() },
@@ -30,7 +30,7 @@ import {
   heldReturn,
   returnedChapter,
   validateRun,
-} from '../src/ui/one-cast.ts';
+} from '../src/legacy/ui/one-cast.ts';
 
 const legacy = JSON.parse(readFileSync(new URL('./fixtures/legacy-one-cast.json', import.meta.url), 'utf8'));
 

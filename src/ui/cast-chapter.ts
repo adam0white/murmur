@@ -1,8 +1,12 @@
 import { isCanonicalEdition } from '../sim/edition.ts';
-import { assertNotebookState } from './notebook.ts';
+import { assertNotebookState, compactNotebook } from './notebook.ts';
+import { storeSourceArchive } from './source-archive.ts';
+
 /** Current canonical UI transport. Only explicit new chapters claim; files never acquire ownership by loading. */
 
-import { ENGINE_VERSION } from '@adam0white/human-framework';
+declare const __HUMAN_FRAMEWORK_VERSION__: string;
+const ENGINE_VERSION = __HUMAN_FRAMEWORK_VERSION__;
+
 import {
   anchorPersonaLife,
   canonicalCast,
@@ -19,8 +23,8 @@ import {
 import { CAST, CAST_VERSION, type CastRole, roleOf } from '../sim/canonical-cast.ts';
 import { type CastReturnArchive, prepareCastChapter, validateCastChapter } from '../sim/cast-chapter.ts';
 import { createCastHistorySource, createCastSource } from '../sim/cast-source.ts';
-import { cloneState, GAME_VERSION, newGame, queueInput, replay, step } from '../sim/game.ts';
-import type { GameState } from '../sim/types.ts';
+import { cloneState, GAME_VERSION, newGame, queueInput, replay, restoreState, step } from '../sim/game.ts';
+import type { GameState, GameStateSnapshot } from '../sim/types.ts';
 import {
   type DepartureGuard,
   departureGuardCurrent,
@@ -46,9 +50,16 @@ export async function freshCanonicalWeek(seed: number, isCurrent: () => boolean)
     s.castScope = 'local';
     return s;
   }
+  let preparedInputCount = 0;
   let prepared: Awaited<ReturnType<typeof prepareCastChapter>> | undefined;
   const journalShelf = {
     request: async <T>(request: PersonaRequest): Promise<T> => {
+      if (request.action === 'prepareBatch') {
+        const batch = await shelf.request<{ inputs: unknown[]; blocked: { reason: string }[] }>(request);
+        if (batch.blocked.length) throw new Error(batch.blocked.map((p) => p.reason).join(' '));
+        preparedInputCount = batch.inputs.length;
+        return batch as T;
+      }
       if (request.action !== 'putBatch' || !prepared || !request.envelopes?.length)
         return shelf.request<T>(request);
       const chapter = structuredClone(prepared);
@@ -73,71 +84,11 @@ export async function freshCanonicalWeek(seed: number, isCurrent: () => boolean)
     CAST.map((c) => c.castId),
     source,
     async (inputs) => {
-      const archives: Record<string, GameState | CastReturnArchive> = {};
-      for (const input of inputs) {
-        if (input.parent.source.game === 'murmur' && input.parent.transfer.castPassport === 'murmur-cast/1') {
-          const raw = localStorage.getItem(`murmur-cast-source:${input.parent.revision}`);
-          if (raw) {
-            const entry = JSON.parse(raw) as GameState | CastReturnArchive;
-            archives[input.parent.revision] = entry;
-          }
-        } else if (input.parent.castId === 'hf.cast.dilan.murmur' && input.parent.source.game === 'hearsay') {
-          const index = JSON.parse(
-            localStorage.getItem(`murmur-cast-branch:${input.parent.branchId}`) ?? 'null',
-          ) as { accepted: boolean; key: string } | null;
-          if (index && !index.accepted)
-            throw Error(
-              'The native source receipt is pending. Preserve or recover its local notebook before returning.',
-            );
-          let archive = index
-            ? (JSON.parse(localStorage.getItem(index.key) ?? 'null') as CastReturnArchive | null)
-            : null;
-          const lineage: PersonaEnvelope[] = [];
-          let revision = input.parent.parentRevision;
-          for (let count = 0; revision && count < 80; count++) {
-            const raw = await shelf.request<PersonaEnvelope | null>({
-              action: 'get',
-              castId: input.parent.castId,
-              revision,
-            });
-            if (!raw)
-              throw Error(
-                'Retained return ancestry is missing. Preserve this chapter or play a separate local story.',
-              );
-            const row = await validatePersona(raw);
-            if (
-              row.revision !== revision ||
-              row.castId !== input.parent.castId ||
-              row.branchId !== input.parent.branchId
-            )
-              throw Error('Retained return ancestry conflicts.');
-            lineage.push(row);
-            if (row.source.game === 'murmur' && row.transfer.castPassport === 'murmur-cast/1') {
-              if (!archive)
-                archive = JSON.parse(
-                  localStorage.getItem(`murmur-cast-source:${row.revision}`) ?? 'null',
-                ) as CastReturnArchive | null;
-              if (!archive || archive.departure.revision !== row.revision)
-                throw Error(
-                  'The source-bound notebook is missing. Export this return or play a separate local story.',
-                );
-              revision = null;
-              break;
-            }
-            revision = row.parentRevision;
-          }
-          if (revision)
-            throw Error(
-              'Retained return ancestry exceeds this host’s bounded inspection. Keep this chapter or play a separate local story.',
-            );
-          if (index && !archive)
-            throw Error(
-              'The source-bound notebook is missing. Export this return or play a separate local story.',
-            );
-          if (archive) archives[input.parent.revision] = { ...archive, lineage };
-        }
-      }
-      prepared = await prepareCastChapter(inputs, seed, archives);
+      if (inputs.length !== preparedInputCount)
+        throw new Error(
+          'The whole cast cannot arrive together. Continue the source chapters or choose a separate local story.',
+        );
+      prepared = await prepareCastChapter(inputs, seed);
       return prepared.initial;
     },
     { isCurrent },
@@ -154,8 +105,8 @@ export async function freshCanonicalWeek(seed: number, isCurrent: () => boolean)
   s.castScope = 'shared';
   return s;
 }
-function simulationOnly(s: GameState) {
-  const copy = cloneState(s);
+function simulationOnly(s: GameState | GameStateSnapshot) {
+  const copy = 'host' in s.hf ? cloneState(s as GameState) : structuredClone(s);
   delete copy.fileHistory;
   delete copy.castHeads;
   delete copy.castScope;
@@ -163,12 +114,11 @@ function simulationOnly(s: GameState) {
   delete copy.castSources;
   return copy;
 }
-export async function validateCanonicalRun(json: GameState): Promise<GameState> {
+export async function validateCanonicalRun(json: GameStateSnapshot): Promise<GameState> {
   assertNotebookState(json);
-  if (
-    (!isCanonicalEdition(json.version) && json.version !== '0.7.0' && json.version !== '0.8.0') ||
-    !json.cast
-  )
+  restoreState(json); // Validate complete HF archive and host ingress before replay.
+
+  if (!json.version.startsWith('0.9.') || !json.cast)
     throw Error('This notebook uses an older cast edition. Start fresh.');
   if (json.castChapter) await validateCastChapter(json.castChapter, json.seed);
   const rebuilt = replay(
@@ -177,7 +127,7 @@ export async function validateCanonicalRun(json: GameState): Promise<GameState> 
     json.minute,
     json.version,
     json.castChapter,
-    json.person.lexicon?.plainEnglish ?? false,
+    json.plainEnglish,
   );
   if (json.phase !== 'day' && rebuilt.phase === 'day') step(rebuilt);
   if (canonicalPersona(simulationOnly(rebuilt)) !== canonicalPersona(simulationOnly(json)))
@@ -197,7 +147,7 @@ export async function validateCanonicalRun(json: GameState): Promise<GameState> 
       !Number.isSafeInteger(record.clockMs) ||
       head.source.game !== 'murmur' ||
       head.source.rules !== CAST_VERSION ||
-      !['2.17.0', '2.21.0', ENGINE_VERSION].includes(head.source.engine) ||
+      head.source.engine !== ENGINE_VERSION ||
       head.castRevision !== canonicalCast(id).revision
     )
       throw Error('Invalid native source receipt.');
@@ -223,14 +173,14 @@ export async function validateCanonicalRun(json: GameState): Promise<GameState> 
       record.minute,
       json.version,
       json.castChapter,
-      json.person.lexicon?.plainEnglish ?? false,
+      json.plainEnglish,
     );
     if (prefix.phase === 'day' && prefix.queue.length === 0) step(prefix);
     if (head.terminal) {
-      if (prefix.cast?.people[roleOf(id)].body.alive) throw Error('Terminal receipt has no actual death.');
+      throw Error('Terminal history requires its original source notebook.');
     } else {
       const projected = await createCastSource(prefix, roleOf(id));
-      for (const key of ['castPassport', 'sourceRole', 'person', 'checkpoint'])
+      for (const key of ['castPassport', 'sourceRole', 'portable', 'checkpoint'])
         if (
           canonicalPersona(head.transfer[key]) !==
           canonicalPersona(projected.transfer[key as keyof typeof projected.transfer])
@@ -238,11 +188,10 @@ export async function validateCanonicalRun(json: GameState): Promise<GameState> 
           throw Error('Native checkpoint differs from its actual played prefix.');
     }
   }
-  if (json.castHeads) rebuilt.castHeads = structuredClone(json.castHeads);
-  rebuilt.castScope = json.castScope;
-  if (json.castHeadScopes) rebuilt.castHeadScopes = structuredClone(json.castHeadScopes);
-  if (json.castSources) rebuilt.castSources = structuredClone(json.castSources);
-  if (json.fileHistory) rebuilt.fileHistory = true;
+  // Preserve the exact captured ownership metadata, including absence and explicit false.
+  for (const key of ['castHeads', 'castScope', 'castHeadScopes', 'castSources', 'fileHistory'] as const) {
+    if (Object.hasOwn(json, key)) Object.assign(rebuilt, { [key]: structuredClone(json[key]) });
+  }
   return rebuilt;
 }
 let pending: Promise<void> | undefined;
@@ -302,7 +251,9 @@ async function saveCastPersonNow(
   });
   // Keep the complete prefix BEFORE a central write. Quota errors must not publish a source whose archive was lost.
   const archiveKey = `murmur-cast-source:${head.revision}`;
-  localStorage.setItem(archiveKey, JSON.stringify({ source: prefix, departure: head }));
+  const archive = await compactNotebook({ state: prefix, departure: head });
+  const archiveReceipt = await storeSourceArchive(head.revision, archive);
+  localStorage.setItem(archiveKey, JSON.stringify(archiveReceipt));
   localStorage.setItem(
     `murmur-cast-branch:${head.branchId}`,
     JSON.stringify({ accepted: false, key: archiveKey }),
@@ -342,28 +293,10 @@ export function automaticCastCheckpoint(s: GameState | null, save: () => void): 
     for (const c of CAST) {
       if (!departureGuardCurrent(guard)) return;
       const role = roleOf(c.castId),
-        p = s.cast?.people[role],
         head = s.castHeads?.[c.castId];
-      if (!p) continue;
       const scope = s.castHeadScopes?.[c.castId] ?? s.castScope;
       if (scope !== 'shared') continue;
-      if (!p.body.alive && head && !head.terminal) {
-        const closed = await closePersonaBranch(head, source, p.now);
-        localStorage.setItem(`murmur-cast-source:${closed.revision}`, JSON.stringify(cloneState(s)));
-        const accepted = await publishPersona(closed, { guard });
-        if (!departureGuardCurrent(guard)) return;
-        s.castHeads ??= {};
-        s.castHeads[c.castId] = accepted;
-        s.castSources ??= {};
-        s.castSources[accepted.revision] = {
-          head: accepted,
-          inputCount: s.inputs.length,
-          minute: s.minute,
-          clockMs: Date.now(),
-          explicitFork: false,
-        };
-        save();
-      } else if (p.body.alive && s.phase === 'end') {
+      if (s.phase === 'end') {
         const saved = head && s.castSources?.[head.revision];
         if (saved?.inputCount === s.inputs.length && saved.minute === s.minute) continue;
         // Projection is read-only and refuses unfinished activities, purposes, or unsupported editions.
@@ -386,7 +319,7 @@ export function canonicalPersonControls(s: GameState, save: () => void): HTMLEle
   el.innerHTML =
     '<h3>People in this chapter</h3><p>The whole cast arrives together. A checkpoint observes an eligible completed Saturday; it does not clear work or promises.</p><label>Person <select id="cast-person">' +
     CAST.map((c) => `<option value="${roleOf(c.castId)}">${c.name}</option>`).join('') +
-    '</select></label><button id="cast-pause">Pause this person’s supported unfinished purposes</button><button id="cast-save">Save this person’s finished chapter</button><button id="cast-alternate">Save an explicit alternate branch for this person</button><button id="cast-download">Download this person’s accepted passport</button><button id="cast-history-download">Download Aylin’s eight-episode source archive</button><p id="cast-status" role="status"></p>';
+    '</select></label><button id="cast-save">Save this person’s finished chapter</button><button id="cast-alternate">Save an explicit alternate branch for this person</button><button id="cast-download">Download this person’s accepted passport</button><button id="cast-history-download">Download Aylin’s complete source archive</button><p id="cast-status" role="status"></p>';
   const role = () => (el.querySelector('select') as HTMLSelectElement).value as CastRole;
   const status = (text: string) => {
     const p = el.querySelector('#cast-status');
@@ -469,7 +402,7 @@ export async function heldCanonicalWeek(): Promise<GameState | null> {
   for (const key of keys) {
     const entry = JSON.parse(localStorage.getItem(key) ?? 'null') as {
       accepted: boolean;
-      state: GameState;
+      state: GameStateSnapshot;
     } | null;
     if (entry?.accepted) return validateCanonicalRun(entry.state);
   }

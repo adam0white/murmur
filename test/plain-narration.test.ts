@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { cloneState, newGame, queueInput, replay, runToCard } from '../src/sim/game.ts';
-import { validateRun } from '../src/ui/one-cast.ts';
+import { cloneState, newGame, queueInput, replay, runToCard } from '../src/legacy/game.ts';
+import { validateRun } from '../src/legacy/ui/one-cast.ts';
 
 describe('published plain narration', () => {
   it.each(['0.2.1', '0.3.0', '0.4.2', '0.6.0'])('opts every fresh %s person in', (version) => {
@@ -33,7 +33,7 @@ describe('published plain narration', () => {
 });
 
 it('keeps inherited journal answers once when a native chapter resumes', async () => {
-  const { momentRecords } = await import('../src/ui/journal.ts');
+  const { momentRecords } = await import('../src/legacy/ui/journal.ts');
   const source = newGame(7);
   runToCard(source);
   queueInput(source, { kind: 'quiet' });
@@ -58,7 +58,7 @@ it('keeps inherited journal answers once when a native chapter resumes', async (
 });
 
 it('renders an inherited refused reply using its original pinned source chapter', async () => {
-  const { replyWords } = await import('../src/ui/reply.ts');
+  const { replyWords } = await import('../src/legacy/ui/reply.ts');
   const source = newGame(7);
   runToCard(source);
   queueInput(source, { kind: 'say', option: 'up' });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LABEL, promiseReview } from '../src/sim/dilan.ts';
+import { LABEL, promiseReview } from '../src/legacy/dilan.ts';
 import {
   cardView,
   cloneState,
@@ -9,10 +9,10 @@ import {
   replay,
   runToCard,
   step,
-} from '../src/sim/game.ts';
-import { momentById } from '../src/sim/moments.ts';
-import type { GameState } from '../src/sim/types.ts';
-import { momentRecords } from '../src/ui/journal.ts';
+} from '../src/legacy/game.ts';
+import { momentById } from '../src/legacy/moments.ts';
+import type { GameState } from '../src/legacy/types.ts';
+import { momentRecords } from '../src/legacy/ui/journal.ts';
 import {
   answerThoughts,
   attributedWords,
@@ -21,8 +21,8 @@ import {
   finalInputWords,
   keptWords,
   sceneWords,
-} from '../src/ui/presentation.ts';
-import { replyWords } from '../src/ui/reply.ts';
+} from '../src/legacy/ui/presentation.ts';
+import { replyWords } from '../src/legacy/ui/reply.ts';
 
 function required<T>(value: T | null | undefined): T {
   if (value == null) throw new Error('Expected value');

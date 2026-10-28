@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
-import { cloneState, GAME_VERSION, replay, restoreState, step } from '../src/sim/game.ts';
-import type { Input } from '../src/sim/types.ts';
+import { cloneState, GAME_VERSION, replay, restoreState, step } from '../src/legacy/game.ts';
+import type { Input } from '../src/legacy/types.ts';
 
 it('replays the historical input corpus under the current edition and continues its current save exactly', () => {
   // Only the ordinary inputs are reused. HF2.8 state/hash fixtures are not a compatibility contract.

@@ -1,9 +1,17 @@
 // Coordinator policies: random choices (15% quiet, 30% insist), and measure.ts edge.
 import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
-import { tick } from '@adam0white/human-framework';
-import { anotherWeek, cardView, cloneState, newGame, queueInput, runToCard, step } from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
+import { tick } from '@adam0white/human-framework-legacy';
+import {
+  anotherWeek,
+  cardView,
+  cloneState,
+  newGame,
+  queueInput,
+  runToCard,
+  step,
+} from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
 import { choose } from './measure.ts';
 export function playWeek(s: GameState, policy: 'careless' | 'careful') {
   let random = s.seed >>> 0;

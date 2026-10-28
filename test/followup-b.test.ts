@@ -2,10 +2,15 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import type { Browser, Page as BrowserPage } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { cardView, cloneState, newGame, queueInput, runToCard } from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
-import { momentRecords } from '../src/ui/journal.ts';
-import { answerThoughts, attributedWords, cardThought, finalInputWords } from '../src/ui/presentation.ts';
+import { cardView, cloneState, newGame, queueInput, runToCard } from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
+import { momentRecords } from '../src/legacy/ui/journal.ts';
+import {
+  answerThoughts,
+  attributedWords,
+  cardThought,
+  finalInputWords,
+} from '../src/legacy/ui/presentation.ts';
 import { launchBrowser } from './browser.ts';
 
 function required<T>(value: T | null | undefined): T {

@@ -9,9 +9,9 @@ import {
   restoreState,
   runToCard,
   step,
-} from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
-import { answerRecord, momentRecord, momentRecords } from '../src/ui/journal.ts';
+} from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
+import { answerRecord, momentRecord, momentRecords } from '../src/legacy/ui/journal.ts';
 
 function required<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) throw new Error('Expected a value');

@@ -1,16 +1,21 @@
-import { restore } from '@adam0white/human-framework';
+import { restore } from '@adam0white/human-framework-legacy';
+import * as historicalJournal from '../legacy/ui/journal.ts';
 import { DAY0 } from '../sim/dilan.ts';
 import { ctxOf, newGame, openMoment, optionsOf, queueInput, step } from '../sim/game.ts';
 import type { Answer, GameState, LogLine } from '../sim/types.ts';
 
 /** The outcome becomes visible when the sim clock reaches its completion. */
 export function doneLine(s: GameState, a: Answer | null = s.answer): LogLine | undefined {
+  if (!('hf' in s))
+    return historicalJournal.doneLine(s as unknown as import('../legacy/types.ts').GameState, a);
   if (!a) return undefined;
   return s.log.find((l) => l.who === 'narrator' && l.at >= a.at && l.at <= s.minute);
 }
 
 /** Today's journal; only the still-open scene and pull remain on the choice card. */
 export function journalLines(s: GameState): LogLine[] {
+  if (!('hf' in s))
+    return historicalJournal.journalLines(s as unknown as import('../legacy/types.ts').GameState);
   return s.log.filter(
     (l) =>
       Math.floor((l.at - DAY0) / 1440) + 1 === s.day &&
@@ -39,10 +44,18 @@ export interface MomentRecord {
  * Call once when rendering a changed journal, then index by sceneAt.
  */
 export function momentRecords(s: GameState): MomentRecord[] {
-  const history = newGame(s.seed, s.version, s.castChapter, s.person.lexicon?.plainEnglish ?? false);
-  const source = s.castChapter?.resume?.source;
-  const inherited = source?.inputs.length ?? 0;
-  const records: MomentRecord[] = source ? momentRecords(source) : [];
+  if (!('hf' in s))
+    return historicalJournal.momentRecords(s as unknown as import('../legacy/types.ts').GameState);
+  const history = newGame(
+    s.seed,
+    s.version,
+    s.castChapter,
+    'hf' in s
+      ? s.plainEnglish
+      : ((s as unknown as import('../legacy/types.ts').GameState).person.lexicon?.plainEnglish ?? false),
+  );
+  const inherited = 0;
+  const records: MomentRecord[] = [];
   const advance = (action: () => void, quiet: 'explicit' | 'timeout' | null) => {
     const card = history.card;
     const m = openMoment(history);
@@ -83,7 +96,9 @@ export function momentRecords(s: GameState): MomentRecord[] {
   };
   for (const [index, input] of s.inputs.slice(inherited, s.applied).entries()) {
     if (s.returnChapter && index + inherited === s.returnChapter.prefixInputs.length)
-      history.person = restore(s.returnChapter.initialPerson);
+      (history as unknown as import('../legacy/types.ts').GameState).person = restore(
+        s.returnChapter.initialPerson,
+      );
     // This is replay's evening rule: next can share the last answer's minute.
     while (
       history.phase === 'day' &&

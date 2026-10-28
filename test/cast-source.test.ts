@@ -5,11 +5,11 @@ import {
   preparePersonaLife,
 } from '@adam0white/lab-client';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { prepareCastChapter } from '../src/sim/cast-chapter.ts';
-import { createCastSource } from '../src/sim/cast-source.ts';
-import { cloneState, newGame, queueInput, runToCard } from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
-import { momentRecords } from '../src/ui/journal.ts';
+import { prepareCastChapter } from '../src/legacy/cast-chapter.ts';
+import { createCastSource } from '../src/legacy/cast-source.ts';
+import { cloneState, newGame, queueInput, runToCard } from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
+import { momentRecords } from '../src/legacy/ui/journal.ts';
 
 it('observes a played native boundary without clearing state to make a passport', async () => {
   const s = newGame(17, '0.6.0');
@@ -50,7 +50,7 @@ describe('exact native return', () => {
   // Play the source once. Each test below keeps the normal per-test deadline
   // while exercising a distinct replay path with the same pinned source.
   beforeAll(async () => {
-    const { cardView } = await import('../src/sim/game.ts');
+    const { cardView } = await import('../src/legacy/game.ts');
     const s = newGame(17, '0.6.1');
     s.castScope = 'shared';
     while (s.phase !== 'end') {
@@ -104,7 +104,7 @@ describe('exact native return', () => {
   it('retains physical outcomes after a foreign visit and rejects missing lineage', async () => {
     const { revision: _revision, ...body } = head;
     const { admitCalendarPersona, createPerson, DEFAULT_NORMS, projectCalendarPersona, snapshot, tick } =
-      await import('@adam0white/human-framework');
+      await import('@adam0white/human-framework-legacy');
     const shifted = structuredClone(native.transfer.person),
       offset = 20160 - shifted.person.source.now;
     shifted.calendar.offset = offset;
@@ -150,7 +150,7 @@ describe('exact native return', () => {
       parentRevision: head.revision,
       source: { game: 'hearsay', build: 'control', engine: '2.17.0', rules: 'hearsay-cast-6' },
     });
-    const { castDigest } = await import('../src/sim/cast-source.ts');
+    const { castDigest } = await import('../src/legacy/cast-source.ts');
     const remote = await createPersona({
       ...body,
       parentRevision: claim.revision,
@@ -184,7 +184,7 @@ describe('exact native return', () => {
   });
 
   it('validates the continued notebook against its exact replayed native source', async () => {
-    const { validateCanonicalRun } = await import('../src/ui/cast-chapter.ts');
+    const { validateCanonicalRun } = await import('../src/legacy/ui/cast-chapter.ts');
     expect(cloneState(await validateCanonicalRun(cloneState(continued)))).toEqual(cloneState(continued));
   });
 });

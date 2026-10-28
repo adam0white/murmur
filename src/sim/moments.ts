@@ -1,6 +1,6 @@
-import { CAST_MOMENTS } from './canonical-cast.ts';
+import { CAST_MOMENTS } from './cast-moments.ts';
 import { isCanonicalEdition, PROMISE_EDITION } from './edition.ts';
-import { OUTCOME_MOMENTS } from './outcomes.ts';
+import { OUTCOME_MOMENTS } from './outcome-moments.ts';
 /**
  * The week, as moments. Content only: scene lines, the pull's lines, and what Dilan could do. Every tempting
  * option carries a `temptation` tag and a norm from HF's own catalog, so HF notices it as a prompt; options the
@@ -835,8 +835,8 @@ const wednesday: Moment[] = [
       (c.version === '0.4.2' ||
         c.version === '0.5.0' ||
         isCanonicalEdition(c.version) ||
-        c.version === '0.7.0' ||
-        c.version === '0.8.0') &&
+        c.version === '0.9.1' ||
+        c.version === '0.9.2') &&
       c.flags.route
         ? 'Dilan is in Aylin’s kitchen. She is fifteen minutes late after finishing the extra route. Aylin has saved her some dinner. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”'
         : 'Dilan is in Aylin’s kitchen. Mum is cutting a cake nobody asked her to bring. “Are you eating properly?”',
@@ -1415,12 +1415,12 @@ export const momentById = (id: string, version?: string): Moment => {
   if (!m) throw new Error(`no moment ${id}`);
   // Queue entries retain IDs. Resolve edition replacements at every later use.
   // Other editions keep the exact original object and lookup path.
-  return version === '0.8.0' || version === PROMISE_EDITION
+  return version === '0.9.2' || version === PROMISE_EDITION
     ? (momentsOf(m.day, version).find((x) => x.id === id) ?? m)
     : m;
 };
 export const momentsOf = (day: number, version?: string): Moment[] => [
-  ...(isCanonicalEdition(version) || version === '0.7.0' || version === '0.8.0'
+  ...(isCanonicalEdition(version) || version === '0.9.1' || version === '0.9.2'
     ? CAST_MOMENTS.filter((m) => m.day === day)
     : []),
   ...MOMENTS.filter((m) => m.day === day)
@@ -1457,7 +1457,7 @@ export const momentsOf = (day: number, version?: string): Moment[] => [
                     o.id === 'scroll' ? { ...o, duration: 150 } : o,
                   ),
                 }
-              : (version === '0.7.0' || version === '0.8.0') && m.id === 'slump-5'
+              : (version === '0.9.1' || version === '0.9.2') && m.id === 'slump-5'
                 ? FRIDAY_HANDOVER
                 : m,
     )
@@ -1466,8 +1466,8 @@ export const momentsOf = (day: number, version?: string): Moment[] => [
         ? [m, ...MUM_CALLS.filter((call) => call.day === day)]
         : [m],
     ),
-  ...(version === '0.7.0' ? WEEK_THREE.filter((m) => m.day === day) : []),
-  ...(version === '0.8.0'
+  ...(version === '0.9.1' ? WEEK_THREE.filter((m) => m.day === day) : []),
+  ...(version === '0.9.2'
     ? [
         ...WEEK_THREE.filter((m) => m.day === day && /^(alarm|bus|bed)-/.test(m.id)).map((m) =>
           m.id.startsWith('alarm-')

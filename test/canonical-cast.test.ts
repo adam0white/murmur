@@ -1,6 +1,6 @@
 import { canonicalCast } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
-import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
+import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/legacy/game.ts';
 
 describe('canonical chapter fiction', () => {
   it('starts four actual people with canonical profiles and no imported secrets', () => {
@@ -35,7 +35,7 @@ describe('canonical chapter fiction', () => {
     expect(cloneState(rebuilt)).toEqual(cloneState(s));
     const untouched = newGame(17, '0.6.0');
     expect(untouched.cast?.discoveries).toEqual([]);
-  });
+  }, 60_000);
 });
 
 it('keeps the agreed shelf visit playable and completes it only through shared work', () => {

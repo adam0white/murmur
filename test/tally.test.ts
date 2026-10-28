@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
-import { dayStart } from '../src/sim/dilan.ts';
-import { cloneState, newGame } from '../src/sim/game.ts';
-import { notebookTally } from '../src/ui/tally.ts';
+import { dayStart } from '../src/legacy/dilan.ts';
+import { cloneState, newGame } from '../src/legacy/game.ts';
+import { notebookTally } from '../src/legacy/ui/tally.ts';
 
 it('counts only player process inputs at a clear ending, without changing state', () => {
   const s = newGame(42);

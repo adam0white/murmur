@@ -2,7 +2,7 @@
 // Run: npm run measure -- seeds=8 [p=silent,oppose] [v=0.2.1,0.3.0,0.4.0] [json=/absolute/path.json]
 
 import { writeFileSync } from 'node:fs';
-import { tick } from '@adam0white/human-framework';
+import { tick } from '@adam0white/human-framework-legacy';
 import {
   cardView,
   ctxOf,
@@ -14,9 +14,9 @@ import {
   step,
   trustOf,
   WEEK_TWO_EDITION,
-} from '../src/sim/game.ts';
-import { momentById } from '../src/sim/moments.ts';
-import type { GameState } from '../src/sim/types.ts';
+} from '../src/legacy/game.ts';
+import { momentById } from '../src/legacy/moments.ts';
+import type { GameState } from '../src/legacy/types.ts';
 
 type Policy = 'silent' | 'oppose' | 'insist' | 'pull' | 'reader' | 'picky' | 'teach' | 'edge' | 'tap';
 const RANK = { yes: 4, 'if pushed': 3, later: 2, 'rather not': 1, no: 0 } as const;

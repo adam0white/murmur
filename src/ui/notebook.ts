@@ -3,9 +3,9 @@
  * Semantic replay/admission stays with validateRun; this codec grants no branch ownership.
  */
 import { clock, DAY_NAMES, isEdition } from '../sim/game.ts';
-import type { GameState } from '../sim/types.ts';
+import type { GameState, GameStateSnapshot } from '../sim/types.ts';
 export interface Notebook {
-  state: GameState;
+  state: GameStateSnapshot;
   [key: string]: unknown;
 }
 export interface CompactNotebook {
@@ -20,7 +20,7 @@ const digest = async (bytes: Uint8Array<ArrayBuffer>) =>
   Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (b) =>
     b.toString(16).padStart(2, '0'),
   ).join('');
-export function assertNotebookState(s: GameState): void {
+export function assertNotebookState(s: GameStateSnapshot): void {
   if (
     !s ||
     !isEdition(s.version) ||
@@ -72,7 +72,7 @@ export async function compactNotebook(value: unknown): Promise<CompactNotebook> 
   if (raw.byteLength > MAX_BYTES)
     throw Error('The complete notebook exceeds the64MiB transport limit. Download the full run instead.');
   const packed = new Uint8Array(
-    await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer(),
+    await new Response(new Response(raw).body!.pipeThrough(new CompressionStream('gzip'))).arrayBuffer(),
   );
   let binary = '';
   for (let i = 0; i < packed.length; i += 8192)
@@ -101,7 +101,7 @@ export async function expandNotebook(value: unknown): Promise<Notebook> {
   )
     throw Error('Malformed compact notebook.');
   const bytes = Uint8Array.from(atob(x.data), (c) => c.charCodeAt(0));
-  const reader = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')).getReader();
+  const reader = new Response(bytes).body!.pipeThrough(new DecompressionStream('gzip')).getReader();
   const chunks: Uint8Array[] = [];
   let count = 0;
   for (;;) {
@@ -124,7 +124,7 @@ export async function expandNotebook(value: unknown): Promise<Notebook> {
     throw Error('Notebook checksum or size differs.');
   return notebook(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(raw)));
 }
-export function savedLocation(s: GameState): string {
+export function savedLocation(s: Pick<GameState, 'day' | 'minute' | 'phase' | 'card'>): string {
   const at = `Saved on ${DAY_NAMES[s.day] ?? 'an unknown day'} at ${clock(s.minute)}`;
   return `${at}${s.phase === 'day' ? (s.card ? ', with her choice still waiting.' : ', between choices.') : s.phase === 'evening' ? ', on her evening page.' : ', at the end of the week.'}`;
 }

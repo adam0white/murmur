@@ -2,8 +2,10 @@
  * Time and effort compete; no cash ledger, invented private facts, extra maintained person or fourth week.
  * Completion hooks run only after a completed HF act. Source passports remain on their separate finite rules.
  */
-import { promise } from '@adam0white/human-framework';
-import { dayStart } from './dilan.ts';
+
+import { dayStart } from './dilan-content.ts';
+import { requestPromise } from './hf4-agenda.ts';
+import { readDilan } from './hf4-read.ts';
 import type { Ctx, GameState, Moment, Opt } from './types.ts';
 
 const at = (h: number, m = 0) => h * 60 + m;
@@ -282,7 +284,7 @@ const central: Moment[] = [
     after: (s, id) => {
       f(s).arrival = id;
       if (id === 'promise')
-        promise(s.person, {
+        requestPromise(s.hf, {
           kind: 'promise',
           toId: 'aylin',
           label: 'my six o’clock help for Aylin',
@@ -389,7 +391,7 @@ const central: Moment[] = [
     ],
     after: (s, id) => {
       f(s).close = id;
-      f(s).closeAt = s.person.now;
+      f(s).closeAt = Math.floor(readDilan(s.hf.run).at / 60_000);
     },
   },
   {

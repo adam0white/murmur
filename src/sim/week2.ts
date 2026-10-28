@@ -1,7 +1,9 @@
 /** Week two: what being depended on does to an ordinary week. Week one's last page is fact. */
-import { promise, releaseCommitment as release } from '@adam0white/human-framework';
-import { DAY0, LABEL } from './dilan.ts';
+
+import { DAY0, LABEL } from './dilan-content.ts';
 import { isCanonicalEdition } from './edition.ts';
+import { releasePromise, requestPromise } from './hf4-agenda.ts';
+import { readDilan } from './hf4-read.ts';
 import type { Ctx, GameState, Moment, Opt } from './types.ts';
 
 const at = (h: number, m = 0) => h * 60 + m;
@@ -595,7 +597,8 @@ const tuesday: Moment[] = [
         phrases: s.phrases
           .map((p) => ({
             ...p,
-            practice: s.person.promptings?.responses.find((r) => r.id === p.id)?.practice ?? 0,
+            practice:
+              readDilan(s.hf.run).promptings.responses.find((r) => r.id === p.id)?.effectivePractice ?? 0,
           }))
           .sort((a, b) => b.practice - a.practice),
       };
@@ -648,7 +651,7 @@ const tuesday: Moment[] = [
       f.practice = chosen;
       if (chosen === 'no') return;
       const day = chosen === 'tomorrow' ? 10 : 11;
-      f.practicePromise = promise(s.person, {
+      f.practicePromise = requestPromise(s.hf, {
         kind: 'promise',
         toId: 'ece',
         label: 'my board practice with Ece',
@@ -656,8 +659,8 @@ const tuesday: Moment[] = [
         from: absolute(day, chosen === 'tomorrow' ? at(13, 10) : at(19, 20)),
         until: absolute(day, chosen === 'tomorrow' ? at(13, 45) : at(20, 10)),
         importance: 0.55,
-      }).id;
-      f.closePromise = promise(s.person, {
+      });
+      f.closePromise = requestPromise(s.hf, {
         kind: 'promise',
         toId: 'ece',
         label: 'my word to Ece',
@@ -665,7 +668,7 @@ const tuesday: Moment[] = [
         from: absolute(12, at(17, 10)),
         until: absolute(12, at(18, 15)),
         importance: 0.6,
-      }).id;
+      });
     },
   },
   bus(9),
@@ -1201,7 +1204,7 @@ const friday: Moment[] = [
       if (chosen === 'open')
         for (const key of ['practicePromise', 'closePromise']) {
           const id = f[key];
-          if (typeof id === 'string') release(s.person, id);
+          if (typeof id === 'string') releasePromise(s.hf, id);
         }
     },
   },

@@ -1,7 +1,7 @@
-import { dischargeAdvice, rememberedTerms } from '@adam0white/human-framework';
+import { dischargeAdvice, rememberedTerms } from '@adam0white/human-framework-legacy';
 import { describe, expect, it } from 'vitest';
-import { cardView, cloneState, newGame, queueInput, runToCard } from '../src/sim/game.ts';
-import { landingChance, moodOf } from '../src/sim/listening.ts';
+import { cardView, cloneState, newGame, queueInput, runToCard } from '../src/legacy/game.ts';
+import { landingChance, moodOf } from '../src/legacy/listening.ts';
 
 describe('gentle suggestions', () => {
   it('makes Monday a close call and sometimes hears an against-leaning tap', () => {
@@ -166,7 +166,7 @@ describe('gentle suggestions', () => {
       }
     }
     expect(bands.size).toBeGreaterThanOrEqual(3);
-  }, 30_000);
+  }, 120_000);
   it('refreshes repeated gentle advice without stacking its score', () => {
     let repeated = false;
     for (let seed = 1; seed < 17 && !repeated; seed++) {

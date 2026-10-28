@@ -4,8 +4,8 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { canonicalCast, canonicalPersona, createPersona, validatePersona } from '@adam0white/lab-client';
-import { castDigest, createCastHistorySource, createCastSource } from '../src/sim/cast-source.ts';
-import { cloneState, replay, step } from '../src/sim/game.ts';
+import { castDigest, createCastHistorySource, createCastSource } from '../src/legacy/cast-source.ts';
+import { cloneState, replay, step } from '../src/legacy/game.ts';
 
 const [input, output] = process.argv.slice(2);
 if (!input || !output)

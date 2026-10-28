@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { dayStart } from '../src/sim/dilan.ts';
+import { dayStart } from '../src/legacy/dilan.ts';
 import {
   anotherWeek,
   canAnotherWeek,
@@ -11,8 +11,8 @@ import {
   restoreState,
   runToCard,
   step,
-} from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
+} from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
 
 function ordinary(s: GameState) {
   const option = cardView(s)?.options.find((o) => !o.isPull && (o.likelihood ?? 0) >= 0.5);

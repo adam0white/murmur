@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
-import { dayStart } from '../src/sim/dilan.ts';
-import { anotherWeek, cardView, newGame, nextCardAt, queueInput, runToCard } from '../src/sim/game.ts';
+import { dayStart } from '../src/legacy/dilan.ts';
+import { anotherWeek, cardView, newGame, nextCardAt, queueInput, runToCard } from '../src/legacy/game.ts';
 
 it('uses the outcomes edition for normal bus timing, displayed bus/bed scenes and completed calls', () => {
   let s = newGame(20, '0.8.0');

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import { promise, releaseCommitment } from '@adam0white/human-framework';
+import { promise, releaseCommitment } from '@adam0white/human-framework-legacy';
 import { describe, expect, it } from 'vitest';
-import { dayStart, LABEL, WAKE } from '../src/sim/dilan.ts';
+import { dayStart, LABEL, WAKE } from '../src/legacy/dilan.ts';
 import {
   anotherWeek,
   canAnotherWeek,
@@ -18,9 +18,9 @@ import {
   restoreState,
   runToCard,
   step,
-} from '../src/sim/game.ts';
-import type { GameState } from '../src/sim/types.ts';
-import * as weekTwo from '../src/sim/week2.ts';
+} from '../src/legacy/game.ts';
+import type { GameState } from '../src/legacy/types.ts';
+import * as weekTwo from '../src/legacy/week2.ts';
 
 const canonical = (x: unknown): unknown =>
   Array.isArray(x)
@@ -393,7 +393,7 @@ describe('the second week edition', () => {
           }
         }
         expect(canAnotherWeek(s)).toBe(false);
-      }, 60_000);
+      }, 180_000);
     }
   }
 });

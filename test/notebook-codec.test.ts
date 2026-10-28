@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
-import { cloneState, newGame, queueInput, runToCard, step } from '../src/sim/game.ts';
-import { compactNotebook, expandNotebook, savedLocation } from '../src/ui/notebook.ts';
-import { validateRun } from '../src/ui/one-cast.ts';
+import { cloneState, newGame, queueInput, runToCard, step } from '../src/legacy/game.ts';
+import { compactNotebook, expandNotebook, savedLocation } from '../src/legacy/ui/notebook.ts';
+import { validateRun } from '../src/legacy/ui/one-cast.ts';
 
 it('losslessly carries an unanswered minute, response deadline, raw person and all history', async () => {
   const s = newGame(17);

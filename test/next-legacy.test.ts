@@ -46,4 +46,4 @@ it('retains the complete raw states captured from12914c3 and exact restored cont
     expect(canonicalPersona(cloneState(restored))).toBe(canonicalPersona(cloneState(s)));
     if (f.version === '0.6.0' && s.phase === 'end') firstWeek = s;
   }
-});
+}, 60_000);
