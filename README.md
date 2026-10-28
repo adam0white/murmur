@@ -2,7 +2,7 @@
 
 [Play Two Voices](https://murmur.adamwhite.work/). You suggest what Dilan should do during an ordinary week. She can agree, refuse or choose another action. Her other inner voice offers its own advice.
 
-Fresh runs use edition 0.9.0 on HF 4.7.0 and contain two authored weeks. Optional edition 0.9.1 adds a third week; 0.9.2 is the separate outcomes edition. Historical notebooks retain their original rules through the pinned HF 3 replay path. Unsupported older cast imports refuse with a fresh-start option.
+Fresh runs use edition 0.9.0 on HF 4.8.0 and contain two authored weeks. Optional edition 0.9.1 adds a third week; 0.9.2 is the separate outcomes edition. Historical notebooks retain their original rules through the pinned HF 3 replay path. Unsupported older cast imports refuse with a fresh-start option.
 
 ## How to play
 
@@ -57,7 +57,7 @@ The unchanged artifact from signed Good Hands source `509386298dfd89026c10bc6011
 
 ## Development and delivery
 
-Use shared Node 26.12.0 (`.node-version` and `.nvmrc`) and pnpm 12.14.0 with `/opt/homebrew/bin` first on PATH. Install with `pnpm install --frozen-lockfile`; run `npm run dev`. Application release and default edition are 0.9.0. HF is pinned to registry package 4.7.0. Client 0.5.3 and kit 0.5.21 use exact GitHub release tar URLs in package.json; neither SDK pin claims npm publication or npm provenance. The explicit historical HF 3.0.0 alias remains. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
+Use shared Node 26.12.0 (`.node-version` and `.nvmrc`) and pnpm 12.14.0 with `/opt/homebrew/bin` first on PATH. Install with `pnpm install --frozen-lockfile`; run `npm run dev`. Application release and default edition are 0.9.0. HF is pinned to registry package 4.8.0. Client 0.5.4 and kit 0.5.22 use exact GitHub release tar URLs in package.json; neither SDK pin claims npm publication or npm provenance. The explicit historical HF 3.0.0 alias remains. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
 
 Before each commit, run the normal lane under the shared lock:
 

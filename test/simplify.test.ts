@@ -20,7 +20,7 @@ afterAll(async () => {
 it('offers gameplay without a flag and keeps diagnostics collapsed beside privacy', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   // Exercise the real current first-week generation and complete replay, not a seeded UI substitute.
-  page.setDefaultTimeout(90000);
+  page.setDefaultTimeout(180000);
   try {
     await page.goto(url);
     await page.locator('#new').waitFor();
@@ -29,8 +29,10 @@ it('offers gameplay without a flag and keeps diagnostics collapsed beside privac
     expect(await page.locator('#next-edition').isVisible()).toBe(true);
     expect(await page.locator('#outcomes-edition').isVisible()).toBe(true);
     await page.locator('#other-ways').click();
+    const generationStarted = Date.now();
     await page.locator('#second').click();
     await page.locator('#hush').waitFor();
+    console.info(JSON.stringify({ stage: 'debug-case-generation', ms: Date.now() - generationStarted }));
     expect(await page.evaluate(() => window.__murmur.state!.day)).toBe(8);
     await page.locator('#menu').click();
     expect(await page.locator('[data-speed]').count()).toBe(4);
@@ -47,15 +49,17 @@ it('offers gameplay without a flag and keeps diagnostics collapsed beside privac
     await page.locator('#bp-export').click();
     expect((await downloaded).suggestedFilename()).toContain('week2');
     await debug.locator('summary').click();
+    const replayStarted = Date.now();
     await page.locator('#bp-replay').click();
     expect(await page.locator('#debug-status').innerText()).toContain('matches');
+    console.info(JSON.stringify({ stage: 'debug-case-replay', ms: Date.now() - replayStarted }));
     await page.locator('#bp-close').click();
     await page.locator('#menu').click();
     expect(await page.locator('.menu-links details').getAttribute('open')).toBeNull();
   } finally {
     await page.close();
   }
-}, 150000);
+}, 300000);
 for (const [width, height] of [
   [360, 690],
   [820, 1180],

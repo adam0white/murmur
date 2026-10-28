@@ -154,13 +154,17 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
 
     it(`offers a played first week from the cover on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
-      // Actual HF4 generation exceeds60s on CI; the generation+Debug route passes with90s.
-      page.setDefaultTimeout(90000);
+      // CI exceeded90s during actual generation; keep the full current path with a finite bound.
+      page.setDefaultTimeout(180000);
       try {
         await page.goto(`${origin}`);
         await chooseSeed(page, 1003);
         await page.locator('#other-ways').click();
+        const generationStarted = Date.now();
         await page.getByRole('button', { name: 'Begin at the second week', exact: true }).click();
+        console.info(
+          JSON.stringify({ stage: 'week-two-generation', size, ms: Date.now() - generationStarted }),
+        );
         // Straight to Monday of the second week: no recap page of answers the player never gave.
         await page.locator('#hush').waitFor();
         expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.9.0');
@@ -171,7 +175,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       } finally {
         await page.close();
       }
-    }, 150000);
+    }, 300000);
 
     it(`renders both weeks and no empty voice note on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });

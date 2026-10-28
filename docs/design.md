@@ -10,7 +10,7 @@
 
 ## Current HF 4 implementation — 2026-10-28
 
-Application/default edition 0.9.0 uses released HF 4.7.0, client 0.5.3 and kit 0.5.21. Client and kit use the exact GitHub release tar URLs in package.json. Optional 0.9.1 adds the third week; 0.9.2 is the separate outcomes edition. Historical editions retain the original HF 3.0.0 simulation under an explicit alias and `src/legacy`. Historical raw golden fixtures stay unchanged. Current public replay forwards both retained chapter and plain-English setting.
+Application/default edition 0.9.0 uses released HF 4.8.0, client 0.5.4 and kit 0.5.22. Client and kit use the exact GitHub release tar URLs in package.json. Optional 0.9.1 adds the third week; 0.9.2 is the separate outcomes edition. Historical editions retain the original HF 3.0.0 simulation under an explicit alias and `src/legacy`. Historical raw golden fixtures stay unchanged. Current public replay forwards both retained chapter and plain-English setting.
 
 One HF run owns the four people. Current reads use public inspection; choices, promptings, learned responses, review-style changes and practice decay use public framework inputs/tuning. The host authors scenes, physical actions and settlement. Companion offers are authored per slot and recorded before ordinary independent decisions. A request alone does not establish private disclosure, a joint repair, a visit agreement or a fulfilled promise. Current option previews keep the supported person perspective.
 

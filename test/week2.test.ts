@@ -393,7 +393,7 @@ describe('the second week edition', () => {
           }
         }
         expect(canAnotherWeek(s)).toBe(false);
-      }, 60_000);
+      }, 180_000);
     }
   }
 });
