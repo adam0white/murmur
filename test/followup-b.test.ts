@@ -54,7 +54,7 @@ async function load(s: GameState, viewport = { width: 360, height: 690 }, base =
   await page.addInitScript(() => {
     window.requestAnimationFrame = () => 1;
   });
-  await page.goto(`${base}?lab=1`);
+  await page.goto(`${base}`);
   if (base === url) {
     await page.locator('#menu').click();
     await page.getByText('Debug', { exact: true }).click();

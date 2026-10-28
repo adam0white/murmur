@@ -6,7 +6,7 @@ import { playedFirstWeek } from '../src/sim/firstweek.ts';
 import { anotherWeek, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
 import type { GameState } from '../src/sim/types.ts';
 import type { tester } from '../src/ui/app.ts';
-import { launchBrowser } from './browser.ts';
+import { chooseSeed, launchBrowser } from './browser.ts';
 
 declare global {
   interface Window {
@@ -46,7 +46,7 @@ afterAll(async () => {
 }, 30_000);
 
 async function importRun(page: Page, state: GameState) {
-  await page.goto(`${origin}?lab=1`);
+  await page.goto(`${origin}`);
   await page.evaluate(() => {
     window.__murmur.fast = true;
   });
@@ -155,7 +155,8 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
     it(`offers a played first week from the cover on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
       try {
-        await page.goto(`${origin}?lab=1&seed=1003`);
+        await page.goto(`${origin}`);
+        await chooseSeed(page, 1003);
         await page.locator('#other-ways').click();
         await page.getByRole('button', { name: 'Begin at the second week', exact: true }).click();
         // Straight to Monday of the second week: no recap page of answers the player never gave.

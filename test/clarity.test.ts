@@ -4,7 +4,7 @@ import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
 import type { Input } from '../src/sim/types.ts';
-import { launchBrowser } from './browser.ts';
+import { chooseSeed, launchBrowser } from './browser.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -23,7 +23,8 @@ afterAll(async () => {
 }, 30_000);
 
 async function firstChoice(page: Page, version = '0.2.1') {
-  await page.goto(`${origin}?lab=1&seed=1`);
+  await page.goto(`${origin}`);
+  await chooseSeed(page, 1);
   await page.evaluate(() => {
     const game = (window as unknown as { __murmur: { fast: boolean } }).__murmur;
     game.fast = true;
@@ -93,7 +94,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
   it('states purpose and influence before play, keeping the biography optional', async () => {
     const page = await browser.newPage();
     try {
-      await page.goto(`${origin}?lab=1`);
+      await page.goto(`${origin}`);
       await page.locator('.title .page-body > p').first().waitFor();
       const purpose = await page.locator('.title .page-body > p').allTextContents();
       expect(purpose.join(' ')).toMatch(/from Monday to Saturday/);
@@ -106,7 +107,8 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       expect(await more.innerText()).toContain('She delivers parcels');
       await page.keyboard.press('Escape');
       expect(await more.isVisible()).toBe(false);
-      await page.goto(`${origin}?lab=1&seed=1`);
+      await page.goto(`${origin}`);
+      await chooseSeed(page, 1);
       await page.locator('#new').click();
       const gap = await page.locator('.gap').innerText();
       expect(gap).toBe('Her alarm is about to ring.');
@@ -262,7 +264,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     const page = await browser.newPage();
     try {
       await page.clock.install();
-      await page.goto(`${origin}?lab=1`);
+      await page.goto(`${origin}`);
       await page.locator('#menu').click();
       await page.getByText('Debug', { exact: true }).click();
       await page.locator('#file').setInputFiles({
@@ -345,7 +347,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     try {
       const before = replay(example.seed, example.inputs, example.minute);
       expect(cardView(before)?.id).toBe('ece-4');
-      await page.goto(`${origin}?lab=1`);
+      await page.goto(`${origin}`);
       await page.locator('#menu').click();
       await page.getByText('Debug', { exact: true }).click();
       await page.locator('#file').setInputFiles({
@@ -409,7 +411,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
   it('uses the shared menu names and downloads a replayable run', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
-      await page.goto(`${origin}?lab=1`);
+      await page.goto(`${origin}`);
       expect(await page.getByRole('link', { name: 'All games', exact: true }).isVisible()).toBe(true);
       await firstChoice(page);
       await page.getByRole('button', { name: 'Game menu', exact: true }).click();
@@ -467,7 +469,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
   ])('keeps menu and silence at least 44px and responses visible at $width×$height', async (viewport) => {
     const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
     try {
-      await page.goto(`${origin}?lab=1`);
+      await page.goto(`${origin}`);
       await documentTargets(page, viewport.height);
       await firstChoice(page);
       await documentTargets(page, viewport.height);
@@ -704,7 +706,8 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
     page.on('pageerror', (error) => errors.push(error.stack ?? error.message));
     try {
       await page.clock.install();
-      await page.goto(`${origin}?lab=1&seed=1`);
+      await page.goto(`${origin}`);
+      await chooseSeed(page, 1);
       await page.locator('#new').click();
       await page.locator('#hush').waitFor();
       await page.clock.runFor(1350);
@@ -819,7 +822,7 @@ describe('edition persistence in the browser', { timeout: 30_000 }, () => {
   it('rejects an unknown imported edition', async () => {
     const page = await browser.newPage();
     try {
-      await page.goto(`${origin}?lab=1`);
+      await page.goto(`${origin}`);
       await page.locator('#menu').click();
       await page.getByText('Debug', { exact: true }).click();
       await page.locator('#file').setInputFiles({
@@ -911,7 +914,7 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
     }
     const page = await browser.newPage();
     try {
-      await page.goto(`${origin}?lab=1`);
+      await page.goto(`${origin}`);
       await page.locator('#menu').click();
       await page.getByText('Debug', { exact: true }).click();
       await page.locator('#file').setInputFiles({
@@ -937,7 +940,7 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
 it('keeps the shared first-visit footer compact and reserves enlarged text height', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
   try {
-    await page.goto(`${origin}?lab=1`);
+    await page.goto(`${origin}`);
     const notice = page.locator('.lk-telemetry-notice');
     await notice.waitFor();
     await page.evaluate(() => document.fonts.ready);

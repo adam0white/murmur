@@ -2,7 +2,7 @@ import { createServer } from 'vite';
 import { expect, it } from 'vitest';
 import { cloneState } from '../src/sim/game.ts';
 import { validateRun } from '../src/ui/one-cast.ts';
-import { launchBrowser } from './browser.ts';
+import { chooseSeed, launchBrowser } from './browser.ts';
 
 it('renders quiet choices without sending; ordinary Submit keeps recording-off privacy; reading slows and menu pauses', async () => {
   const server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
@@ -29,7 +29,8 @@ it('renders quiet choices without sending; ordinary Submit keeps recording-off p
     });
     const requests = () =>
       page.evaluate(() => (window as unknown as { mockFeedback: unknown[] }).mockFeedback);
-    await page.goto(`${server.resolvedUrls!.local[0]}?lab=1&seed=17`);
+    await page.goto(`${server.resolvedUrls!.local[0]}`);
+    await chooseSeed(page, 17);
     await page.locator('#next-edition').check();
     await page.locator('#new').click();
     expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.7.0');
@@ -80,7 +81,7 @@ it('reloads the exact unanswered minute and reports its saved location', async (
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     await page.clock.install();
-    await page.goto(`${server.resolvedUrls!.local[0]}?lab=1`);
+    await page.goto(`${server.resolvedUrls!.local[0]}`);
     await page.evaluate(async () => {
       await window.__murmur.ready;
       window.__murmur.start(17);

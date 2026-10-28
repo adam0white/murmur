@@ -360,10 +360,11 @@ function cue(lean: Lean, pushed: Lean): string {
   return 'She is against it.';
 }
 
-function urlSeed(): number | null {
-  const v = new URLSearchParams(location.search).get('seed');
-  if (v === null || !/^\d+$/.test(v)) return null;
-  return Number(v) >>> 0;
+let debugSeed = '';
+function selectedSeed(): number | null {
+  if (!/^\d+$/.test(debugSeed)) return null;
+  const seed = Number(debugSeed);
+  return Number.isSafeInteger(seed) && seed <= 0xffff_ffff ? seed : null;
 }
 const randomSeed = () => (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
 
@@ -452,7 +453,7 @@ function title() {
     }
   });
   document.getElementById('new')?.addEventListener('click', () => {
-    if (!save) newWeek(urlSeed() ?? randomSeed(), selectedEdition());
+    if (!save) newWeek(selectedSeed() ?? randomSeed(), selectedEdition());
     else {
       required(document.getElementById('new-confirm')).hidden = false;
       required(document.getElementById('new')).hidden = true;
@@ -460,7 +461,7 @@ function title() {
   });
   document
     .getElementById('confirm-new')
-    ?.addEventListener('click', () => newWeek(urlSeed() ?? randomSeed(), selectedEdition()));
+    ?.addEventListener('click', () => newWeek(selectedSeed() ?? randomSeed(), selectedEdition()));
   document.getElementById('cancel-new')?.addEventListener('click', () => {
     required(document.getElementById('new-confirm')).hidden = true;
     required(document.getElementById('new')).hidden = false;
@@ -474,7 +475,7 @@ function title() {
       close();
       invalidateContinuity();
       ++loadGeneration;
-      s = anotherWeek(playedFirstWeek(urlSeed() ?? randomSeed()));
+      s = anotherWeek(playedFirstWeek(selectedSeed() ?? randomSeed()));
       void gateContinuity(recordingState(s)).then(() => {
         writeSave();
         enter();
@@ -1176,7 +1177,9 @@ function ending() {
   document.getElementById('end-cancel-new')?.addEventListener('click', () => {
     required(document.getElementById('end-confirm')).hidden = true;
   });
-  document.getElementById('end-confirm-new')?.addEventListener('click', () => newWeek(randomSeed()));
+  document
+    .getElementById('end-confirm-new')
+    ?.addEventListener('click', () => newWeek(selectedSeed() ?? randomSeed()));
   document.getElementById('send')?.addEventListener('click', () => feedback());
 }
 
@@ -1266,6 +1269,7 @@ function backPage() {
     ${s ? '<button class="row" id="bp-export">Download this run</button>' : ''}
     <div class="menu-footer"><div id="menu-recording"></div><div class="menu-links"><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a><details><summary>Debug</summary><div class="debug-content">
       <p class="soft small provenance">${s ? `Week ${weekOf(s.day)} · run ${s.seed} · edition ${s.version} · ` : ''}Human Framework ${FRAMEWORK_VERSION}</p>
+      <label>Seed for next game <input id="debug-seed" inputmode="numeric" pattern="[0-9]*" value="${esc(debugSeed)}" placeholder="Random" /></label>
       <button id="load">Load a playtest run</button><input type="file" id="file" accept="application/json,.json" hidden />
       ${s ? '<button id="bp-replay">Verify replay</button>' : ''}<p id="debug-status" role="status"></p>
       <pre>${esc(diagnosticError)}</pre>
@@ -1279,6 +1283,9 @@ function backPage() {
   );
   activePanel = { kind: 'menu', close };
   el.querySelector('#menu-recording')?.append(telemetryToggle(lab));
+  el.querySelector<HTMLInputElement>('#debug-seed')?.addEventListener('input', (event) => {
+    debugSeed = (event.currentTarget as HTMLInputElement).value;
+  });
   bindImport(el.querySelector('#load'), el.querySelector('#file'));
   el.querySelector('#bp-export')?.addEventListener('click', download);
   el.querySelector('#bp-replay')?.addEventListener('click', async () => {
@@ -1302,7 +1309,7 @@ function backPage() {
   });
   el.querySelector('#bp-confirm-new')?.addEventListener('click', () => {
     close();
-    void newWeek(randomSeed());
+    void newWeek(selectedSeed() ?? randomSeed());
   });
   el.querySelector('#bp-close')?.addEventListener('click', close);
   el.querySelector('#bp-send')?.addEventListener('click', () => {
@@ -1413,7 +1420,7 @@ export const tester = {
     // The documented tester start is an explicit fresh authored run, never an automatic arrival.
     invalidateContinuity();
     clearSave();
-    s = newGame(seed ?? urlSeed() ?? randomSeed(), version);
+    s = newGame(seed ?? selectedSeed() ?? randomSeed(), version);
     void gateContinuity(recordingState(s));
     writeSave();
     enter();
