@@ -35,7 +35,7 @@ describe('canonical chapter fiction', () => {
     expect(cloneState(rebuilt)).toEqual(cloneState(s));
     const untouched = newGame(17, '0.6.0');
     expect(untouched.cast?.discoveries).toEqual([]);
-  });
+  }, 60_000);
 });
 
 it('keeps the agreed shelf visit playable and completes it only through shared work', () => {

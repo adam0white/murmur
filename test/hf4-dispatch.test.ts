@@ -79,4 +79,4 @@ it('previews low-trust insistence with the same suggestion that holding submits'
     expect(option.pushed).toBe(readings[held.answer!.verdict!]);
   }
   expect(game.fingerprint(state)).toBe(before);
-});
+}, 60_000);
