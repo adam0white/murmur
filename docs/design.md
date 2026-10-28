@@ -8,6 +8,20 @@
 
 **Done for the first playable** (set 2026-10-19 by the coordinator's brief; the owner accepts feel separately): five played weekdays and a Saturday morning, an ending, a playtest export that replays, tests, a headless measure, at least three source-unread playtests recorded verbatim with their findings applied, live at https://murmur.adamwhite.work and listed in the HF games collection.
 
+## HF 4 port — 2026-10-28
+
+Remaining: HF needs runtime inputs for learning prompting responses and changing review style, plus supported fast practice decay, before this game can move from HF 3.0.0. Recheck the published contracts on **2026-11-17**. Adam accepts fiction and feel separately.
+
+The target checked is published HF 4.5.1. Matching client 0.5.2 retains its intentional HF 4.4.0 portable bridge dependency. Neither is adopted here: the game retains HF 3.0.0 / client 0.4.15 / kit 0.5.17.
+
+`src/sim/game.ts` learns a phrase only after the actual choice (`learnPhrase`), changes review style when she writes and after three writing nights (`resolve` / evening handling), and decays unreinforced phrase practice nightly (`fadePhrases`). The public three-week editions also use `PRACTICE_HALF_LIFE_DAYS = 3.1062837195053903`. HF 4.5.1 authors responses and review style in initial state, but its public input union has no response-learning input; `review.requested` takes only person and reason. A candidate style field is rejected at `$.inputs[0].payload.style` as unknown. A candidate response-learning variant is rejected as unknown. The 3.106-day tuning is rejected at `$.tuning.promptings.practiceHalfLifeDays` as outside the supported range. Both input refusals preserve the complete run archive.
+
+Preauthoring every learned response would grant it before the choice. Fixing one review style would remove a consequence of writing. Local decay or response/review mutation would keep HF-owned faculty logic in the game, contrary to the port recipe. These are framework contract blockers. Evidence: `~/code/.lab-scratch/codex/pass-murmur-evidence/murmur-contract451.ts` and `.json`. The candidate probes test missing routes; they are not proposed public APIs.
+
+HF 4.5.1 now has retained portable admission, sourced norms, source-trust reads and bodily forecasts. Old blanket G2/G3/G4 claims are not a reason to retain 3.x. Prompting/review/day events can support a journal; no general narration blocker is claimed. The eventual bridge must convert minutes once, settle requests atomically, preserve finite cast provenance and prove complete current-game export replay on its new exact pin.
+
+The last query switch selected the next seed. This diagnostic now lives in collapsed Debug beside Lab privacy. Browser fixtures select seeds there or through explicit tester starts. Simulation and export rules remain unchanged.
+
 ## How it was chosen (2026-10-19)
 
 The brief (concept 2 of `human-framework/docs/game-taste-2026-10-19.md`) went with three candidate loops to two consultants who read no source.

@@ -1,5 +1,5 @@
 /** Controlled repository WebKit QA only. No isolated Chrome profile or live transport receipt. */
-import { type BrowserContextOptions, webkit } from 'playwright';
+import { type BrowserContextOptions, type Page, webkit } from 'playwright';
 export async function launchBrowser() {
   const browser = await webkit.launch();
   const context = browser.newContext.bind(browser);
@@ -19,4 +19,12 @@ export async function launchBrowser() {
     return p;
   };
   return browser;
+}
+
+/** Select the next authored seed through the public diagnostics, without URL switches. */
+export async function chooseSeed(page: Page, seed: number) {
+  await page.locator('#menu').click();
+  await page.getByText('Debug', { exact: true }).click();
+  await page.locator('#debug-seed').fill(String(seed));
+  await page.locator('#bp-close').click();
 }
