@@ -16,6 +16,7 @@ export { OUTCOME_MOMENTS };
 
 /** A genuine competing HF choice, without a voice ordering another person to assent. */
 const participates = playEncounter;
+export const OUTCOME_COMPANION_ACTIONS = { bench: 'outcome-place', correction: 'outcome-correct' } as const;
 
 /** Called only after Dilan completes an outcome act. Refusal never awards the proposed physical result. */
 export function finishOutcome(s: GameState, m: Moment, o: Opt): string | undefined {
@@ -63,7 +64,7 @@ export function finishOutcome(s: GameState, m: Moment, o: Opt): string | undefin
       f.publication = 'permitted';
       return 'Ece read the checked draft and agreed to one worker-board copy without the private courtyards. “Keep it local. Don’t call it an official survey.” This permission did not move a bench or post a copy.';
     case 'map-place-18': {
-      if (!participates(s, 'murat', 'move-depot-bench', o.duration, m.place))
+      if (!participates(s, 'murat', OUTCOME_COMPANION_ACTIONS.bench, o.duration, m.place))
         return 'Ece joined Dilan, but Murat kept the bench where it was. They did not post or move anything as a completed joint plan.';
       f.publication = 'posted';
       f.publishedAt = s.minute;
@@ -74,7 +75,7 @@ export function finishOutcome(s: GameState, m: Moment, o: Opt): string | undefin
       f.allocation = 'disclosed';
       return 'Murat opened the old allocation file. He named the difficult stops he had given Dilan after she challenged a target, and the delays he had then recorded as her fault. “I chose those stops.” The admission was still private.';
     case 'allocation-correct-19': {
-      if (!participates(s, 'ece', 'hear-allocation-correction', o.duration, m.place))
+      if (!participates(s, 'ece', OUTCOME_COMPANION_ACTIONS.correction, o.duration, m.place))
         return 'Murat was ready to speak, but Ece kept her own work. The worker-visible correction remained undone.';
       f.correction = 'posted';
       f.correctedAt = s.minute;
