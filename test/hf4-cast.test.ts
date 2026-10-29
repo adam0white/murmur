@@ -4,13 +4,12 @@ import {
   claimCastChapterBatch,
   createPersona,
   initialPersonaLife,
-  type PersonaEnvelope,
   type PersonaRequest,
   preparePersonaLife,
 } from '@adam0white/lab-client';
 import { expect, it } from 'vitest';
-import { prepareCastChapter, validateCastChapter } from '../src/sim/cast-chapter.ts';
-import { cloneState, fingerprint, newGame, replay, restoreState } from '../src/sim/game.ts';
+import { prepareCastChapter } from '../src/sim/cast-chapter.ts';
+import { newGame } from '../src/sim/game.ts';
 import { MURMUR_ACTIONS } from '../src/sim/hf4-actions.ts';
 import { createMurmurOpening } from '../src/sim/hf4-opening.ts';
 import { readPerson } from '../src/sim/hf4-read.ts';
@@ -60,38 +59,30 @@ async function source(withDuty = false) {
   });
   return { parent, portable };
 }
-it('admits a complete retained person before an atomic exact-parent cast claim', async () => {
+it('preserves a blocked retained person before the atomic cast claim', async () => {
   const { parent } = await source();
   const input = preparePersonaLife(parent, 1_800_000_000_000);
-  const prepared = await prepareCastChapter([input], 17);
   let writes = 0;
   const shelf = {
     request: async <T>(r: PersonaRequest): Promise<T> => {
       if (r.action === 'prepareBatch')
         return { inputs: [input], blocked: [], expectedHeads: { [parent.castId]: parent.revision } } as T;
-      if (r.action === 'putBatch') {
-        writes++;
-        expect(r.expectedHeads?.[parent.castId]).toBe(parent.revision);
-        return {} as T;
-      }
-      throw new Error('Unexpected request');
+      if (r.action === 'putBatch') writes++;
+      throw new Error('Unexpected write');
     },
   };
-  const result = await claimCastChapterBatch(
-    shelf,
-    [parent.castId],
-    { game: 'murmur', build: 'fixture', engine: parent.source.engine, rules: '0.9.0' },
-    async () => prepared.initial,
-  );
-  if (!result) throw new Error('Missing cast claim');
-  prepared.claims = result.claims;
-  await validateCastChapter(prepared, 17);
-  expect(writes).toBe(1);
-  const s = newGame(17, '0.9.0', prepared, false);
-  expect(fingerprint(replay(s.seed, s.inputs, s.minute, s.version, prepared, false))).toBe(fingerprint(s));
-  expect(readPerson(s.hf.run, 'aylin').body.state.health).toBe(1);
-  expect(s.castChapter?.inputs[0]?.parent.revision).toBe(parent.revision);
-  expect(fingerprint(restoreState(JSON.parse(JSON.stringify(cloneState(s)))))).toBe(fingerprint(s));
+  await expect(
+    claimCastChapterBatch(
+      shelf,
+      [parent.castId],
+      { game: 'murmur', build: 'fixture', engine: parent.source.engine, rules: '0.9.0' },
+      async (inputs) => {
+        if (inputs.length !== 1) throw new Error('The whole cast cannot arrive together.');
+        return (await prepareCastChapter(inputs, 17)).initial;
+      },
+    ),
+  ).rejects.toThrow('whole cast');
+  expect(writes).toBe(0);
 });
 it('refuses an old passport and altered captured life before any chapter starts', async () => {
   const { parent } = await source();
@@ -115,7 +106,7 @@ it('preserves an incoming source duty with its exact recipient and clock', async
   const duty = readPerson(s.hf.run, 'aylin').agenda.commitments.find((c) => c.id === 'source-duty');
   expect(duty).toMatchObject({ status: 'pending', toId: 'aylin', actions: ['dinner'] });
   expect(duty?.until).toBe(
-    chapter.portable.aylin!.person.version === 2 ? chapter.portable.aylin!.person.retained.at + 3600000 : 0,
+    chapter.portable.aylin?.person.version === 2 ? chapter.portable.aylin?.person.retained.at + 3600000 : 0,
   );
 });
 

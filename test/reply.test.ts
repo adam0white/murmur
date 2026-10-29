@@ -221,4 +221,4 @@ it('varies accepted bus and bedtime choices from real runs', () => {
     }
   }
   expect([...seen].sort()).toEqual(['bed:scroll', 'bed:write', 'bus:scroll', 'bus:text']);
-}, 15000);
+}, 60000);

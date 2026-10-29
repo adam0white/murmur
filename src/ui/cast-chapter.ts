@@ -12,7 +12,6 @@ import {
   canonicalCast,
   canonicalPersona,
   claimCastChapterBatch,
-  closePersonaBranch,
   createPersona,
   initialPersonaLife,
   type PersonaEnvelope,
@@ -30,6 +29,7 @@ import {
   departureGuardCurrent,
   publishPersona,
   recordingEpochGuard,
+  requireSharedWrite,
   shelf,
 } from './continuity.ts';
 
@@ -55,8 +55,12 @@ export async function freshCanonicalWeek(seed: number, isCurrent: () => boolean)
   const journalShelf = {
     request: async <T>(request: PersonaRequest): Promise<T> => {
       if (request.action === 'prepareBatch') {
-        const batch = await shelf.request<{ inputs: unknown[]; blocked: { reason: string }[] }>(request);
+        const batch = await shelf.request<{
+          inputs: { parent: { castId: string } }[];
+          blocked: { reason: string }[];
+        }>(request);
         if (batch.blocked.length) throw new Error(batch.blocked.map((p) => p.reason).join(' '));
+        for (const input of batch.inputs) requireSharedWrite(input.parent.castId);
         preparedInputCount = batch.inputs.length;
         return batch as T;
       }
@@ -84,6 +88,7 @@ export async function freshCanonicalWeek(seed: number, isCurrent: () => boolean)
     CAST.map((c) => c.castId),
     source,
     async (inputs) => {
+      for (const input of inputs) requireSharedWrite(input.parent.castId);
       if (inputs.length !== preparedInputCount)
         throw new Error(
           'The whole cast cannot arrive together. Continue the source chapters or choose a separate local story.',
@@ -220,6 +225,9 @@ async function saveCastPersonNow(
   const guard = fixedGuard ?? (await recordingEpochGuard());
   if (fixedGuard && (guard.owner !== s || !departureGuardCurrent(guard)))
     throw Error('The loaded run changed before its checkpoint.');
+  const selected = canonicalCast(`hf.cast.${role}.murmur`);
+  const selectedScope = s.castHeadScopes?.[selected.castId] ?? s.castScope ?? 'local';
+  if (options.fork || selectedScope === 'shared') requireSharedWrite(selected.castId);
   if (options.pause) queueInput(s, { kind: 'cast-pause', role });
   const prefix = cloneState(s),
     cast = canonicalCast(`hf.cast.${role}.murmur`),
@@ -299,7 +307,8 @@ export function automaticCastCheckpoint(s: GameState | null, save: () => void): 
       if (s.phase === 'end') {
         const saved = head && s.castSources?.[head.revision];
         if (saved?.inputCount === s.inputs.length && saved.minute === s.minute) continue;
-        // Projection is read-only and refuses unfinished activities, purposes, or unsupported editions.
+        // Check the shared-write policy before creating a portable projection.
+        requireSharedWrite(c.castId);
         try {
           await createCastSource(s, role);
         } catch {

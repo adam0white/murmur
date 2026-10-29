@@ -5,6 +5,7 @@ import {
   type PersonaEnvelope,
   type PersonaShelfState,
   personaChannel,
+  portableWriteBlockers,
   validatePersona,
   watchPersonaCheckpoint,
 } from '@adam0white/lab-client';
@@ -79,6 +80,14 @@ export async function recordingEpochGuard(): Promise<DepartureGuard> {
 export function departureGuardCurrent(guard: DepartureGuard): boolean {
   return guard.generation === generation && guard.owner === current()?.owner;
 }
+/** Refuse shared writes until the published client permits every peer. */
+export function requireSharedWrite(castId: string): void {
+  const blocked = portableWriteBlockers(castId, 'murmur');
+  if (blocked.length)
+    throw new Error(
+      `This person is read-only until ${blocked.join(', ')} supports safe shared history. The saved history has not been replaced.`,
+    );
+}
 /** Returns only a validated accepted receipt. A conflict never retries or forks implicitly. */
 export async function publishPersona(
   envelope: PersonaEnvelope,
@@ -89,6 +98,7 @@ export async function publishPersona(
     arrival?: PersonaEnvelope;
   } = {},
 ): Promise<PersonaEnvelope> {
+  if (!options.scope || options.scope === 'shared') requireSharedWrite(envelope.castId);
   const checked = await validatePersona(envelope);
   await shelf.ready;
   if (options.guard && !departureGuardCurrent(options.guard))
@@ -113,6 +123,7 @@ export async function claimPersona(
   metadata: Record<string, unknown>,
   scope: ContinuityScope = 'shared',
 ): Promise<PersonaEnvelope> {
+  if (scope === 'shared') requireSharedWrite(source.castId);
   const { revision, ...body } = await validatePersona(source);
   const claim = await createPersona({
     ...body,
