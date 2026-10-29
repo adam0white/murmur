@@ -86,6 +86,8 @@ interface Save {
   seed: number;
   inputs: Input[];
   state?: GameStateSnapshot;
+  /** Fraction of the next simulation minute already shown; never changes HF state. */
+  clockFraction?: number;
 }
 
 const notice = telemetryNotice();
@@ -166,7 +168,14 @@ async function readSave(): Promise<Save | null> {
         { hf, ...rebuiltHost } = state;
       if (hf.run.hashes.full !== parsed.hfHash || canonicalPersona(rebuiltHost) !== canonicalPersona(host))
         throw new Error('The saved input checkpoint does not reconstruct exactly.');
-      sv = { format: 'murmur-save/2', version: host.version, seed: host.seed, inputs: host.inputs, state };
+      sv = {
+        format: 'murmur-save/2',
+        version: host.version,
+        seed: host.seed,
+        inputs: host.inputs,
+        state,
+        clockFraction: parsed.clockFraction,
+      };
     }
     if (sv && 'format' in sv && sv.format !== 'murmur-save/2') throw Error('Unsupported save format.');
     if (
@@ -178,6 +187,11 @@ async function readSave(): Promise<Save | null> {
     )
       throw Error('Malformed saved notebook.');
     if (!sv) return null;
+    if (
+      sv.clockFraction !== undefined &&
+      (!Number.isFinite(sv.clockFraction) || sv.clockFraction < 0 || sv.clockFraction >= 1)
+    )
+      throw Error('Malformed saved clock boundary.');
     if (sv.state) assertNotebookState(sv.state);
     if (!Number.isSafeInteger(sv.seed) || !Array.isArray(sv.inputs) || (sv.version && !isEdition(sv.version)))
       throw Error('Unknown or malformed saved edition.');
@@ -194,12 +208,14 @@ function writeSave() {
   const generation = ++saveGeneration;
   try {
     const state = cloneState(s);
+    const clockFraction = s.phase === 'day' ? carry % 1 : 0;
     const payload = {
       format: 'murmur-save/2',
       version: s.version,
       seed: s.seed,
       inputs: state.inputs,
       state,
+      clockFraction,
     };
     if ('hf' in state) {
       // This explicit intermediate format reconstructs every HF value, including the archive hash.
@@ -207,18 +223,28 @@ function writeSave() {
       const { hf, ...host } = state;
       localStorage.setItem(
         SAVE,
-        JSON.stringify({ format: 'murmur-replay-save/1', host, hfHash: hf.run.hashes.full }),
+        JSON.stringify({
+          format: 'murmur-replay-save/1',
+          host,
+          hfHash: hf.run.hashes.full,
+          clockFraction,
+        }),
       );
       latestSave = compactNotebook(payload)
         .then((compact) => {
-          if (generation === saveGeneration) localStorage.setItem(SAVE, JSON.stringify(compact));
+          if (generation === saveGeneration) {
+            localStorage.setItem(SAVE, JSON.stringify(compact));
+            lab.captureSave(compact);
+          }
         })
         .catch((error) => {
           if (generation === saveGeneration)
             diagnosticError = `Full archive compression: ${String(error)}. The exact input checkpoint remains saved.`;
         });
-    } else localStorage.setItem(SAVE, JSON.stringify(payload));
-    lab.captureSave(payload);
+    } else {
+      localStorage.setItem(SAVE, JSON.stringify(payload));
+      lab.captureSave(payload);
+    }
   } catch (error) {
     diagnosticError = `Could not save this input: ${String(error)}`;
     toast = 'This choice could not be saved. Download this run before closing the page.';
@@ -494,6 +520,8 @@ async function title() {
       s = loaded;
       await gateContinuity(recordingState(s));
       enter();
+      carry = save?.clockFraction ?? 0;
+      drawStatus();
     } catch (error) {
       recordFailure(error, 'We could not resume your saved week. Your saved week is still here.', () => {
         document.getElementById('cont')?.click();
@@ -525,6 +553,7 @@ async function title() {
       invalidateContinuity();
       ++loadGeneration;
       s = anotherWeek(playedFirstWeek(selectedSeed() ?? randomSeed()));
+      carry = 0;
       void gateContinuity(recordingState(s)).then(() => {
         writeSave();
         enter();
@@ -574,6 +603,7 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   if (attempt !== loadGeneration) return;
   clearSave();
   s = next;
+  carry = 0;
   if (!useShelf || localDevelopment || version === '0.9.2') s.castScope = 'local';
   await gateContinuity(recordingState(s));
   writeSave();
@@ -627,6 +657,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       invalidateContinuity();
       if (attempt !== loadGeneration) return;
       s = r;
+      carry = 0;
       s.fileHistory = true;
       if (s.cast) {
         s.castScope = 'file';
@@ -1087,9 +1118,9 @@ function bindHold(b: HTMLButtonElement) {
 function hush(): Answer | null {
   if (menuPausedAt !== null || s?.phase !== 'day' || !s.card) return null;
   queueInput(s, { kind: 'quiet' });
+  carry = 0;
   writeSave();
   answeredAt = performance.now();
-  carry = 0;
   const a = s.answer;
   if (fast) runToCard(s);
   drawDay();
@@ -1099,9 +1130,9 @@ function hush(): Answer | null {
 function sayIt(option: string, insist: boolean): Answer | null {
   if (menuPausedAt !== null || s?.phase !== 'day' || !s.card) return null;
   queueInput(s, insist ? { kind: 'say', option, insist: true } : { kind: 'say', option });
+  carry = 0;
   writeSave();
   answeredAt = performance.now();
-  carry = 0;
   const a = s.answer;
   if (fast) runToCard(s);
   drawDay();
@@ -1214,6 +1245,7 @@ function ending() {
   document.getElementById('another')?.addEventListener('click', () => {
     if (!s || !canAnotherWeek(s)) return;
     s = anotherWeek(s);
+    carry = 0;
     void gateContinuity(recordingState(s));
     writeSave();
     enter();
@@ -1472,6 +1504,7 @@ export const tester = {
     invalidateContinuity();
     clearSave();
     s = newGame(seed ?? selectedSeed() ?? randomSeed(), version);
+    carry = 0;
     void gateContinuity(recordingState(s));
     writeSave();
     enter();

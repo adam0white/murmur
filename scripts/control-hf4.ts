@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { exportRun } from '@adam0white/human-framework';
+import { checkRun, gzip, RUN_LIMITS, runEnvelope } from '@adam0white/lab-client';
 import {
   anotherWeek,
   canAnotherWeek,
@@ -18,6 +19,7 @@ import {
 import { readDilanEvents } from '../src/sim/hf4-read.ts';
 import { verifySessionReplay } from '../src/sim/hf4-session.ts';
 import type { GameState } from '../src/sim/types.ts';
+import { compactNotebook, expandNotebook } from '../src/ui/notebook.ts';
 export function playCurrent(s: GameState, lastDay: number) {
   let cards = 0;
   let reportedDay = 0;
@@ -136,6 +138,27 @@ console.error(
   JSON.stringify({ stage: 'hf-replay', clock: new Date().toISOString(), rss: process.memoryUsage().rss }),
 );
 if (!verifySessionReplay(saved.hf.run)) throw new Error('HF archive replay differs');
+// One complete horizon measures the actual lossless file payload, not a truncated history surrogate.
+const packed = await compactNotebook({
+  game: 'murmur',
+  version: s.version,
+  seed: s.seed,
+  inputs: s.inputs,
+  state: saved,
+});
+const expanded = await expandNotebook(packed);
+if (JSON.stringify(expanded.state) !== json) throw new Error('Complete notebook codec differs');
+const envelope = JSON.stringify(runEnvelope('murmur', { a: '0.9.3', hf: '4.9.0' }, packed));
+const wireBytes = (await gzip(envelope)).size;
+if (!checkRun(envelope) || wireBytes > RUN_LIMITS.compressedBytes)
+  throw new Error(`Complete notebook exceeds released upload bounds: ${envelope.length}/${wireBytes}`);
+const codec = {
+  rawBytes: json.length,
+  packedBytes: JSON.stringify(packed).length,
+  envelopeBytes: envelope.length,
+  wireBytes,
+  exact: true,
+};
 console.log(
   JSON.stringify({
     edition,
@@ -152,5 +175,6 @@ console.log(
     hostReplay: true,
     hfReplay: true,
     narration: narrationReceipt,
+    codec,
   }),
 );

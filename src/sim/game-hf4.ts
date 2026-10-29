@@ -6,8 +6,8 @@ import { canonicalPersona } from '@adam0white/lab-client';
  * Covers: two authored weeks, the offstage weekend between them, edition-preserving replay, and one HF decision
  * per moment with two voices (`you` and `pull`, each with its own trust), her answer in HF's words, prompts and turning away (HF promptings), the evening review (HF
  * review: `ruminating` by default, `accounting` on nights she writes the day down), the hours between moments lived
- * through HF (commute, work, meals, sleep), and learned mornings without an alarm card.
- * Optional0.7 adds a third week; existing0.6 and earlier editions retain exact rules. Does not cover money or spatial movement.
+ * through HF (commute, work, meals, sleep). Learned responses influence ordinary decisions; the host never forces a learned morning.
+ * Optional0.9.1 adds a third week;0.9.2 supplies its separate outcomes. Historical replay uses src/legacy. Does not cover money or spatial movement.
  */
 import {
   advanceCast,
@@ -56,7 +56,7 @@ import type {
 
 export const GAME_VERSION = PROMISE_EDITION;
 export const NEXT_VERSION = '0.9.1';
-/** Pinned0.7 continuous scale: one day of disuse retains0.8. Old editions keep their nightly rule. */
+/** Public current HF tuning: one day of disuse retains0.8, without host practice mutation. */
 export const PRACTICE_HALF_LIFE_DAYS = 3.1062837195053903;
 export const LEGACY_VERSION = '0.2.1';
 export const isEdition = (version: string) => listens({ version }) || version === LEGACY_VERSION;
@@ -107,7 +107,6 @@ const WEEK_TWO_PULL = 0.1;
 /** The pull borrows your ink only once she trusts you this much. */
 const BORROW_FROM = 0.55;
 const PSYCH = ['safety', 'belonging', 'esteem', 'autonomy', 'competence', 'leisure', 'meaning'];
-const { FEET_ALONE_FROM, upAloneLine } = weekTwo;
 
 const minuteOfDay = (m: number) => (((m - DAY0) % 1440) + 1440) % 1440;
 export const clock = (m: number) => {
@@ -443,14 +442,6 @@ export function step(s: GameState): void {
     while (s.queue.length > 0) {
       const m = castMoment(s, momentById(s.queue[0] as string, s.version));
       if (m.when && !m.when(ctxOf(s))) {
-        if (getsUpAlone(s, m)) {
-          const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(ctxOf(s)) : m.at);
-          if (s.minute < at) {
-            s.minute += 1;
-            return;
-          }
-          getUpAlone(s, m);
-        }
         s.queue.shift();
         continue;
       }
@@ -500,49 +491,6 @@ function open(s: GameState, m: Moment) {
         t.surfacedAt = s.minute;
     }
   }
-}
-
-/** Old editions force a learned morning. New promises still go through an HF decision. */
-function getsUpAlone(s: GameState, m: Moment): boolean {
-  return (
-    weekOf(s.day) === 2 &&
-    s.version !== PROMISE_EDITION &&
-    m.id.startsWith('alarm-') &&
-    (ctxOf(s).phrases.find((ph) => ph.id === 'feet')?.practice ?? 0) >= FEET_ALONE_FROM
-  );
-}
-
-function getUpAlone(s: GameState, m: Moment) {
-  liveUntil(s, s.minute);
-  const up = optionsOf(s, m).find((o) => o.action === 'get-up');
-  if (!up) throw new Error(`Alarm ${m.id} has no get-up action.`);
-  const due = readDilan(s.hf.run)
-    .agenda.commitments.filter((item) => item.status === 'pending' && item.actions.includes(up.action))
-    .map((item) => item.id);
-  hostAct(
-    s,
-    {
-      id: up.id,
-      action: up.action,
-      label: up.label,
-      duration: up.duration,
-      effort: up.effort ?? 0,
-      advertises: up.advertises ?? {},
-      placeId: up.placeId,
-    },
-    hfMinute(s),
-    { competence: 0.15, autonomy: 0.1 },
-    undefined,
-    due,
-  );
-  s.flags.late = false;
-  s.chosen[m.id] = up.id;
-  s.stats.gotUpAlone = true;
-  s.stats.turnedAlone.push(s.phrases.find((ph) => ph.id === 'feet')?.text ?? 'Put your feet on the floor');
-  say(s, 'narrator', upAloneLine);
-  m.after?.(s, up.id);
-  // Do not mark the phrase reinforced: no player said it again today.
-  // The ordinary HF action above keeps her alarm promise and practises the get-up habit.
 }
 
 /** Her reason when she turns your word down and HF gave her no words: tiredness, the easier way, or plain no. */

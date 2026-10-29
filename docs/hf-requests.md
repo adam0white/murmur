@@ -1,5 +1,13 @@
 # HF requests from The Two Voices
 
+## Current disposition —2026-10-29
+
+Released HF4.9.0 supplies public multiple-commitment fulfillment, scoped prompting cues, response learning, review-style changes and practice-half-life tuning. Every current0.9 route uses these contracts. A completed family dinner explicitly fulfills the overlapping Mum and Aylin promises without a synthetic call. The default as well as optional routes use public continuous3.106-day practice decay. Learned alarms remain ordinary HF choices. Focused current-native controls cover these mechanisms; HF2.8/3 tests below remain historical.
+
+Noun-phrase commitment labels remain intentional. Current action forms and seeded narration come from the host lexicon and HF4.9. Goals still attract rather than forbid; item4 requests no behavior change. No new private faculty or negative-goal schema is introduced. Peer reading/custody gaps are separate from these now-supported local mechanics, with SDK/peer owners and recheck2026-11-03. Adam accepts feel separately.
+
+## Original HF2.8 requests (historical)
+
 Game: The Two Voices (`adam0white/murmur`), built on `@adam0white/human-framework` 2.8.0 (items 1 and 2 checked against the 2.8.0 dist and still open). Each item says what is confirmed and what is assumed. The game works around each one in the host; none blocks release.
 
 ## 1. One outcome keeps only one commitment, even when `fulfills` lists two
@@ -31,6 +39,6 @@ Game: The Two Voices (`adam0white/murmur`), built on `@adam0white/human-framewor
 **Confirmed (source):** practice for a prompting response decays with a fixed 60-day half-life (`PROMPTINGS_DEFAULTS.practiceHalfLifeDays`). `enablePromptings` keeps the practice of an existing response. A one-week game cannot make a phrase fade with disuse through the public API. **Workaround:** each night the host scales `practice` on responses not used that day (`fadePhrases` in `src/sim/game.ts`). This writes into HF-owned state. **Proposal:** an optional `practiceHalfLifeDays` in `enablePromptings`, or a per-response `halfLifeDays`. Target 2.9.0.
 
 
-## Host adoption candidate — 2026-10-26
+## Historical HF3 host adoption candidate — 2026-10-26
 
 The requests above record the original HF2.8 findings and workarounds. Published HF3.0 already provides explicit multi-commitment fulfillment, scoped PromptingResponse.cue and public practiceHalfLifeDays. The optional0.7.0 host candidate adopts all three without an HF upgrade. Its completed birthday dinner names both overlapping promises and stages no synthetic call. Learned responses retain their actual situation cues. Continuous3.106day decay replaces the nightly host multiplier only in0.7. Existing0.6/0.3/0.2.1 raw state and continuation controls remain exact; no usedLines, names, prose or RNG normalization is used. Source review, signed delivery and real owner/player acceptance remain separate.

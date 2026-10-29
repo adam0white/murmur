@@ -855,7 +855,7 @@ const wednesday: Moment[] = [
         advertises: { belonging: 0.2 },
         gives: { belonging: 0.5, meaning: 0.2 },
         norms: [{ normId: 'lying', relation: 'fulfills' }],
-        alsoDoes: { action: 'call-mum', duration: 5 },
+        keeps: ['mum'],
         placeId: 'aylin',
         phrase: { id: 'plain', kind: 'leave', text: 'Just say it plainly' },
         done: '“I’m not, really.” Mum put down the knife and sat with her. Aylin pretended not to listen.',
@@ -871,7 +871,7 @@ const wednesday: Moment[] = [
         gives: { belonging: 0.2 },
         tags: T,
         norms: [{ normId: 'lying', relation: 'violates' }],
-        alsoDoes: { action: 'call-mum', duration: 5 },
+        keeps: ['mum'],
         placeId: 'aylin',
         done: '“Yes, Mum.” Mum gave her the biggest slice anyway.',
       },
@@ -1415,7 +1415,7 @@ export const momentById = (id: string, version?: string): Moment => {
   if (!m) throw new Error(`no moment ${id}`);
   // Queue entries retain IDs. Resolve edition replacements at every later use.
   // Other editions keep the exact original object and lookup path.
-  return version === '0.9.2' || version === PROMISE_EDITION
+  return version === '0.9.1' || version === '0.9.2' || version === PROMISE_EDITION
     ? (momentsOf(m.day, version).find((x) => x.id === id) ?? m)
     : m;
 };
@@ -1445,7 +1445,7 @@ export const momentsOf = (day: number, version?: string): Moment[] => [
               ),
               after: () => {},
             }
-          : version === PROMISE_EDITION && day >= 8 && m.id.startsWith('alarm-')
+          : day >= 8 && m.id.startsWith('alarm-')
             ? { ...m, when: () => true }
             : version === PROMISE_EDITION && day >= 8 && m.id.startsWith('bed-')
               ? {
@@ -1457,7 +1457,7 @@ export const momentsOf = (day: number, version?: string): Moment[] => [
                     o.id === 'scroll' ? { ...o, duration: 150 } : o,
                   ),
                 }
-              : (version === '0.9.1' || version === '0.9.2') && m.id === 'slump-5'
+              : m.id === 'slump-5'
                 ? FRIDAY_HANDOVER
                 : m,
     )

@@ -1,5 +1,13 @@
 # Canonical cast and supported life
 
+## Current reconciliation —2026-10-29
+
+Current0.9 routes use one complete four-person HF4.9 run and retained portable-person v2. Full native source notebooks retain every input, actor, history and RNG value. Source projection observes a genuinely completed idle Saturday; it does not clear purposes. The historical named HF3 dialects/eight-episode producer below are replay evidence, not current reader certification or shared custody. Current Aylin history projection retains the complete native archive through createCastHistorySource; it does not truncate to eight episodes. Whole-cast atomic admission, exact-parent conflicts and file origin remain mandatory. Client0.5.8’s uncertified peer readers/custody remain SDK/peer-owner dependencies as of2026-10-29, recheck2026-11-03.
+
+The public separate outcomes route is0.9.2. Its finite authored discussion, dance night, permissioned local posting/bench move, worker-visible correction and smaller-route trial already exist. Completion requires actual HF actions and other-person participation; requests alone imply no agreement or private disclosure. No external official response, permanent rota, forgiveness, imported achievement or new canonical biography is granted. The old dated EXT006 engineering deferrals below are historical. Adam’s fiction acceptance remains2026-11-03; this reconciliation does not claim a new full0.9.2 horizon or real journey.
+
+## Historical source/adoption record
+
 The current edition uses released canonical profiles, six traits and ten values. Continuing supported state overrides opening priors. No secret is learned by importing a biography.
 
 | Before                      | Canonical edition                                                                 | Source anchors                                     |

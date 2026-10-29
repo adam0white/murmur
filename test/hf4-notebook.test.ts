@@ -13,5 +13,7 @@ it('compresses every current host and HF archive value, then cold restores it ex
   const expanded = await expandNotebook(JSON.parse(JSON.stringify(packed)));
   expect(canonicalPersona(expanded)).toBe(canonicalPersona(value));
   expect(fingerprint(restoreState(expanded.state))).toBe(fingerprint(s));
+  await expect(expandNotebook({ ...packed, bytes: 64 * 1024 * 1024 + 1 })).rejects.toThrow('Malformed');
+  await expect(expandNotebook({ ...packed, bytes: packed.bytes - 1 })).rejects.toThrow('size');
   await expect(expandNotebook({ ...packed, sha256: '0'.repeat(64) })).rejects.toThrow('checksum');
 });
