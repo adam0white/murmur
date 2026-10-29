@@ -414,7 +414,7 @@ const monday: Moment[] = [
     at: at(7, 12),
     place: 'home',
     scene: (c) =>
-      `${feetStrong(c) ? `${mumOpening(c)}\n` : ''}A tenancy letter is by the door. Her name shows through the envelope’s window.`,
+      `${feetStrong(c) ? `${mumOpening(c)}\n` : ''}A letter about renewing her tenancy is by the door. Her name shows through the envelope’s window.`,
     pull: { to: 'bowl', line: 'Put it under the fruit bowl. That’s where you keep important things.' },
     options: [
       {
