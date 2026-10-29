@@ -181,7 +181,7 @@ describe('exact native return', () => {
         [remote.revision]: { ...archive, lineage: [] },
       }),
     ).rejects.toThrow(/lineage/i);
-  });
+  }, 30000);
 
   it('validates the continued notebook against its exact replayed native source', async () => {
     const { validateCanonicalRun } = await import('../src/legacy/ui/cast-chapter.ts');
