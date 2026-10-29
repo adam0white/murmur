@@ -84,7 +84,7 @@ for (const compression of ['gzip', 'checkpoint'])
     const browser = await launchBrowser();
     try {
       const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-      await page.clock.install();
+      await page.clock.install({ time: new Date('2026-10-29T00:00:00Z') });
       if (compression === 'checkpoint')
         await page.addInitScript(() => {
           Object.defineProperty(window, 'CompressionStream', {
@@ -110,6 +110,8 @@ for (const compression of ['gzip', 'checkpoint'])
       });
       await page.reload();
       await page.locator('#cont').waitFor();
+      // Freeze only this restoration measurement; normal moving-clock behavior is tested separately.
+      await page.clock.pauseAt(new Date('2026-10-29T00:02:00Z'));
       expect(await page.locator('.title').innerText()).toContain('with her choice still waiting');
       await page.locator('#cont').click();
       await page.locator('#hush').waitFor();

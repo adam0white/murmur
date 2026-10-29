@@ -78,6 +78,7 @@ export function castOptions(s: GameState, m: Moment, base: Opt[]): Opt[] {
       ink: c.ink,
       label: c.label ?? c.ink,
       action: c.action,
+      ...(role === 'aylin' ? { keeps: ['mum'] } : {}),
       duration: c.duration,
       advertises: { belonging: 0.25, meaning: 0.2 },
       gives: { belonging: 0.25, meaning: 0.2 },

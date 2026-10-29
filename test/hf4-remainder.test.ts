@@ -1,11 +1,12 @@
 /** Current-native authored Friday and prompting controls; no peer custody or player-feel verdict. */
 import { exportRun, readRunHistory } from '@adam0white/human-framework';
-import { expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { castOptions } from '../src/sim/canonical-cast.ts';
 import { LABEL } from '../src/sim/dilan-content.ts';
 import { cloneState, newGame, queueInput, replay, restoreState, runToCard, step } from '../src/sim/game.ts';
 import { readDilan } from '../src/sim/hf4-read.ts';
 import { momentById, momentsOf } from '../src/sim/moments.ts';
-import type { Ctx, GameState } from '../src/sim/types.ts';
+import type { Ctx, GameState, GameStateSnapshot } from '../src/sim/types.ts';
 
 const context: Ctx = {
   day: 8,
@@ -30,7 +31,9 @@ it('offers the default Friday obligation and lets every current learned morning 
     expect(momentById('alarm-8', version).when?.(context)).toBe(true);
     const dinner = momentsOf(3, version).find((m) => m.id === 'dinner-3')!;
     const options = typeof dinner.options === 'function' ? dinner.options(context) : dinner.options;
-    for (const option of options.filter((o) => o.action === 'dinner')) {
+    for (const option of castOptions(newGame(17, version), dinner, options).filter(
+      (o) => o.action === 'dinner',
+    )) {
       expect(option.alsoDoes).toBeUndefined();
       expect(option.keeps).toContain('mum');
     }
@@ -48,46 +51,59 @@ function reach(s: GameState, id: string) {
   }
   throw new Error(`Did not reach ${id}`);
 }
-it('settles one real dinner against both duties, then records Friday alternatives and exactly replays', () => {
-  const s = newGame(17);
-  reach(s, 'dinner-3');
-  const at = readDilan(s.hf.run).at;
-  queueInput(s, { kind: 'quiet' });
-  const kept = readDilan(s.hf.run).agenda.commitments.filter((c) => c.status === 'kept');
-  expect(kept.some((c) => c.label === LABEL.aylin)).toBe(true);
-  expect(kept.some((c) => c.label === LABEL.mum && c.from <= at && c.until >= at)).toBe(true);
-  const entries = readRunHistory(exportRun(s.hf.run)).flatMap((t) => t.inputs);
-  expect(entries.some((i) => i.id === 'dinner-3:also:offers')).toBe(false);
-  reach(s, 'handover-5');
-  const before = cloneState(s);
+describe('actual dinner and Friday branches', () => {
+  let before: GameStateSnapshot;
+  let dinner: { keptAylin: boolean; keptMum: boolean; syntheticCall: boolean };
   const choices = new Set<string>();
-  for (const input of [
-    { kind: 'quiet' as const },
-    { kind: 'say' as const, option: 'handover', insist: true },
-  ]) {
-    const branch = restoreState(before);
-    queueInput(branch, input);
-    choices.add(branch.chosen['handover-5']!);
-    expect(branch.chosen['handover-5']).toMatch(/handover|board|none/);
-    expect(branch.log.at(-1)?.text).not.toContain('Ece took the unchecked sheet');
-    // A completed Dilan action cannot invent Ece's joint work, and no diagnostic truncates native inputs.
-    if (branch.chosen['handover-5'] === 'handover') {
-      expect(branch.flags.w3?.handover).toBe('handover');
-      const joint = branch.log.at(-1)?.text?.includes('They checked');
-      expect(joint).toBe(
-        branch.cast!.encounters.some((e) => e.person === 'ece' && e.action === 'handover-ece'),
+  // One actually played four-day prefix, reused by both complete branch/replay controls.
+  // Each original120s deadline remains; no history, assertion or actor is removed.
+  beforeAll(() => {
+    const s = newGame(17);
+    reach(s, 'dinner-3');
+    const at = readDilan(s.hf.run).at;
+    queueInput(s, { kind: 'quiet' });
+    const kept = readDilan(s.hf.run).agenda.commitments.filter((c) => c.status === 'kept');
+    const entries = readRunHistory(exportRun(s.hf.run)).flatMap((t) => t.inputs);
+    dinner = {
+      keptAylin: kept.some((c) => c.label === LABEL.aylin),
+      keptMum: kept.some((c) => c.label === LABEL.mum && c.from <= at && c.until >= at),
+      syntheticCall: entries.some((i) => i.id === 'dinner-3:also:offers'),
+    };
+    reach(s, 'handover-5');
+    before = cloneState(s);
+  }, 120_000);
+  it('settles one real dinner against both duties without a synthetic call', () => {
+    expect(dinner).toEqual({ keptAylin: true, keptMum: true, syntheticCall: false });
+  });
+  it.each([{ kind: 'quiet' as const }, { kind: 'say' as const, option: 'handover', insist: true }])(
+    'records Friday $kind and exactly cold continues/replays its complete prefix',
+    (input) => {
+      const branch = restoreState(before);
+      queueInput(branch, input);
+      choices.add(branch.chosen['handover-5']!);
+      expect(branch.chosen['handover-5']).toMatch(/handover|board|none/);
+      expect(branch.log.at(-1)?.text).not.toContain('Ece took the unchecked sheet');
+      if (branch.chosen['handover-5'] === 'handover') {
+        expect(branch.flags.w3?.handover).toBe('handover');
+        const joint = branch.log.at(-1)?.text?.includes('They checked');
+        expect(joint).toBe(
+          branch.cast!.encounters.some((e) => e.person === 'ece' && e.action === 'handover-ece'),
+        );
+      }
+      const restored = restoreState(cloneState(branch));
+      step(branch);
+      step(restored);
+      expect(cloneState(restored)).toEqual(cloneState(branch));
+      expect(cloneState(replay(branch.seed, branch.inputs, branch.minute, branch.version))).toEqual(
+        cloneState(branch),
       );
-    }
-    const restored = restoreState(cloneState(branch));
-    step(branch);
-    step(restored);
-    expect(cloneState(restored)).toEqual(cloneState(branch));
-    expect(cloneState(replay(branch.seed, branch.inputs, branch.minute, branch.version))).toEqual(
-      cloneState(branch),
-    );
-  }
-  expect(choices.has('handover')).toBe(true);
-}, 120_000);
+    },
+    120_000,
+  );
+  it('includes an actual completed handover path without forcing assent', () => {
+    expect(choices.has('handover')).toBe(true);
+  });
+});
 
 it('learns the actual alarm cue and lets HF decay practice without host mutation', async () => {
   const { advanceHost } = await import('../src/sim/hf4-host.ts');
