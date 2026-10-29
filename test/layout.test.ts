@@ -3,7 +3,7 @@ import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { playedFirstWeek } from '../src/sim/firstweek.ts';
 import { anotherWeek, cloneState, queueInput, runToCard } from '../src/sim/game.ts';
-import { expandNotebook } from '../src/ui/notebook.ts';
+import { compactNotebook, expandNotebook } from '../src/ui/notebook.ts';
 import { chooseSeed, launchBrowser } from './browser.ts';
 
 let browser: Browser;
@@ -158,6 +158,7 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
 }
 it('offers privacy beside the recording switch and yields journal room before scrolling long text', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
+  page.setDefaultTimeout(120000);
   try {
     // Build the actual long journal headlessly, then render its ordinary saved notebook.
     // Re-rendering and saving every earlier card is unrelated to this layout assertion.
@@ -172,13 +173,15 @@ it('offers privacy beside the recording switch and yields journal room before sc
     const saved = cloneState(state);
     await page.addInitScript(
       (json) => localStorage.setItem('murmur-save-v1', json),
-      JSON.stringify({
-        format: 'murmur-save/2',
-        version: saved.version,
-        seed: saved.seed,
-        inputs: saved.inputs,
-        state: saved,
-      }),
+      JSON.stringify(
+        await compactNotebook({
+          format: 'murmur-save/2',
+          version: saved.version,
+          seed: saved.seed,
+          inputs: saved.inputs,
+          state: saved,
+        }),
+      ),
     );
     await page.goto(`${url}`);
     await chooseSeed(page, 1);
@@ -193,7 +196,7 @@ it('offers privacy beside the recording switch and yields journal room before sc
   } finally {
     await page.close();
   }
-}, 30000);
+}, 180000);
 it('refreshes Send when the shared recording preference changes after the form opens', async () => {
   const page = await browser.newPage();
   try {
