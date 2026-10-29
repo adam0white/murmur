@@ -170,11 +170,12 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
   it('shows the deciding and answering states, pauses under the menu, and resumes the reply beat', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
+      // Install before rendering so card timestamps use the same clock on slow CI.
+      await page.clock.install();
       await firstChoice(page);
       await page.evaluate(() => {
         (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
-      await page.clock.install();
       await page.clock.resume();
       await page.clock.runFor(100);
       expect(await page.locator('#state-words').innerText()).toMatch(/^\d+ seconds to answer\.$/);
@@ -456,12 +457,13 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       reducedMotion: 'reduce',
     });
     try {
+      // Install before rendering so card timestamps use the same clock on slow CI.
+      await page.clock.install();
       await firstChoice(page);
       await page.evaluate(() => {
         (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
       await page.evaluate(() => document.fonts.ready);
-      await page.clock.install();
       await page.clock.runFor(1000);
       const up = page.locator('.opt[data-o="up"]');
       expect(await up.locator('.lean').innerText()).toBe('She would agree only if you insist.');
@@ -503,12 +505,13 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
   it('does not send an old hold to the next card and supports keyboard insistence', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
+      // Install before rendering so card timestamps use the same clock on slow CI.
+      await page.clock.install();
       await firstChoice(page);
       await page.evaluate(() => {
         (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
       await page.evaluate(() => document.fonts.ready);
-      await page.clock.install();
       await page.clock.runFor(1000);
       const up = page.locator('[data-o="up"]');
       const box = await up.boundingBox();
@@ -543,12 +546,13 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
   it('cancels an unfinished WebKit pointer hold and keeps an ordinary tap available', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
+      // Install before rendering so card timestamps use the same clock on slow CI.
+      await page.clock.install();
       await firstChoice(page);
       await page.evaluate(() => {
         (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
       await page.evaluate(() => document.fonts.ready);
-      await page.clock.install();
       await page.clock.runFor(1000);
       const up = page.locator('.opt[data-o="up"]');
       const box = await up.boundingBox();
