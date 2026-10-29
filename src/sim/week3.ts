@@ -191,7 +191,7 @@ const central: Moment[] = [
     at: at(14),
     place: 'depot',
     scene: (c) =>
-      `${practiced(c) ? 'Ece has practised the delivery board.' : 'Ece has not completed the board practice.'} ${c.flags.w3?.handover === 'handover' ? 'They checked a handover together in the first week.' : 'Ece remembers taking the unchecked handover to the floor.'} ${c.flags.w2?.adviceId ? 'Ece remembers borrowing Dilan’s advice for a customer last week.' : 'They have not settled on a phrase to use here.'} An instruction that fits the board sends a van to the wrong loading bay.`,
+      `${practiced(c) ? 'Ece has practised the delivery board.' : 'Ece has not completed the board practice.'} ${c.flags.w3?.handover === 'handover' ? (c.handoverTogether ? 'They checked a handover together in the first week.' : 'Dilan checked a handover alone in the first week.') : 'Dilan did not check the first week’s handover sheet.'} ${c.flags.w2?.adviceId ? 'Ece remembers borrowing Dilan’s advice for a customer last week.' : 'They have not settled on a phrase to use here.'} An instruction that fits the board sends a van to the wrong loading bay.`,
     pull: { to: 'repeat', line: 'The instruction worked last week. Say it again.' },
     options: [
       opt(

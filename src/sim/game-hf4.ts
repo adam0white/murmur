@@ -187,6 +187,11 @@ export function ctxOf(s: GameState): Ctx {
     day: s.day,
     flags: s.flags,
     missedMum,
+    handoverTogether: Boolean(
+      s.cast?.encounters.some(
+        (e) => e.person === 'ece' && e.action === 'handover-ece' && e.at >= dayStart(5) && e.at < dayStart(6),
+      ),
+    ),
     tired: bedLate || bedSmall || person.body.state.sleepPressure > 0.55,
     chosen: s.chosen,
     note: voiceNote(s),

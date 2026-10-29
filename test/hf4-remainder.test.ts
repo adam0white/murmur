@@ -4,6 +4,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { castOptions } from '../src/sim/canonical-cast.ts';
 import { LABEL } from '../src/sim/dilan-content.ts';
 import { cloneState, newGame, queueInput, replay, restoreState, runToCard, step } from '../src/sim/game.ts';
+import { ctxOf } from '../src/sim/game-hf4.ts';
+import { playEncounter } from '../src/sim/hf4-encounter.ts';
 import { readDilan } from '../src/sim/hf4-read.ts';
 import { momentById, momentsOf } from '../src/sim/moments.ts';
 import type { Ctx, GameState, GameStateSnapshot } from '../src/sim/types.ts';
@@ -58,7 +60,7 @@ describe('actual dinner and Friday branches', () => {
   // One actually played four-day prefix, reused by both complete branch/replay controls.
   // Each original120s deadline remains; no history, assertion or actor is removed.
   beforeAll(() => {
-    const s = newGame(17);
+    const s = newGame(17, '0.9.1');
     reach(s, 'dinner-3');
     const at = readDilan(s.hf.run).at;
     queueInput(s, { kind: 'quiet' });
@@ -90,6 +92,18 @@ describe('actual dinner and Friday branches', () => {
           branch.cast!.encounters.some((e) => e.person === 'ece' && e.action === 'handover-ece'),
         );
       }
+      const scene = momentById('floor-15', branch.version).scene;
+      expect(typeof scene).toBe('function');
+      const later = typeof scene === 'function' ? scene(ctxOf(branch)) : scene;
+      const joint = branch.cast!.encounters.some((e) => e.person === 'ece' && e.action === 'handover-ece');
+      if (branch.flags.w3?.handover === 'handover') {
+        expect(later).toContain(
+          joint ? 'They checked a handover together' : 'Dilan checked a handover alone',
+        );
+      } else {
+        expect(later).toContain('Dilan did not check the first week’s handover sheet');
+      }
+      expect(later).not.toContain('Ece remembers taking the unchecked handover');
       const restored = restoreState(cloneState(branch));
       step(branch);
       step(restored);
@@ -103,6 +117,15 @@ describe('actual dinner and Friday branches', () => {
   it('includes an actual completed handover path without forcing assent', () => {
     expect(choices.has('handover')).toBe(true);
   });
+});
+
+it('records Ece choosing her own time in the authored free-opening host fixture', () => {
+  const s = newGame(17, '0.9.1');
+  // Authored opening fixture, as in hf4-outcome-companions: skip the first routine slot.
+  // This does not force Ece's choice and is not a natural Friday player trace.
+  s.hf.nextCompanionEvent = 2;
+  expect(playEncounter(s, 'ece', 'handover-ece', 20, 'depot')).toBe(false);
+  expect(s.cast?.encounters).toEqual([expect.objectContaining({ person: 'ece', action: 'own-time' })]);
 });
 
 it('learns the actual alarm cue and lets HF decay practice without host mutation', async () => {
