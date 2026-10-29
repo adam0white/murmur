@@ -1,5 +1,6 @@
 /** Actual current game, complete cold JSON restore and deterministic host replay. */
 import { createHash } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { exportRun } from '@adam0white/human-framework';
 import { checkRun, gzip, RUN_LIMITS, runEnvelope } from '@adam0white/lab-client';
@@ -40,6 +41,9 @@ export function playCurrent(s: GameState, lastDay: number) {
     runToCard(s);
     const card = cardView(s);
     if (card) {
+      // One actual prefix supplies production reading-card QA; no synthetic clock/person fixture.
+      if (card.id === 'letter-8' && process.env.MURMUR_CONTROL_CHECKPOINT)
+        writeFileSync(process.env.MURMUR_CONTROL_CHECKPOINT, JSON.stringify(cloneState(s)));
       queueInput(s, { kind: 'say', option: card.options.find((o) => !o.isPull)?.id ?? card.options[0]!.id });
       cards++;
       if (cards % 10 === 0)
@@ -176,5 +180,6 @@ console.log(
     hfReplay: true,
     narration: narrationReceipt,
     codec,
+    letter: { choice: s.chosen['letter-8'], afterReading: s.chosen['letter-decision-8'] ?? null },
   }),
 );

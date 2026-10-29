@@ -139,6 +139,7 @@ const actionForms = {
     'putting the letter under the fruit bowl',
   ],
   quiet: ['stay quiet', 'stayed quiet', 'staying quiet'],
+  'read-letter': ['read the renewal letter', 'read the renewal letter', 'reading the renewal letter'],
   'redo-returns': ['handle the returns', 'handled the returns', 'handling the returns'],
   'repair-sheet': ['work on the sheet', 'worked on the sheet', 'working on the sheet'],
   'repeat-board': [

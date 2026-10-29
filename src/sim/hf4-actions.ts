@@ -73,6 +73,7 @@ export const MURMUR_ACTIONS = [
   'promise-ece',
   'put-letter',
   'quiet',
+  'read-letter',
   'redo-returns',
   'repair-sheet',
   'repeat-board',

@@ -2,7 +2,7 @@
 
 Remaining: final qualified signed source/draftPR packet and root-owned review, exact CI, integration/deployment/live verification. Adam/player acceptanceNov3 and genuine SDK/peer custody remain open. No new hosted request, merge or deploy is authorized for this worker. See docs/remainder-2026-10-29.md and ~/code/.lab-scratch/games-deferred/recovery-murmur-remainder-report.md.
 
-Current source keeps HF4.9.0/client0.5.8/kit0.5.25, complete four-person native archives, lazy lab initialization/own-property proxy and production startup regression. Available remainder changes bring Friday handover into the default, keep joint Ece work conditional on actual native completion, remove synthetic dinner calls and optional forced mornings, and retain the fractional local answer clock across Resume. Whole-cast admission, exactCAS, shared guards and file ownership are unchanged. Historical sections below keep their source-attributed receipts and are not new pending work.
+Current source keeps HF4.9.0/client0.5.8/kit0.5.25, complete four-person native archives, lazy lab initialization/own-property proxy and production startup regression. Available remainder changes bring Friday handover into the default, keep joint Ece work conditional on actual native completion, remove synthetic dinner calls and optional forced mornings, retain the fractional local answer clock across Resume, and offer native reading before a later signature decision. Optional current bus/bed suggestions use their weekday-specific words. Whole-cast admission, exactCAS, shared guards and file ownership are unchanged. Historical sections below keep their source-attributed receipts and are not new pending work.
 
 # HF 4.9 narration adoption — 2026-10-29
 
