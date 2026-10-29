@@ -3,7 +3,15 @@ import type { Browser, Page } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { playedFirstWeek } from '../src/sim/firstweek.ts';
-import { anotherWeek, cloneState, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
+import {
+  anotherWeek,
+  cloneState,
+  queueInput,
+  replay,
+  restoreState,
+  runToCard,
+  step,
+} from '../src/sim/game.ts';
 import type { GameState } from '../src/sim/types.ts';
 import type { tester } from '../src/ui/app.ts';
 import { compactNotebook } from '../src/ui/notebook.ts';
@@ -31,6 +39,27 @@ function finish(s: GameState) {
     }
   }
   return s;
+}
+
+const firstWeeks = new Map<number, ReturnType<typeof cloneState>>();
+const twoWeekEndings = new Map<number, ReturnType<typeof cloneState>>();
+
+function firstWeek(seed: number): GameState {
+  let snapshot = firstWeeks.get(seed);
+  if (!snapshot) {
+    snapshot = cloneState(playedFirstWeek(seed));
+    firstWeeks.set(seed, snapshot);
+  }
+  return restoreState(snapshot);
+}
+
+function twoWeekEnding(seed: number): GameState {
+  let snapshot = twoWeekEndings.get(seed);
+  if (!snapshot) {
+    snapshot = cloneState(finish(anotherWeek(firstWeek(seed))));
+    twoWeekEndings.set(seed, snapshot);
+  }
+  return restoreState(snapshot);
 }
 
 beforeAll(async () => {
@@ -78,7 +107,7 @@ describe('a played first week', () => {
   it.each([1, 42, 1003])(
     'plays and replays seed %i through the normal inputs',
     (seed) => {
-      const s = playedFirstWeek(seed);
+      const s = firstWeek(seed);
       expect(s.version).toBe('0.10.0');
       expect(s.phase).toBe('end');
       expect(s.day).toBe(6);
@@ -106,7 +135,7 @@ describe('second week browser flow', { timeout: 180_000 }, () => {
     it(`continues the same Dilan and shows a readable Monday on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
       try {
-        const state = playedFirstWeek(42);
+        const state = firstWeek(42);
         const canon = structuredClone(state.final);
         await importRun(page, state);
         expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(1);
@@ -181,7 +210,7 @@ describe('second week browser flow', { timeout: 180_000 }, () => {
     it(`renders both weeks and no empty voice note on ${size}`, async () => {
       const page = await browser.newPage({ viewport, hasTouch: true, reducedMotion: 'reduce' });
       try {
-        const state = finish(anotherWeek(playedFirstWeek(42)));
+        const state = twoWeekEnding(42);
         expect(state.day).toBe(13);
         expect(state.final?.note).toBe('');
         await importRun(page, state);
@@ -226,7 +255,7 @@ describe('second week browser flow', { timeout: 180_000 }, () => {
 
 it('offers the notebook tally only at the ending, closed until requested', async () => {
   const page = await browser.newPage();
-  await importRun(page, playedFirstWeek(42));
+  await importRun(page, firstWeek(42));
   const before = await page.evaluate(() => ({
     state: window.__murmur.state,
     save: localStorage.getItem('murmur-save-v1'),
