@@ -79,6 +79,8 @@ export interface Ctx {
   day: number;
   flags: Flags;
   missedMum: number;
+  /** A completed Ece handover encounter in the first Friday interval. */
+  handoverTogether?: boolean;
   tired: boolean;
   /** Which option each moment so far ended in. */
   chosen: Record<string, string>;

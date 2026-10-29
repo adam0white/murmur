@@ -1,6 +1,6 @@
 # A third week: the advice comes back
 
-**Historical proposal below.** The widened owner instruction now authorizes remaining campaign engineering. An explicit0.7.0 candidate implements this scope; default0.6.0 and loaded notebooks keep their original story. The independent review is complete; its bounded chronology, departure and control-budget corrections are implemented. Signed delivery remains pending. Adam accepts the fiction by playing, with owner acceptance2026-11-03. The older approval/implementation statements below record the proposal's original sequencing.
+**Current reconciliation —2026-10-29.** The public three-week checkbox starts current0.9.1 with fresh local people. It already implements five workdays and Saturday after the first two weeks. App0.9.3/HF4.9.0 source397d5fac was delivered by NARRATION; that release is not evidence for the new remainder changes. This batch also brings the first Friday handover into the default two-week route and requires actual native Ece participation before joint narration. The old0.7-only and pending-approval/delivery conditions below are historical, superseded by owner authorization. Adam’s fiction/feel acceptance remains2026-11-03; conditional voluntary return is not established by builder controls.
 
 A third week earns its place if Dilan must live with what she and the player have set in motion. Keep the two voices, the running day, and evening review. Add five weekdays and a Saturday ending. Trust, fatigue, competing promises, and other people's needs still limit what the player can achieve.
 
@@ -21,7 +21,7 @@ Carry the actual HF person forward: voice trust and pressure, habits, learned ph
 
 ## Implemented schedule correction
 
-Only edition0.7 replaces the first Friday afternoon coffee card in its original slot at15:20. The third Tuesday bus at18:15 precedes the photographs at18:40. Old-edition queues keep their original order.
+Historical0.7 replaced the first Friday afternoon coffee card in its original slot at15:20. The third Tuesday bus at18:15 precedes the photographs at18:40. Old-edition queues keep their original order.
 
 On the third Friday, a completed closing choice ends depot work. Leaving on time takes the17:20 bus and a25-minute commute before home time. Staying for practice still costs70minutes. The bus line follows the completed choice and departure time. The actual three-week control shares its played campaign across these checks and retains full replay, with a specific20-second budget.
 
@@ -29,4 +29,4 @@ On the third Friday, a completed closing choice ends depot work. Leaving on time
 
 Author one central situation per weekday with bounded outcome branches. Reuse the alarm, bus, and bedtime routines: keep one steady and vary two around the new events. Add no HF faculty, map, economy, playable person, or fourth-week hook. Keep faith in the background. Preserve replay editions; a third-week edition must be explicit.
 
-Done would mean six playable days, a replayable export, focused continuity tests, checks at 360×690 and 412×891, and a clean live release. The owner accepts whether the week feels earned. Testers can find defects; they cannot overrule the owner's taste. Approval authorizes an implementation plan. Until then, the game ends after week two.
+The original proposal’s done condition was six playable days, a replayable export, focused continuity tests, checks at 360×690 and 412×891, and a clean live release. The owner accepts whether the week feels earned. Testers can find defects; they cannot overrule the owner's taste. The original approval-first sequence is superseded; current0.9.1 is playable. This does not establish owner acceptance or genuine cross-origin custody.

@@ -89,7 +89,10 @@ export function createMurmurOpening(
         { type: 'voice', id: 'pull' },
         ...[...cast.map((c) => role(c.castId)), 'mum'].map((id) => ({ type: 'person' as const, id })),
       ],
-      lexicon: murmurLexicon(Object.fromEntries(cast.map((entry) => [role(entry.castId), entry.name]))),
+      lexicon: murmurLexicon(
+        Object.fromEntries(cast.map((entry) => [role(entry.castId), entry.name])),
+        actionIds.includes('read-letter'),
+      ),
       calendar: {
         id: 'murmur-calendar',
         epoch: { id: 'epoch', simulationAt: 0, dayIndex: 0, msOfDay: 0 },

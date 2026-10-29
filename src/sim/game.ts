@@ -1,6 +1,7 @@
 /** Dispatch pinned historical editions to their original simulation and engine. */
 
 import * as legacy from '../legacy/game.ts';
+import { isHf4Edition } from './edition.ts';
 import * as current from './game-hf4.ts';
 
 export type { CardView, Lean } from './game-hf4.ts';
@@ -16,7 +17,7 @@ export {
   weekOf,
 } from './game-hf4.ts';
 
-const isCurrent = (version: string) => version === '0.9.0' || version === '0.9.1' || version === '0.9.2';
+const isCurrent = isHf4Edition;
 export const isEdition = (version: string) => isCurrent(version) || legacy.isEdition(version);
 export const listens: typeof current.listens = (state) =>
   isCurrent(state.version) ? current.listens(state) : legacy.listens(state);

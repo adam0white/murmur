@@ -1,4 +1,5 @@
 import { canonicalPersona } from '@adam0white/lab-client';
+import { isHf4Edition } from '../sim/edition.ts';
 /**
  * The Two Voices UI: plain DOM over the pure sim. The UI reads state and queues inputs; it never changes the sim
  * directly. Real time drives sim minutes, continuously: fast between cards (dead time skipped quickly), strongly
@@ -86,6 +87,8 @@ interface Save {
   seed: number;
   inputs: Input[];
   state?: GameStateSnapshot;
+  /** Fraction of the next simulation minute already shown; never changes HF state. */
+  clockFraction?: number;
 }
 
 const notice = telemetryNotice();
@@ -166,7 +169,14 @@ async function readSave(): Promise<Save | null> {
         { hf, ...rebuiltHost } = state;
       if (hf.run.hashes.full !== parsed.hfHash || canonicalPersona(rebuiltHost) !== canonicalPersona(host))
         throw new Error('The saved input checkpoint does not reconstruct exactly.');
-      sv = { format: 'murmur-save/2', version: host.version, seed: host.seed, inputs: host.inputs, state };
+      sv = {
+        format: 'murmur-save/2',
+        version: host.version,
+        seed: host.seed,
+        inputs: host.inputs,
+        state,
+        clockFraction: parsed.clockFraction,
+      };
     }
     if (sv && 'format' in sv && sv.format !== 'murmur-save/2') throw Error('Unsupported save format.');
     if (
@@ -178,6 +188,11 @@ async function readSave(): Promise<Save | null> {
     )
       throw Error('Malformed saved notebook.');
     if (!sv) return null;
+    if (
+      sv.clockFraction !== undefined &&
+      (!Number.isFinite(sv.clockFraction) || sv.clockFraction < 0 || sv.clockFraction >= 1)
+    )
+      throw Error('Malformed saved clock boundary.');
     if (sv.state) assertNotebookState(sv.state);
     if (!Number.isSafeInteger(sv.seed) || !Array.isArray(sv.inputs) || (sv.version && !isEdition(sv.version)))
       throw Error('Unknown or malformed saved edition.');
@@ -194,12 +209,14 @@ function writeSave() {
   const generation = ++saveGeneration;
   try {
     const state = cloneState(s);
+    const clockFraction = s.phase === 'day' ? carry % 1 : 0;
     const payload = {
       format: 'murmur-save/2',
       version: s.version,
       seed: s.seed,
       inputs: state.inputs,
       state,
+      clockFraction,
     };
     if ('hf' in state) {
       // This explicit intermediate format reconstructs every HF value, including the archive hash.
@@ -207,18 +224,28 @@ function writeSave() {
       const { hf, ...host } = state;
       localStorage.setItem(
         SAVE,
-        JSON.stringify({ format: 'murmur-replay-save/1', host, hfHash: hf.run.hashes.full }),
+        JSON.stringify({
+          format: 'murmur-replay-save/1',
+          host,
+          hfHash: hf.run.hashes.full,
+          clockFraction,
+        }),
       );
       latestSave = compactNotebook(payload)
         .then((compact) => {
-          if (generation === saveGeneration) localStorage.setItem(SAVE, JSON.stringify(compact));
+          if (generation === saveGeneration) {
+            localStorage.setItem(SAVE, JSON.stringify(compact));
+            lab.captureSave(compact);
+          }
         })
         .catch((error) => {
           if (generation === saveGeneration)
             diagnosticError = `Full archive compression: ${String(error)}. The exact input checkpoint remains saved.`;
         });
-    } else localStorage.setItem(SAVE, JSON.stringify(payload));
-    lab.captureSave(payload);
+    } else {
+      localStorage.setItem(SAVE, JSON.stringify(payload));
+      lab.captureSave(payload);
+    }
   } catch (error) {
     diagnosticError = `Could not save this input: ${String(error)}`;
     toast = 'This choice could not be saved. Download this run before closing the page.';
@@ -466,7 +493,7 @@ async function title() {
     <div class="title-spacer" id="title-spacer"></div>
     <div class="page-actions actions">
       ${saved ? `<p class="soft small">${esc(save?.state ? savedLocation(saved) : 'This older save keeps your answers, but not the exact saved minute. Resume opens its next choice.')}</p><button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved.day]?.slice(0, 3) ?? '')} ${clock(saved.minute)}</button>` : ''}
-      <label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
+      <label class="soft small"><input type="checkbox" id="remainder-edition" /> Try the new handover, letter-reading and learned-morning rules (0.10). Existing notebooks keep their recorded rules.</label><label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
       <div id="new-confirm" hidden><p>Start a new game? This replaces your saved week.</p><div class="confirm-actions"><button id="confirm-new">Start new game</button><button id="cancel-new">Cancel</button></div></div>
       ${credit()}
     </div></div>`;
@@ -494,6 +521,8 @@ async function title() {
       s = loaded;
       await gateContinuity(recordingState(s));
       enter();
+      carry = save?.clockFraction ?? 0;
+      drawStatus();
     } catch (error) {
       recordFailure(error, 'We could not resume your saved week. Your saved week is still here.', () => {
         document.getElementById('cont')?.click();
@@ -525,6 +554,7 @@ async function title() {
       invalidateContinuity();
       ++loadGeneration;
       s = anotherWeek(playedFirstWeek(selectedSeed() ?? randomSeed()));
+      carry = 0;
       void gateContinuity(recordingState(s)).then(() => {
         writeSave();
         enter();
@@ -542,7 +572,11 @@ async function title() {
 }
 
 function selectedEdition() {
-  if (document.querySelector<HTMLInputElement>('#outcomes-edition')?.checked) return '0.9.2';
+  const remainder = document.querySelector<HTMLInputElement>('#remainder-edition')?.checked;
+  if (document.querySelector<HTMLInputElement>('#outcomes-edition')?.checked)
+    return remainder ? '0.10.2' : '0.9.2';
+  if (remainder)
+    return document.querySelector<HTMLInputElement>('#next-edition')?.checked ? '0.10.1' : '0.10.0';
   return document.querySelector<HTMLInputElement>('#next-edition')?.checked ? NEXT_VERSION : GAME_VERSION;
 }
 async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
@@ -574,7 +608,9 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   if (attempt !== loadGeneration) return;
   clearSave();
   s = next;
-  if (!useShelf || localDevelopment || version === '0.9.2') s.castScope = 'local';
+  carry = 0;
+  if (!useShelf || localDevelopment || version === '0.9.2' || version.startsWith('0.10.'))
+    s.castScope = 'local';
   await gateContinuity(recordingState(s));
   writeSave();
   enter();
@@ -616,9 +652,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       if (ex.state) {
         // validateRun already cold-restores and compares the complete current snapshot.
         // Compare its full JSON here without creating another HF run for a status line.
-        const want = version.startsWith('0.9.')
-          ? canonicalPersona(ex.state)
-          : fingerprint(restoreState(ex.state));
+        const want = isHf4Edition(version) ? canonicalPersona(ex.state) : fingerprint(restoreState(ex.state));
         note =
           fingerprint(r) === want
             ? 'The saved run was replayed. It matches the file.'
@@ -627,6 +661,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       invalidateContinuity();
       if (attempt !== loadGeneration) return;
       s = r;
+      carry = 0;
       s.fileHistory = true;
       if (s.cast) {
         s.castScope = 'file';
@@ -1087,9 +1122,9 @@ function bindHold(b: HTMLButtonElement) {
 function hush(): Answer | null {
   if (menuPausedAt !== null || s?.phase !== 'day' || !s.card) return null;
   queueInput(s, { kind: 'quiet' });
+  carry = 0;
   writeSave();
   answeredAt = performance.now();
-  carry = 0;
   const a = s.answer;
   if (fast) runToCard(s);
   drawDay();
@@ -1099,9 +1134,9 @@ function hush(): Answer | null {
 function sayIt(option: string, insist: boolean): Answer | null {
   if (menuPausedAt !== null || s?.phase !== 'day' || !s.card) return null;
   queueInput(s, insist ? { kind: 'say', option, insist: true } : { kind: 'say', option });
+  carry = 0;
   writeSave();
   answeredAt = performance.now();
-  carry = 0;
   const a = s.answer;
   if (fast) runToCard(s);
   drawDay();
@@ -1214,6 +1249,7 @@ function ending() {
   document.getElementById('another')?.addEventListener('click', () => {
     if (!s || !canAnotherWeek(s)) return;
     s = anotherWeek(s);
+    carry = 0;
     void gateContinuity(recordingState(s));
     writeSave();
     enter();
@@ -1342,7 +1378,7 @@ function backPage() {
       const rebuilt = await validateRun(pinned);
       required(el.querySelector('#debug-status')).textContent =
         fingerprint(rebuilt) ===
-        (pinned.version.startsWith('0.9.') ? canonicalPersona(pinned) : fingerprint(restoreState(pinned)))
+        (isHf4Edition(pinned.version) ? canonicalPersona(pinned) : fingerprint(restoreState(pinned)))
           ? 'Replay matches this run.'
           : 'Replay differs from this run.';
     } catch (error) {
@@ -1472,6 +1508,7 @@ export const tester = {
     invalidateContinuity();
     clearSave();
     s = newGame(seed ?? selectedSeed() ?? randomSeed(), version);
+    carry = 0;
     void gateContinuity(recordingState(s));
     writeSave();
     enter();

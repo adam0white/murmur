@@ -9,9 +9,13 @@ import type { Ctx, GameState, Moment, Opt } from './types.ts';
 const at = (h: number, m = 0) => h * 60 + m;
 const absolute = (day: number, minute: number) => DAY0 + (day - 1) * 1440 + minute;
 const dayLine = (c: Ctx, lines: string[]) => lines[c.weekday - 1] ?? lines[0] ?? '';
-// Copy-only variation belongs to the new edition; exported older runs keep their words.
+// Every current HF4 route uses weekday-specific words; historical replay uses src/legacy.
 const routineWords = (legacy: string, nights: string[]) => (c: Ctx) =>
-  c.version === '0.4.1' || c.version === '0.4.2' || c.version === '0.5.0' || isCanonicalEdition(c.version)
+  c.version?.startsWith('0.10.') ||
+  c.version === '0.4.1' ||
+  c.version === '0.4.2' ||
+  c.version === '0.5.0' ||
+  isCanonicalEdition(c.version)
     ? dayLine(c, nights)
     : legacy;
 const w2 = (s: GameState) => (s.flags.w2 ??= {});
@@ -382,6 +386,26 @@ function bed(day: number): Moment {
   };
 }
 
+const signLetter: Opt = {
+  id: 'sign',
+  ink: 'Sign it.',
+  label: 'sign the letter',
+  action: 'sign-letter',
+  duration: 5,
+  advertises: { autonomy: 0.15 },
+  gives: { autonomy: 0.1 },
+  done: 'She signed it and put it back in the envelope.',
+};
+const putLetter: Opt = {
+  id: 'bowl',
+  ink: 'Put it under the fruit bowl.',
+  label: 'put the letter away',
+  action: 'put-letter',
+  duration: 2,
+  advertises: { rest: 0.1 },
+  gives: { autonomy: 0.05 },
+  done: 'She put the letter under the fruit bowl. One corner still showed.',
+};
 const monday: Moment[] = [
   alarm(8),
   {
@@ -394,15 +418,17 @@ const monday: Moment[] = [
     pull: { to: 'bowl', line: 'Put it under the fruit bowl. That’s where you keep important things.' },
     options: [
       {
-        id: 'sign',
-        ink: 'Sign it.',
-        label: 'sign the letter',
-        action: 'sign-letter',
-        duration: 5,
-        advertises: { autonomy: 0.15 },
-        gives: { autonomy: 0.1 },
-        done: 'She signed it and put it back in the envelope.',
+        id: 'read',
+        ink: 'Read it before deciding.',
+        label: 'read the renewal letter',
+        action: 'read-letter',
+        duration: 10,
+        effort: 0.1,
+        advertises: { competence: 0.15, autonomy: 0.1 },
+        gives: { competence: 0.1, autonomy: 0.05 },
+        done: 'She read the renewal letter and put it back without signing.',
       },
+      signLetter,
       {
         id: 'unopened',
         ink: 'Leave it unopened.',
@@ -413,17 +439,22 @@ const monday: Moment[] = [
         gives: { rest: 0.1 },
         done: 'She stepped over it to find her shoes.',
       },
-      {
-        id: 'bowl',
-        ink: 'Put it under the fruit bowl.',
-        label: 'put the letter away',
-        action: 'put-letter',
-        duration: 2,
-        advertises: { rest: 0.1 },
-        gives: { autonomy: 0.05 },
-        done: 'She put the letter under the fruit bowl. One corner still showed.',
-      },
+      putLetter,
     ],
+    after: (s, chosen) => {
+      w2(s).letter = chosen;
+    },
+  },
+  {
+    // Prospective host paper task, not legal terms or a new reading faculty. Only completed reading opens it.
+    id: 'letter-decision-8',
+    day: 8,
+    at: at(7, 25),
+    place: 'home',
+    when: (c) => c.flags.w2?.letter === 'read',
+    scene: 'Dilan has read the renewal letter. It is still unsigned. The envelope is open by her shoes.',
+    pull: { to: 'bowl', line: 'You can still leave it for later.' },
+    options: [signLetter, putLetter],
     after: (s, chosen) => {
       w2(s).letter = chosen;
     },
@@ -1359,9 +1390,11 @@ export function weekTwoThreads(s: GameState): string[] {
   lines.push(
     f.letter === 'sign'
       ? 'The tenancy letter is back in its envelope.'
-      : f.letter === 'unopened'
-        ? 'The tenancy letter is still by the door.'
-        : 'A corner of the letter sticks out under the fruit bowl.',
+      : f.letter === 'read'
+        ? 'She read the tenancy letter. It is still unsigned.'
+        : f.letter === 'unopened'
+          ? 'The tenancy letter is still by the door.'
+          : 'A corner of the letter sticks out under the fruit bowl.',
   );
   return lines;
 }

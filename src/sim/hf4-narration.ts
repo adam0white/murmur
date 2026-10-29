@@ -139,6 +139,7 @@ const actionForms = {
     'putting the letter under the fruit bowl',
   ],
   quiet: ['stay quiet', 'stayed quiet', 'staying quiet'],
+  'read-letter': ['read the renewal letter', 'read the renewal letter', 'reading the renewal letter'],
   'redo-returns': ['handle the returns', 'handled the returns', 'handling the returns'],
   'repair-sheet': ['work on the sheet', 'worked on the sheet', 'working on the sheet'],
   'repeat-board': [
@@ -198,13 +199,15 @@ const dilanWordings = {
   ],
 } as const;
 
-export function murmurLexicon(names: Record<string, string>): Lexicon {
+export function murmurLexicon(names: Record<string, string>, reading = false): Lexicon {
   return {
     names: { ...names, mum: 'Mum', you: 'you', pull: 'my inclination' },
     roles: {},
     prefer: 'name',
     actions: Object.fromEntries(
-      Object.entries(actionForms).map(([id, [base, past, gerund]]) => [id, { base, past, gerund }]),
+      Object.entries(actionForms)
+        .filter(([id]) => reading || id !== 'read-letter')
+        .map(([id, [base, past, gerund]]) => [id, { base, past, gerund }]),
     ),
     voices: { dilan: dilanWordings },
   };

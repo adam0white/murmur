@@ -1,4 +1,4 @@
-import { isCanonicalEdition } from '../sim/edition.ts';
+import { isCanonicalEdition, isHf4Edition, sourceRules } from '../sim/edition.ts';
 import { assertNotebookState, compactNotebook } from './notebook.ts';
 import { storeSourceArchive } from './source-archive.ts';
 
@@ -19,7 +19,7 @@ import {
   type PersonaRequest,
   validatePersona,
 } from '@adam0white/lab-client';
-import { CAST, CAST_VERSION, type CastRole, roleOf } from '../sim/canonical-cast.ts';
+import { CAST, type CastRole, roleOf } from '../sim/canonical-cast.ts';
 import { type CastReturnArchive, prepareCastChapter, validateCastChapter } from '../sim/cast-chapter.ts';
 import { createCastHistorySource, createCastSource } from '../sim/cast-source.ts';
 import { cloneState, GAME_VERSION, newGame, queueInput, replay, restoreState, step } from '../sim/game.ts';
@@ -34,7 +34,13 @@ import {
 } from './continuity.ts';
 
 declare const __MURMUR_BUILD__: string;
-const source = { game: 'murmur', build: __MURMUR_BUILD__, engine: ENGINE_VERSION, rules: CAST_VERSION };
+const sourceFor = (version: string) => ({
+  game: 'murmur',
+  build: __MURMUR_BUILD__,
+  engine: ENGINE_VERSION,
+  rules: sourceRules(version),
+});
+const source = sourceFor(GAME_VERSION);
 export interface CastSourceRecord {
   head: PersonaEnvelope;
   inputCount: number;
@@ -123,9 +129,13 @@ export async function validateCanonicalRun(json: GameStateSnapshot): Promise<Gam
   assertNotebookState(json);
   restoreState(json); // Validate complete HF archive and host ingress before replay.
 
-  if (!json.version.startsWith('0.9.') || !json.cast)
+  if (!isHf4Edition(json.version) || !json.cast)
     throw Error('This notebook uses an older cast edition. Start fresh.');
-  if (json.castChapter) await validateCastChapter(json.castChapter, json.seed);
+  if (json.castChapter) {
+    if (json.castChapter.edition !== sourceRules(json.version))
+      throw Error('Cast chapter rules conflict with the notebook edition.');
+    await validateCastChapter(json.castChapter, json.seed);
+  }
   const rebuilt = replay(
     json.seed,
     json.inputs,
@@ -151,7 +161,7 @@ export async function validateCanonicalRun(json: GameStateSnapshot): Promise<Gam
       !Number.isFinite(record.minute) ||
       !Number.isSafeInteger(record.clockMs) ||
       head.source.game !== 'murmur' ||
-      head.source.rules !== CAST_VERSION ||
+      head.source.rules !== sourceRules(json.version) ||
       head.source.engine !== ENGINE_VERSION ||
       head.castRevision !== canonicalCast(id).revision
     )
@@ -247,7 +257,7 @@ async function saveCastPersonNow(
     castRevision: cast.revision,
     branchId,
     parentRevision: options.fork ? null : (parent?.revision ?? null),
-    source,
+    source: sourceFor(s.version),
     transfer: {
       ...native.transfer,
       life:
@@ -364,7 +374,7 @@ export function canonicalPersonControls(s: GameState, save: () => void): HTMLEle
         castRevision: cast.revision,
         branchId,
         parentRevision: parent?.revision ?? null,
-        source,
+        source: sourceFor(notebook.version),
         transfer: {
           ...native.transfer,
           life: parent?.transfer.life ?? initialPersonaLife(cast.castId, branchId, Date.now()),
@@ -379,7 +389,7 @@ export function canonicalPersonControls(s: GameState, save: () => void): HTMLEle
         sourceBuildBasis: notebook.fileHistory
           ? 'Imported notebook; original build is not recorded here.'
           : source.build,
-        producer: source,
+        producer: sourceFor(notebook.version),
         ownership: 'file export; no shelf claim or upload',
       };
       const a = document.createElement('a');

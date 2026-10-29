@@ -77,36 +77,55 @@ it('renders quiet choices without sending; ordinary Submit keeps recording-off p
   }
 }, 30000);
 
-it('reloads the exact unanswered minute and reports its saved location', async () => {
-  const server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
-  await server.listen();
-  const browser = await launchBrowser();
-  try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    await page.clock.install();
-    await page.goto(`${server.resolvedUrls!.local[0]}`);
-    await page.evaluate(async () => {
-      await window.__murmur.ready;
-      window.__murmur.start(17);
-    });
-    await page.locator('#hush').waitFor();
-    await page.clock.runFor(14000);
-    await page.locator('#menu').click();
-    const before = await page.evaluate(() => {
-      window.dispatchEvent(new PageTransitionEvent('pagehide'));
-      return JSON.parse(JSON.stringify(window.__murmur.state));
-    });
-    await page.reload();
-    await page.locator('#cont').waitFor();
-    expect(await page.locator('.title').innerText()).toContain('with her choice still waiting');
-    await page.locator('#cont').click();
-    await page.locator('#hush').waitFor();
-    const after = await page.evaluate(() => JSON.parse(JSON.stringify(window.__murmur.state)));
-    expect(after).toEqual(before);
-    expect(after.card.closesAt).toBe(before.card.closesAt);
-    await page.close();
-  } finally {
-    await browser.close();
-    await server.close();
-  }
-}, 30000);
+for (const compression of ['gzip', 'checkpoint'])
+  it(`reloads the exact unanswered minute and fractional clock from ${compression}`, async () => {
+    const server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
+    await server.listen();
+    const browser = await launchBrowser();
+    try {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      await page.clock.install({ time: new Date('2026-10-29T00:00:00Z') });
+      if (compression === 'checkpoint')
+        await page.addInitScript(() => {
+          Object.defineProperty(window, 'CompressionStream', {
+            value: class {
+              constructor() {
+                throw new Error('controlled compression failure');
+              }
+            },
+          });
+        });
+      await page.goto(`${server.resolvedUrls!.local[0]}`);
+      await page.evaluate(async () => {
+        await window.__murmur.ready;
+        window.__murmur.start(17);
+      });
+      await page.locator('#hush').waitFor();
+      await page.clock.runFor(14000);
+      await page.locator('#menu').click();
+      const remaining = await page.locator('#timer').getAttribute('stroke-dasharray');
+      const before = await page.evaluate(async () => {
+        window.dispatchEvent(new PageTransitionEvent('pagehide'));
+        const { cloneState } = await new Function('return import("/src/sim/game.ts")')();
+        return cloneState(window.__murmur.state!);
+      });
+      await page.reload();
+      await page.locator('#cont').waitFor();
+      // Freeze only this restoration measurement; normal moving-clock behavior is tested separately.
+      await page.clock.pauseAt(new Date('2026-10-29T00:02:00Z'));
+      expect(await page.locator('.title').innerText()).toContain('with her choice still waiting');
+      await page.locator('#cont').click();
+      await page.locator('#hush').waitFor();
+      const after = await page.evaluate(async () => {
+        const { cloneState } = await new Function('return import("/src/sim/game.ts")')();
+        return cloneState(window.__murmur.state!);
+      });
+      expect(after).toEqual(before);
+      expect(after.card.closesAt).toBe(before.card.closesAt);
+      expect(await page.locator('#timer').getAttribute('stroke-dasharray')).toBe(remaining);
+      await page.close();
+    } finally {
+      await browser.close();
+      await server.close();
+    }
+  }, 30000);

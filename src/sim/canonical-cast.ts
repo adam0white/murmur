@@ -1,5 +1,6 @@
 /** Four maintained people. Private clues require a completed chosen encounter, never a passport. */
 import { castForGame } from '@adam0white/lab-client';
+import { isRemainderEdition } from './edition.ts';
 import { playEncounter } from './hf4-encounter.ts';
 import { readDilan } from './hf4-read.ts';
 import type { GameState, Moment, Opt } from './types.ts';
@@ -78,6 +79,7 @@ export function castOptions(s: GameState, m: Moment, base: Opt[]): Opt[] {
       ink: c.ink,
       label: c.label ?? c.ink,
       action: c.action,
+      ...(role === 'aylin' && isRemainderEdition(s.version) ? { keeps: ['mum'] } : {}),
       duration: c.duration,
       advertises: { belonging: 0.25, meaning: 0.2 },
       gives: { belonging: 0.25, meaning: 0.2 },
@@ -89,6 +91,12 @@ export function castOptions(s: GameState, m: Moment, base: Opt[]): Opt[] {
 /** Dilan's completed action alone cannot establish another person's assent or private disclosure. */
 export function finishCastEncounter(s: GameState, m: Moment, chosen: Opt): string | undefined {
   if (!s.cast) return;
+  // Authored Friday work: only a second completed HF act establishes joint checking.
+  if (isRemainderEdition(s.version) && m.id === 'handover-5' && chosen.id === 'handover') {
+    if (playEncounter(s, 'ece', 'handover-ece', chosen.duration, m.place))
+      return 'They checked the handover sheet together. Dilan still had her own late deliveries to route.';
+    return 'Dilan checked the handover sheet. Ece did not join her; no joint check was completed. Dilan’s own late deliveries still needed routing.';
+  }
   if (m.id === 'shelf-visit-6' && chosen.id === 'repair-with-aylin') {
     if (!playEncounter(s, 'aylin', 'shelf', chosen.duration, m.place))
       return 'Dilan worked on the shelf. Aylin did not join the repair; they did not finish it together.';

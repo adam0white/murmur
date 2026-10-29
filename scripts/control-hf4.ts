@@ -1,7 +1,9 @@
 /** Actual current game, complete cold JSON restore and deterministic host replay. */
 import { createHash } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { exportRun } from '@adam0white/human-framework';
+import { checkRun, gzip, RUN_LIMITS, runEnvelope } from '@adam0white/lab-client';
 import {
   anotherWeek,
   canAnotherWeek,
@@ -18,6 +20,7 @@ import {
 import { readDilanEvents } from '../src/sim/hf4-read.ts';
 import { verifySessionReplay } from '../src/sim/hf4-session.ts';
 import type { GameState } from '../src/sim/types.ts';
+import { compactNotebook, expandNotebook } from '../src/ui/notebook.ts';
 export function playCurrent(s: GameState, lastDay: number) {
   let cards = 0;
   let reportedDay = 0;
@@ -38,6 +41,9 @@ export function playCurrent(s: GameState, lastDay: number) {
     runToCard(s);
     const card = cardView(s);
     if (card) {
+      // One actual prefix supplies production reading-card QA; no synthetic clock/person fixture.
+      if (card.id === 'letter-8' && process.env.MURMUR_CONTROL_CHECKPOINT)
+        writeFileSync(process.env.MURMUR_CONTROL_CHECKPOINT, JSON.stringify(cloneState(s)));
       queueInput(s, { kind: 'say', option: card.options.find((o) => !o.isPull)?.id ?? card.options[0]!.id });
       cards++;
       if (cards % 10 === 0)
@@ -62,7 +68,7 @@ export function playCurrent(s: GameState, lastDay: number) {
   return cards;
 }
 const edition = process.argv[2] ?? '0.9.0';
-const lastDay = Number(process.argv[3]) || (edition === '0.9.0' ? 13 : 20);
+const lastDay = Number(process.argv[3]) || (['0.9.0', '0.10.0'].includes(edition) ? 13 : 20);
 const s = newGame(17, edition);
 const cards = playCurrent(s, lastDay);
 console.error(
@@ -136,6 +142,27 @@ console.error(
   JSON.stringify({ stage: 'hf-replay', clock: new Date().toISOString(), rss: process.memoryUsage().rss }),
 );
 if (!verifySessionReplay(saved.hf.run)) throw new Error('HF archive replay differs');
+// One complete horizon measures the actual lossless file payload, not a truncated history surrogate.
+const packed = await compactNotebook({
+  game: 'murmur',
+  version: s.version,
+  seed: s.seed,
+  inputs: s.inputs,
+  state: saved,
+});
+const expanded = await expandNotebook(packed);
+if (JSON.stringify(expanded.state) !== json) throw new Error('Complete notebook codec differs');
+const envelope = JSON.stringify(runEnvelope('murmur', { a: '0.9.3', hf: '4.9.0' }, packed));
+const wireBytes = (await gzip(envelope)).size;
+if (!checkRun(envelope) || wireBytes > RUN_LIMITS.compressedBytes)
+  throw new Error(`Complete notebook exceeds released upload bounds: ${envelope.length}/${wireBytes}`);
+const codec = {
+  rawBytes: json.length,
+  packedBytes: JSON.stringify(packed).length,
+  envelopeBytes: envelope.length,
+  wireBytes,
+  exact: true,
+};
 console.log(
   JSON.stringify({
     edition,
@@ -152,5 +179,7 @@ console.log(
     hostReplay: true,
     hfReplay: true,
     narration: narrationReceipt,
+    codec,
+    letter: { choice: s.chosen['letter-8'], afterReading: s.chosen['letter-decision-8'] ?? null },
   }),
 );

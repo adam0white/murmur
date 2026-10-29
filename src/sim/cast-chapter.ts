@@ -9,8 +9,9 @@ import {
   preparePersonaLife,
   validatePersona,
 } from '@adam0white/lab-client';
-import { CAST, CAST_VERSION, type CastState, freshCast, roleOf } from './canonical-cast.ts';
-import { MURMUR_ACTIONS } from './hf4-actions.ts';
+import { CAST, type CastState, freshCast, roleOf } from './canonical-cast.ts';
+import { sourceRules } from './edition.ts';
+import { actionsForEdition } from './hf4-actions.ts';
 import { retainedReferences } from './hf4-history.ts';
 import { createMurmurOpening } from './hf4-opening.ts';
 import type { GameStateSnapshot } from './types.ts';
@@ -20,7 +21,7 @@ export interface CastReturnArchive {
   lineage?: PersonaEnvelope[];
 }
 export interface CastChapter {
-  edition: typeof CAST_VERSION;
+  edition: '0.9.0' | '0.10.0';
   seed: number;
   inputs: LifePreparation[];
   claims: PersonaEnvelope[];
@@ -34,6 +35,7 @@ export async function prepareCastChapter(
   inputs: LifePreparation[],
   seed: number,
   _archives: Record<string, unknown> = {},
+  version = '0.9.0',
 ): Promise<CastChapter> {
   if (inputs.length > 4 || new Set(inputs.map((i) => i.parent.castId)).size !== inputs.length)
     throw new Error('Invalid or duplicate cast batch.');
@@ -70,7 +72,7 @@ export async function prepareCastChapter(
     const offsetMs = (400 * 1440 + 399) * 60_000 - person.retained.at;
     if (offsetMs % 86_400_000 !== 0 && person.retained.agenda.commitments.some((c) => c.status === 'pending'))
       throw new Error('Source duties require a matching time of day. Continue the source chapter.');
-    const references = retainedReferences(person, parent.revision);
+    const references = retainedReferences(person, parent.revision, version);
     portable[role] = { person, mapping: { offsetMs, references } };
     const life = lifeAdmission(input, 'murmur');
     initial.assignments[role] = life.assignment;
@@ -79,9 +81,9 @@ export async function prepareCastChapter(
     initial.extraWork[role] = life.availableForExtraWork;
   }
   // HF validates every retained history/reference and responsibility before any central write.
-  createMurmurOpening(seed, MURMUR_ACTIONS, portable);
+  createMurmurOpening(seed, actionsForEdition(version), portable);
   return {
-    edition: CAST_VERSION,
+    edition: sourceRules(version),
     seed,
     inputs: structuredClone(inputs),
     claims: [],
@@ -94,13 +96,13 @@ export async function validateCastChapter(chapter: CastChapter, seed: number): P
   if (
     !chapter ||
     chapter.seed !== seed ||
-    chapter.edition !== CAST_VERSION ||
+    !['0.9.0', '0.10.0'].includes(chapter.edition) ||
     chapter.mapping !== 'murmur-portable/2' ||
     !Array.isArray(chapter.claims) ||
     chapter.claims.length !== chapter.inputs.length
   )
     throw new Error('Invalid pinned retained cast chapter.');
-  const prepared = await prepareCastChapter(chapter.inputs, seed);
+  const prepared = await prepareCastChapter(chapter.inputs, seed, {}, chapter.edition);
   if (!same({ ...prepared, claims: chapter.claims }, chapter))
     throw new Error('Pinned cast admission differs from its complete sources.');
   const seen = new Set<string>();
