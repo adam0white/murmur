@@ -22,7 +22,7 @@ const context: Ctx = {
   phrases: [{ id: 'feet', text: 'Feet on the floor', practice: 1 }],
 };
 it('offers the default Friday obligation and lets every current learned morning reach an HF choice', () => {
-  for (const version of ['0.9.0', '0.9.1', '0.9.2']) {
+  for (const version of ['0.10.0', '0.10.1', '0.10.2']) {
     expect(momentsOf(5, version).some((m) => m.id === 'handover-5')).toBe(true);
     expect(momentsOf(5, version).some((m) => m.id === 'slump-5')).toBe(false);
     expect(
@@ -60,7 +60,7 @@ describe('actual dinner and Friday branches', () => {
   // One actually played four-day prefix, reused by both complete branch/replay controls.
   // Each original120s deadline remains; no history, assertion or actor is removed.
   beforeAll(() => {
-    const s = newGame(17, '0.9.1');
+    const s = newGame(17, '0.10.1');
     reach(s, 'dinner-3');
     const at = readDilan(s.hf.run).at;
     queueInput(s, { kind: 'quiet' });
@@ -120,7 +120,7 @@ describe('actual dinner and Friday branches', () => {
 });
 
 it('records Ece choosing her own time in the authored free-opening host fixture', () => {
-  const s = newGame(17, '0.9.1');
+  const s = newGame(17, '0.10.1');
   // Authored opening fixture, as in hf4-outcome-companions: skip the first routine slot.
   // This does not force Ece's choice and is not a natural Friday player trace.
   s.hf.nextCompanionEvent = 2;
@@ -131,7 +131,7 @@ it('records Ece choosing her own time in the authored free-opening host fixture'
 it('learns the actual alarm cue and lets HF decay practice without host mutation', async () => {
   const { advanceHost } = await import('../src/sim/hf4-host.ts');
   const { settleMurmur } = await import('../src/sim/hf4-world.ts');
-  const s = newGame(17);
+  const s = newGame(17, '0.10.0');
   runToCard(s);
   expect(readDilan(s.hf.run).promptings.responses).toHaveLength(0);
   queueInput(s, { kind: 'say', option: 'up', insist: true });

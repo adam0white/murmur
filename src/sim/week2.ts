@@ -11,7 +11,7 @@ const absolute = (day: number, minute: number) => DAY0 + (day - 1) * 1440 + minu
 const dayLine = (c: Ctx, lines: string[]) => lines[c.weekday - 1] ?? lines[0] ?? '';
 // Every current HF4 route uses weekday-specific words; historical replay uses src/legacy.
 const routineWords = (legacy: string, nights: string[]) => (c: Ctx) =>
-  c.version?.startsWith('0.9.') ||
+  c.version?.startsWith('0.10.') ||
   c.version === '0.4.1' ||
   c.version === '0.4.2' ||
   c.version === '0.5.0' ||

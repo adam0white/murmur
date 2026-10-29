@@ -2,7 +2,7 @@
 
 ## Current disposition —2026-10-29
 
-Released HF4.9.0 supplies public multiple-commitment fulfillment, scoped prompting cues, response learning, review-style changes and practice-half-life tuning. Every current0.9 route uses these contracts. A completed family dinner explicitly fulfills the overlapping Mum and Aylin promises without a synthetic call. The default as well as optional routes use public continuous3.106-day practice decay. Learned alarms remain ordinary HF choices. Focused current-native controls cover these mechanisms; HF2.8/3 tests below remain historical.
+Released HF4.9.0 supplies public multiple-commitment fulfillment, scoped prompting cues, response learning, review-style changes and practice-half-life tuning. Served0.9.x routes retain397 semantics. Explicit0.10.x routes use the revised dinner and ordinary learned-morning choices. In0.10.x a completed family dinner explicitly fulfills the overlapping Mum and Aylin promises without a synthetic call. The default as well as optional routes use public continuous3.106-day practice decay. Learned alarms in0.10.x remain ordinary HF choices;0.9.x retains its recorded397 morning behavior. Focused current-native controls cover these mechanisms; HF2.8/3 tests below remain historical.
 
 Noun-phrase commitment labels remain intentional. Current action forms and seeded narration come from the host lexicon and HF4.9. Goals still attract rather than forbid; item4 requests no behavior change. No new private faculty or negative-goal schema is introduced. Peer reading/custody gaps are separate from these now-supported local mechanics, with SDK/peer owners and recheck2026-11-03. Adam accepts feel separately.
 

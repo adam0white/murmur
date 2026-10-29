@@ -68,7 +68,7 @@ export function playCurrent(s: GameState, lastDay: number) {
   return cards;
 }
 const edition = process.argv[2] ?? '0.9.0';
-const lastDay = Number(process.argv[3]) || (edition === '0.9.0' ? 13 : 20);
+const lastDay = Number(process.argv[3]) || (['0.9.0', '0.10.0'].includes(edition) ? 13 : 20);
 const s = newGame(17, edition);
 const cards = playCurrent(s, lastDay);
 console.error(

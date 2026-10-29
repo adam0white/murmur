@@ -1,7 +1,7 @@
 /** Reference catalogues retain source meanings. They do not add actors, skills or present locations. */
 import { DEFAULT_NORMS, type PortableAdmission, type PortablePerson } from '@adam0white/human-framework';
 import { canonicalPersona } from '@adam0white/lab-client';
-import { MURMUR_ACTIONS } from './hf4-actions.ts';
+import { actionsForEdition } from './hf4-actions.ts';
 export const MURMUR_PLACES = [
   'home',
   'bed',
@@ -24,8 +24,10 @@ const people = ['mum', 'dilan', 'aylin', 'ece', 'murat'];
 export function retainedReferences(
   person: Extract<PortablePerson, { version: 2 }>,
   revision: string,
+  edition = '0.9.0',
 ): PortableAdmission['mapping']['references'] {
-  const actions = new Set<string>(MURMUR_ACTIONS),
+  const catalog: readonly string[] = actionsForEdition(edition);
+  const actions = new Set<string>(catalog),
     entities = new Set<string>(people),
     sources = new Set(['murmur', 'you', 'pull', ...people]);
   const r = person.retained;
@@ -33,11 +35,7 @@ export function retainedReferences(
     if (!DEFAULT_NORMS.some((n) => canonicalPersona(n) === canonicalPersona(norm)))
       throw new Error('This source norm has no declared Murmur meaning.');
   for (const duty of [...r.agenda.commitments, ...r.agenda.owed]) {
-    if (
-      [...duty.actions, ...(duty.violatedBy ?? [])].some(
-        (a) => !MURMUR_ACTIONS.includes(a as (typeof MURMUR_ACTIONS)[number]),
-      )
-    )
+    if ([...duty.actions, ...(duty.violatedBy ?? [])].some((a) => !catalog.includes(a)))
       throw new Error('A source duty requires its source action loop.');
     if ('toId' in duty && duty.toId && !['self', person.source.personId, ...people].includes(duty.toId))
       throw new Error('A source duty needs somebody still at source.');
@@ -63,9 +61,7 @@ export function retainedReferences(
     ...[...actions].map((source) => ({
       kind: 'action' as const,
       source,
-      target: MURMUR_ACTIONS.includes(source as (typeof MURMUR_ACTIONS)[number])
-        ? source
-        : historical('action', source),
+      target: catalog.includes(source) ? source : historical('action', source),
     })),
     ...DEFAULT_NORMS.map((n) => ({ kind: 'norm' as const, source: n.id, target: n.id })),
     ...[...entities]

@@ -4,6 +4,7 @@
  */
 import type { CastRole } from './canonical-cast.ts';
 import { dayStart } from './dilan-content.ts';
+import { isOutcomesEdition } from './edition.ts';
 import { playEncounter } from './hf4-encounter.ts';
 import type { GameState, Moment, Opt } from './types.ts';
 
@@ -20,7 +21,7 @@ export const OUTCOME_COMPANION_ACTIONS = { bench: 'outcome-place', correction: '
 
 /** Called only after Dilan completes an outcome act. Refusal never awards the proposed physical result. */
 export function finishOutcome(s: GameState, m: Moment, o: Opt): string | undefined {
-  if (s.version !== OUTCOMES_VERSION || !OUTCOME_MOMENTS.some((x) => x.id === m.id)) return;
+  if (!isOutcomesEdition(s.version) || !OUTCOME_MOMENTS.some((x) => x.id === m.id)) return;
   const f = flags(s);
   if (o.id === 'leave') {
     f[m.id] = 'left';

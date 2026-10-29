@@ -1,4 +1,5 @@
 import { canonicalPersona } from '@adam0white/lab-client';
+import { isHf4Edition } from '../sim/edition.ts';
 /**
  * The Two Voices UI: plain DOM over the pure sim. The UI reads state and queues inputs; it never changes the sim
  * directly. Real time drives sim minutes, continuously: fast between cards (dead time skipped quickly), strongly
@@ -492,7 +493,7 @@ async function title() {
     <div class="title-spacer" id="title-spacer"></div>
     <div class="page-actions actions">
       ${saved ? `<p class="soft small">${esc(save?.state ? savedLocation(saved) : 'This older save keeps your answers, but not the exact saved minute. Resume opens its next choice.')}</p><button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved.day]?.slice(0, 3) ?? '')} ${clock(saved.minute)}</button>` : ''}
-      <label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
+      <label class="soft small"><input type="checkbox" id="remainder-edition" /> Try the new handover, letter-reading and learned-morning rules (0.10). Existing notebooks keep their recorded rules.</label><label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
       <div id="new-confirm" hidden><p>Start a new game? This replaces your saved week.</p><div class="confirm-actions"><button id="confirm-new">Start new game</button><button id="cancel-new">Cancel</button></div></div>
       ${credit()}
     </div></div>`;
@@ -571,7 +572,11 @@ async function title() {
 }
 
 function selectedEdition() {
-  if (document.querySelector<HTMLInputElement>('#outcomes-edition')?.checked) return '0.9.2';
+  const remainder = document.querySelector<HTMLInputElement>('#remainder-edition')?.checked;
+  if (document.querySelector<HTMLInputElement>('#outcomes-edition')?.checked)
+    return remainder ? '0.10.2' : '0.9.2';
+  if (remainder)
+    return document.querySelector<HTMLInputElement>('#next-edition')?.checked ? '0.10.1' : '0.10.0';
   return document.querySelector<HTMLInputElement>('#next-edition')?.checked ? NEXT_VERSION : GAME_VERSION;
 }
 async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
@@ -604,7 +609,8 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   clearSave();
   s = next;
   carry = 0;
-  if (!useShelf || localDevelopment || version === '0.9.2') s.castScope = 'local';
+  if (!useShelf || localDevelopment || version === '0.9.2' || version.startsWith('0.10.'))
+    s.castScope = 'local';
   await gateContinuity(recordingState(s));
   writeSave();
   enter();
@@ -646,9 +652,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       if (ex.state) {
         // validateRun already cold-restores and compares the complete current snapshot.
         // Compare its full JSON here without creating another HF run for a status line.
-        const want = version.startsWith('0.9.')
-          ? canonicalPersona(ex.state)
-          : fingerprint(restoreState(ex.state));
+        const want = isHf4Edition(version) ? canonicalPersona(ex.state) : fingerprint(restoreState(ex.state));
         note =
           fingerprint(r) === want
             ? 'The saved run was replayed. It matches the file.'
@@ -1374,7 +1378,7 @@ function backPage() {
       const rebuilt = await validateRun(pinned);
       required(el.querySelector('#debug-status')).textContent =
         fingerprint(rebuilt) ===
-        (pinned.version.startsWith('0.9.') ? canonicalPersona(pinned) : fingerprint(restoreState(pinned)))
+        (isHf4Edition(pinned.version) ? canonicalPersona(pinned) : fingerprint(restoreState(pinned)))
           ? 'Replay matches this run.'
           : 'Replay differs from this run.';
     } catch (error) {

@@ -1,0 +1,397 @@
+{
+  "source": "397d5facd81f49312fdbc7ff1d4a753d886b35b1",
+  "version": "0.9.2",
+  "seed": 17,
+  "inputs": [
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 576401
+    },
+    {
+      "kind": "say",
+      "option": "reply",
+      "at": 576436
+    },
+    {
+      "kind": "say",
+      "option": "truth",
+      "at": 576506
+    },
+    {
+      "kind": "say",
+      "option": "talk",
+      "at": 576641
+    },
+    {
+      "kind": "say",
+      "option": "outside",
+      "at": 576761
+    },
+    {
+      "kind": "say",
+      "option": "walk",
+      "at": 576921
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "at": 577091
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "at": 577291
+    },
+    {
+      "kind": "next",
+      "at": 577291
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 577841
+    },
+    {
+      "kind": "say",
+      "option": "truth",
+      "at": 577946
+    },
+    {
+      "kind": "say",
+      "option": "own",
+      "at": 578111
+    },
+    {
+      "kind": "say",
+      "option": "sit",
+      "at": 578201
+    },
+    {
+      "kind": "say",
+      "option": "walk",
+      "at": 578361
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "at": 578531
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "at": 578731
+    },
+    {
+      "kind": "next",
+      "at": 578731
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 579281
+    },
+    {
+      "kind": "say",
+      "option": "reply",
+      "at": 579316
+    },
+    {
+      "kind": "say",
+      "option": "truth",
+      "at": 579386
+    },
+    {
+      "kind": "say",
+      "option": "outside",
+      "at": 579641
+    },
+    {
+      "kind": "say",
+      "option": "no",
+      "at": 579891
+    },
+    {
+      "kind": "say",
+      "option": "truth",
+      "at": 580066
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "at": 580181
+    },
+    {
+      "kind": "next",
+      "at": 580181
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 580721
+    },
+    {
+      "kind": "say",
+      "option": "truth",
+      "at": 580826
+    },
+    {
+      "kind": "say",
+      "option": "yes",
+      "at": 580891
+    },
+    {
+      "kind": "say",
+      "option": "outside",
+      "at": 581081
+    },
+    {
+      "kind": "say",
+      "option": "walk",
+      "at": 581241
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "at": 581411
+    },
+    {
+      "kind": "say",
+      "option": "build",
+      "at": 581506
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "at": 581611
+    },
+    {
+      "kind": "next",
+      "at": 581611
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 582161
+    },
+    {
+      "kind": "say",
+      "option": "cancel",
+      "at": 582196
+    },
+    {
+      "kind": "say",
+      "option": "busy",
+      "at": 582521
+    },
+    {
+      "kind": "say",
+      "option": "handover",
+      "at": 582681
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "at": 582931
+    },
+    {
+      "kind": "next",
+      "at": 582931
+    },
+    {
+      "kind": "say",
+      "option": "send",
+      "at": 583801
+    },
+    {
+      "kind": "next",
+      "at": 583810
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 586481
+    },
+    {
+      "kind": "say",
+      "option": "sign",
+      "at": 586513
+    },
+    {
+      "kind": "say",
+      "option": "redo",
+      "at": 586726
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "at": 587171
+    },
+    {
+      "kind": "say",
+      "option": "shelf",
+      "at": 587241
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "at": 587371
+    },
+    {
+      "kind": "next",
+      "at": 587371
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 587921
+    },
+    {
+      "kind": "say",
+      "option": "soften",
+      "at": 588131
+    },
+    {
+      "kind": "say",
+      "option": "thursday",
+      "at": 588431
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "at": 588611
+    },
+    {
+      "kind": "say",
+      "option": "look",
+      "at": 588691
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "at": 588811
+    },
+    {
+      "kind": "next",
+      "at": 588811
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 589361
+    },
+    {
+      "kind": "say",
+      "option": "private",
+      "at": 589751
+    },
+    {
+      "kind": "say",
+      "option": "aside",
+      "at": 589881
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "at": 590051
+    },
+    {
+      "kind": "say",
+      "option": "salt",
+      "at": 590121
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "at": 590251
+    },
+    {
+      "kind": "next",
+      "at": 590251
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 590801
+    },
+    {
+      "kind": "say",
+      "option": "leave",
+      "at": 591011
+    },
+    {
+      "kind": "say",
+      "option": "ask",
+      "at": 591321
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "at": 591491
+    },
+    {
+      "kind": "say",
+      "option": "sit",
+      "at": 591561
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "at": 591691
+    },
+    {
+      "kind": "next",
+      "at": 591691
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 592241
+    },
+    {
+      "kind": "say",
+      "option": "home",
+      "at": 592273
+    },
+    {
+      "kind": "say",
+      "option": "unsure",
+      "at": 592601
+    },
+    {
+      "kind": "say",
+      "option": "stay",
+      "at": 592871
+    },
+    {
+      "kind": "say",
+      "option": "call",
+      "at": 592931
+    },
+    {
+      "kind": "say",
+      "option": "write",
+      "at": 593131
+    },
+    {
+      "kind": "next",
+      "at": 593131
+    },
+    {
+      "kind": "say",
+      "option": "answer",
+      "at": 593881
+    },
+    {
+      "kind": "next",
+      "at": 593890
+    },
+    {
+      "kind": "say",
+      "option": "up",
+      "at": 596561
+    }
+  ],
+  "hash": "8413b80080af269cb26fbd7dfa45edec3f536725afd207e8e95230e30fb9a317",
+  "nextHash": "ed6373ad616c2f09f4715c774a57dde8e62b860259832c4b21b00e5c8149cb23"
+}

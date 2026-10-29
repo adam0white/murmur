@@ -15,7 +15,7 @@ it('offers reading before signature and gates the later decision on completed re
     note: '',
     phrases: [],
   };
-  for (const version of ['0.9.0', '0.9.1', '0.9.2']) {
+  for (const version of ['0.10.0', '0.10.1', '0.10.2']) {
     const moments = momentsOf(8, version);
     const letter = moments.find((m) => m.id === 'letter-8')!;
     const options = typeof letter.options === 'function' ? letter.options(ctx) : letter.options;
@@ -43,7 +43,7 @@ it('uses weekday-specific bus and bedtime suggestions in every current route', (
     note: '',
     phrases: [],
   };
-  for (const version of ['0.9.0', '0.9.1', '0.9.2']) {
+  for (const version of ['0.10.0', '0.10.1', '0.10.2']) {
     for (const kind of ['bus', 'bed']) {
       const labels = [8, 9].map((day) => {
         const c = { ...context, version, day, weekday: day - 7 };

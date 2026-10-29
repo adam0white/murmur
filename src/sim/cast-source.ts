@@ -2,6 +2,7 @@
 import { inspect, type PersonView } from '@adam0white/human-framework';
 import { canonicalPersona } from '@adam0white/lab-client';
 import { CAST, type CastRole, roleOf } from './canonical-cast.ts';
+import { isHf4Edition } from './edition.ts';
 import { restoreState } from './game-hf4.ts';
 import { checkpointMurmur } from './hf4-session.ts';
 import type { GameState, GameStateSnapshot } from './types.ts';
@@ -13,7 +14,7 @@ export async function castDigest(value: unknown): Promise<string> {
 }
 export async function createCastSource(input: GameState | GameStateSnapshot, role: CastRole) {
   const s = 'host' in input.hf ? (input as GameState) : restoreState(input as GameStateSnapshot);
-  if (!s.version.startsWith('0.9.') || !s.cast || s.phase !== 'end' || ![6, 13, 20].includes(s.day) || s.card)
+  if (!isHf4Edition(s.version) || !s.cast || s.phase !== 'end' || ![6, 13, 20].includes(s.day) || s.card)
     throw new Error('A checkpoint needs an actually completed Saturday.');
   if (s.hf.host.active.some((a) => a.person === role))
     throw new Error('Finish this person’s activity before taking a checkpoint.');
