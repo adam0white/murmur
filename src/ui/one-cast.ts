@@ -1,5 +1,4 @@
 import type { PersonaEnvelope } from '@adam0white/lab-client';
-import { isHf4Edition } from '../sim/edition.ts';
 import type { GameState, GameStateSnapshot } from '../sim/types.ts';
 import {
   automaticCastCheckpoint,
@@ -33,11 +32,7 @@ export function recordingState(s: GameState | null) {
 }
 
 export async function validateRun(json: GameStateSnapshot): Promise<GameState> {
-  if (isHf4Edition(json.version)) return validateCanonicalRun(json);
-  const { validateRun: validateHistorical } = await import('../legacy/ui/one-cast.ts');
-  return (await validateHistorical(
-    json as unknown as import('../legacy/types.ts').GameState,
-  )) as unknown as GameState;
+  return validateCanonicalRun(json);
 }
 export const checkpoint = (s: GameState | null, save: () => void) => automaticCastCheckpoint(s, save);
 export const releaseAndCheckpoint = (s: GameState, save: () => void) => saveCastPerson(s, 'dilan', save);

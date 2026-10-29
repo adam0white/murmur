@@ -1,7 +1,7 @@
 /** Reference catalogues retain source meanings. They do not add actors, skills or present locations. */
 import { DEFAULT_NORMS, type PortableAdmission, type PortablePerson } from '@adam0white/human-framework';
 import { canonicalPersona } from '@adam0white/lab-client';
-import { actionsForEdition } from './hf4-actions.ts';
+import { MURMUR_ACTIONS } from './hf4-actions.ts';
 export const MURMUR_PLACES = [
   'home',
   'bed',
@@ -24,9 +24,9 @@ const people = ['mum', 'dilan', 'aylin', 'ece', 'murat'];
 export function retainedReferences(
   person: Extract<PortablePerson, { version: 2 }>,
   revision: string,
-  edition = '0.9.0',
+  _edition = '0.10.0',
 ): PortableAdmission['mapping']['references'] {
-  const catalog: readonly string[] = actionsForEdition(edition);
+  const catalog: readonly string[] = MURMUR_ACTIONS;
   const actions = new Set<string>(catalog),
     entities = new Set<string>(people),
     sources = new Set(['murmur', 'you', 'pull', ...people]);

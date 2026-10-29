@@ -2,7 +2,7 @@
 
 [Play Two Voices](https://murmur.adamwhite.work/). You suggest what Dilan should do during an ordinary week. She can agree, refuse or choose another action. Her other inner voice offers its own advice.
 
-Application 0.9.3 uses HF 4.9.0, client 0.5.8 and kit 0.5.25. Fresh runs use edition 0.9.0 and contain two authored weeks. Optional edition 0.9.1 adds a third week; 0.9.2 is the separate outcomes edition. Historical notebooks retain their original rules through the pinned HF 3 replay path. Unsupported older cast imports refuse with a fresh-start option.
+Application 0.10.0 uses HF 4.9.0, client 0.5.8 and kit 0.5.25. Fresh runs use the 0.10 rules. Older notebooks cannot continue; download them to keep them, then start a new week. Eligible people carry between games automatically. People who cannot join stay at their source.
 
 ## How to play
 
@@ -57,7 +57,7 @@ The unchanged artifact from signed Good Hands source `509386298dfd89026c10bc6011
 
 ## Development and delivery
 
-Use shared Node 26.12.0 (`.node-version` and `.nvmrc`) and pnpm 12.14.0 with `/opt/homebrew/bin` first on PATH. Install with `pnpm install --frozen-lockfile`; run `npm run dev`. Application release is 0.9.3; the default simulation edition stays 0.9.0. HF is pinned to registry package 4.9.0. Client 0.5.8 and kit 0.5.25 use exact GitHub release tar URLs in package.json; neither SDK pin claims npm publication or npm provenance. The explicit historical HF 3.0.0 alias remains. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
+Use shared Node 26.12.0 (`.node-version` and `.nvmrc`) and pnpm 12.14.0 with `/opt/homebrew/bin` first on PATH. Install with `pnpm install --frozen-lockfile`; run `npm run dev`. Application release and default rules are 0.10.0. HF is pinned to registry package 4.9.0. Client 0.5.8 and kit 0.5.25 use exact GitHub release tar URLs in package.json; neither SDK pin claims npm publication or npm provenance. The HF 3.0.0 alias supports archival tests only. TypeScript 7 or later is required; this checkout pins 7.0.2. SDK archives remain immutable release artifacts.
 
 Before each commit, run the normal lane directly:
 

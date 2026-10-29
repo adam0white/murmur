@@ -9,7 +9,7 @@ it.each([
 ] as const)(
   'offers the %s companion a valid outcome action',
   (person, action) => {
-    const s = newGame(17, '0.9.2');
+    const s = newGame(17, '0.10.2');
     // Place the encounter in a free interval before the next ordinary companion offer.
     s.hf.nextCompanionEvent = 2;
     expect(() => playEncounter(s, person, action, 20, 'depot')).not.toThrow();

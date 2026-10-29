@@ -1,7 +1,6 @@
 import { CAST_MOMENTS } from './cast-moments.ts';
-import { isCanonicalEdition, isRemainderEdition, REMAINDER_EDITION } from './edition.ts';
+import { isCanonicalEdition, REMAINDER_EDITION } from './edition.ts';
 import { OUTCOME_MOMENTS } from './outcome-moments.ts';
-import * as served397 from './rules-397/moments.ts';
 /**
  * The week, as moments. Content only: scene lines, the pull's lines, and what Dilan could do. Every tempting
  * option carries a `temptation` tag and a norm from HF's own catalog, so HF notices it as a prompt; options the
@@ -1404,8 +1403,7 @@ export const MOMENTS: Moment[] = [
 /** The last day of week one. Week two (edition 0.4.0) runs days 8-13; day 7 is an offstage Sunday. */
 export const LAST_DAY = 6;
 export const WEEK_TWO_LAST_DAY = 13;
-export const momentById = (id: string, version?: string): Moment => {
-  if (!isRemainderEdition(version)) return served397.momentById(id, version);
+export const momentById = (id: string, version = REMAINDER_EDITION): Moment => {
   const m = [
     ...MOMENTS,
     ...CAST_MOMENTS,
@@ -1421,84 +1419,81 @@ export const momentById = (id: string, version?: string): Moment => {
     ? (momentsOf(m.day, version).find((x) => x.id === id) ?? m)
     : m;
 };
-export const momentsOf = (day: number, version?: string): Moment[] =>
-  !isRemainderEdition(version)
-    ? served397.momentsOf(day, version)
-    : [
-        ...(isCanonicalEdition(version) || version === '0.10.1' || version === '0.10.2'
-          ? CAST_MOMENTS.filter((m) => m.day === day)
-          : []),
-        ...MOMENTS.filter((m) => m.day === day)
-          .map((m) =>
-            version === REMAINDER_EDITION && m.id === 'evening-11'
+export const momentsOf = (day: number, version = REMAINDER_EDITION): Moment[] => [
+  ...(isCanonicalEdition(version) || version === '0.10.1' || version === '0.10.2'
+    ? CAST_MOMENTS.filter((m) => m.day === day)
+    : []),
+  ...MOMENTS.filter((m) => m.day === day)
+    .map((m) =>
+      version === REMAINDER_EDITION && m.id === 'evening-11'
+        ? {
+            ...m,
+            options: (c: Ctx) =>
+              (typeof m.options === 'function' ? m.options(c) : m.options).map((o) =>
+                o.action === 'call-mum' ? { ...o, action: 'listen-to-mum' } : o,
+              ),
+          }
+        : version === REMAINDER_EDITION && day >= 8 && m.id.startsWith('bus-')
+          ? {
+              ...m,
+              scene: (c: Ctx) =>
+                `${typeof m.scene === 'function' ? m.scene(c) : m.scene}\nShe promised Mum twenty minutes of her attention each evening this week.`,
+              options: (typeof m.options === 'function' ? [] : m.options).map((o) =>
+                o.id === 'call'
+                  ? { ...o, duration: 3, gives: {}, done: 'Mum picked up. Dilan said hello.' }
+                  : o,
+              ),
+              after: () => {},
+            }
+          : day >= 8 && m.id.startsWith('alarm-')
+            ? { ...m, when: () => true }
+            : version === REMAINDER_EDITION && day >= 8 && m.id.startsWith('bed-')
               ? {
                   ...m,
-                  options: (c: Ctx) =>
-                    (typeof m.options === 'function' ? m.options(c) : m.options).map((o) =>
-                      o.action === 'call-mum' ? { ...o, action: 'listen-to-mum' } : o,
-                    ),
+                  at: 21 * 60 + 30,
+                  scene: (c: Ctx) =>
+                    `${typeof m.scene === 'function' ? m.scene(c) : m.scene}\nShe promised herself the phone would be away by 21:55. Writing or going straight to sleep both leave it aside.`,
+                  options: (typeof m.options === 'function' ? [] : m.options).map((o) =>
+                    o.id === 'scroll' ? { ...o, duration: 150 } : o,
+                  ),
                 }
-              : version === REMAINDER_EDITION && day >= 8 && m.id.startsWith('bus-')
-                ? {
-                    ...m,
-                    scene: (c: Ctx) =>
-                      `${typeof m.scene === 'function' ? m.scene(c) : m.scene}\nShe promised Mum twenty minutes of her attention each evening this week.`,
-                    options: (typeof m.options === 'function' ? [] : m.options).map((o) =>
-                      o.id === 'call'
-                        ? { ...o, duration: 3, gives: {}, done: 'Mum picked up. Dilan said hello.' }
-                        : o,
-                    ),
-                    after: () => {},
-                  }
-                : day >= 8 && m.id.startsWith('alarm-')
-                  ? { ...m, when: () => true }
-                  : version === REMAINDER_EDITION && day >= 8 && m.id.startsWith('bed-')
-                    ? {
-                        ...m,
-                        at: 21 * 60 + 30,
-                        scene: (c: Ctx) =>
-                          `${typeof m.scene === 'function' ? m.scene(c) : m.scene}\nShe promised herself the phone would be away by 21:55. Writing or going straight to sleep both leave it aside.`,
-                        options: (typeof m.options === 'function' ? [] : m.options).map((o) =>
-                          o.id === 'scroll' ? { ...o, duration: 150 } : o,
-                        ),
-                      }
-                    : m.id === 'slump-5'
-                      ? FRIDAY_HANDOVER
-                      : m,
-          )
-          .flatMap((m) =>
-            version === REMAINDER_EDITION && m.id.startsWith('bus-')
-              ? [m, ...MUM_CALLS.filter((call) => call.day === day)]
-              : [m],
-          ),
-        ...(version === '0.10.1' ? WEEK_THREE.filter((m) => m.day === day) : []),
-        ...(version === '0.10.2'
-          ? [
-              ...WEEK_THREE.filter((m) => m.day === day && /^(alarm|bus|bed)-/.test(m.id)).map((m) =>
-                m.id.startsWith('alarm-')
-                  ? m
-                  : m.id.startsWith('bus-')
-                    ? {
-                        ...m,
-                        at: 20 * 60,
-                        scene:
-                          'Her planned work is over for the evening. On the bus, Dilan has time to call Mum or look at her phone.',
-                        options: (typeof m.options === 'function' ? [] : m.options).map((o) =>
-                          o.id === 'call'
-                            ? {
-                                ...o,
-                                done: 'Dilan called Mum and told her about her day. She kept the other people’s private details to herself.',
-                              }
-                            : o,
-                        ),
-                      }
-                    : {
-                        ...m,
-                        scene:
-                          'Dilan puts her bag down. She can write about what she actually did, or go to sleep.',
-                      },
-              ),
-              ...OUTCOME_MOMENTS.filter((m) => m.day === day),
-            ].sort((a, b) => (a.at as number) - (b.at as number))
-          : []),
-      ];
+              : m.id === 'slump-5'
+                ? FRIDAY_HANDOVER
+                : m,
+    )
+    .flatMap((m) =>
+      version === REMAINDER_EDITION && m.id.startsWith('bus-')
+        ? [m, ...MUM_CALLS.filter((call) => call.day === day)]
+        : [m],
+    ),
+  ...(version === '0.10.1' ? WEEK_THREE.filter((m) => m.day === day) : []),
+  ...(version === '0.10.2'
+    ? [
+        ...WEEK_THREE.filter((m) => m.day === day && /^(alarm|bus|bed)-/.test(m.id)).map((m) =>
+          m.id.startsWith('alarm-')
+            ? m
+            : m.id.startsWith('bus-')
+              ? {
+                  ...m,
+                  at: 20 * 60,
+                  scene:
+                    'Her planned work is over for the evening. On the bus, Dilan has time to call Mum or look at her phone.',
+                  options: (typeof m.options === 'function' ? [] : m.options).map((o) =>
+                    o.id === 'call'
+                      ? {
+                          ...o,
+                          done: 'Dilan called Mum and told her about her day. She kept the other people’s private details to herself.',
+                        }
+                      : o,
+                  ),
+                }
+              : {
+                  ...m,
+                  scene:
+                    'Dilan puts her bag down. She can write about what she actually did, or go to sleep.',
+                },
+        ),
+        ...OUTCOME_MOMENTS.filter((m) => m.day === day),
+      ].sort((a, b) => (a.at as number) - (b.at as number))
+    : []),
+];

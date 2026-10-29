@@ -1,3 +1,5 @@
+> Superseded delivery policy, 2026-10-29: the HF4 fix makes 0.10 the only playable rules, refuses older books, and restores automatic portable arrivals with per-person skips. Historical compatibility claims below describe PR #8 and are not current policy. See [current rules](hf49-editions.md).
+
 # Remaining-clause source reconciliation —2026-10-29
 
 Remaining: root must qualify the final signed draft-PR source, choose the eligible single hosted review when capacity is available, then own integration, exact main CI, normal deployment/live verification and final cleanup. Adam’s fiction/feel/readability acceptance remains2026-11-03. Player/friends/ShowHN remain paused. This is builder source and regression evidence, not a source-unread player verdict or genuine cross-origin custody.

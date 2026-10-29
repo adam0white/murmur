@@ -25,7 +25,7 @@ for (const viewport of [
       await page.locator('#bp-close').click();
       await page.evaluate(() => {
         window.__murmur.fast = true;
-        window.__murmur.start(17, '0.9.0');
+        window.__murmur.start(17, '0.10.0');
       });
       await page.locator('#hush').waitFor();
       const first = await page.evaluate(() => window.__murmur.view()!.id);
@@ -37,7 +37,7 @@ for (const viewport of [
       await page.evaluate(() => window.__murmur.flushSave());
       await page.reload();
       await page.locator('#cont').click();
-      await page.waitForFunction(() => window.__murmur.state?.version === '0.9.0');
+      await page.waitForFunction(() => window.__murmur.state?.version === '0.10.0');
       expect(await page.evaluate((id) => window.__murmur.state?.chosen[id], first)).toBeTruthy();
       expect(errors).toEqual([]);
     } finally {
@@ -63,7 +63,7 @@ it('reconstructs the exact synchronous checkpoint when full compression fails, a
         },
       });
       window.__murmur.fast = true;
-      window.__murmur.start(18, '0.9.0');
+      window.__murmur.start(18, '0.10.0');
     });
     await page.locator('#hush').waitFor();
     const first = await page.evaluate(() => window.__murmur.view()!.id);

@@ -84,10 +84,9 @@ describe('actual dinner and Friday branches', () => {
       queueInput(branch, input);
       choices.add(branch.chosen['handover-5']!);
       expect(branch.chosen['handover-5']).toMatch(/handover|board|none/);
-      expect(branch.log.at(-1)?.text).not.toContain('Ece took the unchecked sheet');
       if (branch.chosen['handover-5'] === 'handover') {
         expect(branch.flags.w3?.handover).toBe('handover');
-        const joint = branch.log.at(-1)?.text?.includes('They checked');
+        const joint = branch.log.at(-1)?.text?.includes('Together they found');
         expect(joint).toBe(
           branch.cast!.encounters.some((e) => e.person === 'ece' && e.action === 'handover-ece'),
         );
@@ -98,10 +97,10 @@ describe('actual dinner and Friday branches', () => {
       const joint = branch.cast!.encounters.some((e) => e.person === 'ece' && e.action === 'handover-ece');
       if (branch.flags.w3?.handover === 'handover') {
         expect(later).toContain(
-          joint ? 'They checked a handover together' : 'Dilan checked a handover alone',
+          joint ? 'Ece taps the sheet they fixed together' : 'Dilan remembers the parcel she found',
         );
       } else {
-        expect(later).toContain('Dilan did not check the first week’s handover sheet');
+        expect(later).toContain('Ece still has last Friday’s unchecked sheet');
       }
       expect(later).not.toContain('Ece remembers taking the unchecked handover');
       const restored = restoreState(cloneState(branch));

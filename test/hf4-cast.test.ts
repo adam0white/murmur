@@ -1,12 +1,5 @@
 import { inspect, type PersonView } from '@adam0white/human-framework';
-import {
-  canonicalCast,
-  claimCastChapterBatch,
-  createPersona,
-  initialPersonaLife,
-  type PersonaRequest,
-  preparePersonaLife,
-} from '@adam0white/lab-client';
+import { canonicalCast, createPersona, initialPersonaLife, preparePersonaLife } from '@adam0white/lab-client';
 import { expect, it } from 'vitest';
 import { prepareCastChapter } from '../src/sim/cast-chapter.ts';
 import { newGame } from '../src/sim/game.ts';
@@ -49,7 +42,7 @@ async function source(withDuty = false) {
     castRevision: cast.revision,
     branchId: 'fixture-aylin',
     parentRevision: null,
-    source: { game: 'murmur', build: 'fixture', engine: portable.source.engine, rules: '0.9.0' },
+    source: { game: 'murmur', build: 'fixture', engine: portable.source.engine, rules: '0.10.0' },
     transfer: {
       castPassport: 'hf-portable-person/2',
       portable: retained,
@@ -59,31 +52,6 @@ async function source(withDuty = false) {
   });
   return { parent, portable };
 }
-it('preserves a blocked retained person before the atomic cast claim', async () => {
-  const { parent } = await source();
-  const input = preparePersonaLife(parent, 1_800_000_000_000);
-  let writes = 0;
-  const shelf = {
-    request: async <T>(r: PersonaRequest): Promise<T> => {
-      if (r.action === 'prepareBatch')
-        return { inputs: [input], blocked: [], expectedHeads: { [parent.castId]: parent.revision } } as T;
-      if (r.action === 'putBatch') writes++;
-      throw new Error('Unexpected write');
-    },
-  };
-  await expect(
-    claimCastChapterBatch(
-      shelf,
-      [parent.castId],
-      { game: 'murmur', build: 'fixture', engine: parent.source.engine, rules: '0.9.0' },
-      async (inputs) => {
-        if (inputs.length !== 1) throw new Error('The whole cast cannot arrive together.');
-        return (await prepareCastChapter(inputs, 17)).initial;
-      },
-    ),
-  ).rejects.toThrow('whole cast');
-  expect(writes).toBe(0);
-});
 it('refuses an old passport and altered captured life before any chapter starts', async () => {
   const { parent } = await source();
   const input = preparePersonaLife(parent, 1_800_000_000_000);
@@ -102,7 +70,7 @@ it('refuses an old passport and altered captured life before any chapter starts'
 it('preserves an incoming source duty with its exact recipient and clock', async () => {
   const { parent } = await source(true);
   const chapter = await prepareCastChapter([preparePersonaLife(parent, 1_800_000_000_000)], 17);
-  const s = newGame(17, '0.9.0', chapter);
+  const s = newGame(17, '0.10.0', chapter);
   const duty = readPerson(s.hf.run, 'aylin').agenda.commitments.find((c) => c.id === 'source-duty');
   expect(duty).toMatchObject({ status: 'pending', toId: 'aylin', actions: ['dinner'] });
   expect(duty?.until).toBe(
@@ -138,7 +106,7 @@ it('admits actual played memories with their declared place reference', async ()
     castRevision: cast.revision,
     branchId: 'played-aylin',
     parentRevision: null,
-    source: { game: 'murmur', build: 'fixture', engine: portable.source.engine, rules: '0.9.0' },
+    source: { game: 'murmur', build: 'fixture', engine: portable.source.engine, rules: '0.10.0' },
     transfer: {
       castPassport: 'hf-portable-person/2',
       portable,
@@ -147,7 +115,7 @@ it('admits actual played memories with their declared place reference', async ()
     limitations: [],
   });
   const chapter = await prepareCastChapter([preparePersonaLife(parent, 1_800_000_000_000)], 17);
-  const s = newGame(17, '0.9.0', chapter);
+  const s = newGame(17, '0.10.0', chapter);
   const arrival = inspect(s.hf.run, {
     perspective: { kind: 'host' },
     people: ['aylin'],
@@ -164,4 +132,29 @@ it('admits actual played memories with their declared place reference', async ()
     portable.retained.memory.episodes.map((e) => e.placeId),
   );
   expect(current.retained.memory.episodes.length).toBe(portable.retained.memory.episodes.length);
+});
+
+it('refuses a Murmur chapter written under old rules', async () => {
+  const { parent } = await source();
+  const { revision: _revision, ...body } = parent;
+  const old = await createPersona({ ...body, source: { ...body.source, rules: '0.9.0' } });
+  await expect(prepareCastChapter([preparePersonaLife(old, 1_800_000_000_000)], 17)).rejects.toThrow(
+    /start a new week/i,
+  );
+});
+
+it('admits a portable person from another game', async () => {
+  const { parent } = await source();
+  const { revision: _revision, ...body } = parent;
+  const portable = structuredClone(body.transfer.portable) as typeof parent.transfer.portable & {
+    source: { game: string };
+  };
+  portable.source.game = 'hearsay';
+  const foreign = await createPersona({
+    ...body,
+    source: { ...body.source, game: 'hearsay', rules: 'hearsay-cast-1' },
+    transfer: { ...body.transfer, portable },
+  });
+  const chapter = await prepareCastChapter([preparePersonaLife(foreign, 1_800_000_000_000)], 17);
+  expect(chapter.portable.aylin?.person.source.game).toBe('hearsay');
 });

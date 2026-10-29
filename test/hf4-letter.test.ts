@@ -1,7 +1,9 @@
 /** Prospective paper-reading choices only; no invented tenancy terms or player/owner verdict. */
 import { expect, it } from 'vitest';
+import { newGame } from '../src/sim/game.ts';
 import { momentsOf } from '../src/sim/moments.ts';
 import type { Ctx } from '../src/sim/types.ts';
+import { weekTwoThreads } from '../src/sim/week2.ts';
 
 it('offers reading before signature and gates the later decision on completed reading', () => {
   const ctx: Ctx = {
@@ -27,7 +29,17 @@ it('offers reading before signature and gates the later decision on completed re
     expect(decision).toBeDefined();
     expect(decision.when?.(ctx)).toBe(false);
     expect(decision.when?.({ ...ctx, flags: { w2: { letter: 'read' } } })).toBe(true);
-    expect(String(read?.done)).toContain('without signing');
+    expect(String(read?.done)).toContain('left it unsigned by her shoes');
+    const state = newGame(17, version);
+    letter.after?.(state, 'read');
+    decision.after?.(state, 'bowl');
+    expect(state.flags.w2).toMatchObject({ letter: 'bowl', letterRead: true });
+    expect(weekTwoThreads(state)).toEqual(
+      expect.arrayContaining([
+        'She read the tenancy letter.',
+        'A corner of the letter sticks out under the fruit bowl.',
+      ]),
+    );
   }
 });
 

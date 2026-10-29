@@ -187,3 +187,20 @@ Rules, replay, rendered text, review and delivery receipts are in `~/code/.lab-s
 Replies and thoughts now use punctuated speech tags. Story sources clarify delivery work, returned parcels, family calls and retained advice. The birthday reflection no longer contradicts Aylin’s canonical age. Evening prose describes the structured kept/missed actions; talking to Mum covers phone calls and in-person dinner. Semantic action and commitment labels remain stable.
 
 Technical done is signed main, exact green CI, normal deployment and a matching clean live release. Adam’s fiction acceptance remains 2026-11-03. Seeded rules, current-export replay, ten-minute rendered capture, phone layout and independent Codex review receipts are in `~/code/.lab-scratch/plain3/murmur-report.md`.
+
+
+## 2026-10-29 — murmur-hf4-fix
+
+Remaining: exact CI, deployment receipt and final cleanup are recorded in `~/code/.lab-scratch/codex/murmur-hf4-fix.md`. Adam accepts the fiction by playing; target remains 2026-11-03. Cross-origin source→target proof remains gated by the pinned SDK's empty verified-live portable-reader registry. Synthetic admission controls do not certify live peers.
+
+The 0.10 handover, letter-reading and HF learned-morning rules now apply to every fresh run. The app refuses older saves and imports with a plain start-fresh message and offers a download of the refused browser notebook. Removed rules-397 and the tests/fixtures for exact 0.9 continuation. The app dispatcher and notebook validator no longer continue HF3 notebooks. Archival HF3 source/tests remain isolated from playable dispatch.
+
+Portable arrivals use the existing HF route and per-person admission callback. Compatible people enter while incompatible people are skipped. Skipped identities are pinned and protected against later checkpoint/fork writes. All current story routes can use the shelf. Imported notebooks retain file origin and do not claim browser ownership.
+
+Friday copy describes the wrong-sheet parcel, the actual joint or solo check, and the unchecked sheet going to the floor. The later scene shows one remembered detail. The tenancy letter has one name. A separate read flag survives putting it under the fruit bowl. No option cost, effort, trust, practice decay, refusal rule or difficulty tuning changed.
+
+Replay identity: preserved every archival fixed hash. `next-legacy.test.ts` now imports the archival implementation directly because the app dispatcher refuses old editions. Added a current fixed complete-state hash after seed17's first answered card and next opening: `efb8ac0bfe116b22c1d7a803f271ce43402a0e392cdd9c06477f9de47fea009d`; cold continuation and replay must match. No existing pin was updated for behavior drift.
+
+Campaign decision is dated in `docs/hf49-editions.md`: the pre-existing third-week and outcomes story routes already use current rules; their combined chronological placement/pacing is targeted to Adam's 2026-11-03 fiction pass. This fix removes the 0.10 rules opt-in.
+
+Hosted review is waived by coordinator ruling 2026-10-29T09:25Z. No hosted @codex request, Opus read, or second review was made for this fix. The supplied Opus read of merged PR8 is the findings source.

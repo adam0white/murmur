@@ -67,8 +67,8 @@ export function playCurrent(s: GameState, lastDay: number) {
   if (s.phase !== 'end' || s.day !== lastDay) throw new Error(`Unfinished game at ${s.day}/${s.phase}`);
   return cards;
 }
-const edition = process.argv[2] ?? '0.9.0';
-const lastDay = Number(process.argv[3]) || (['0.9.0', '0.10.0'].includes(edition) ? 13 : 20);
+const edition = process.argv[2] ?? '0.10.0';
+const lastDay = Number(process.argv[3]) || (edition === '0.10.0' ? 13 : 20);
 const s = newGame(17, edition);
 const cards = playCurrent(s, lastDay);
 console.error(
@@ -152,7 +152,7 @@ const packed = await compactNotebook({
 });
 const expanded = await expandNotebook(packed);
 if (JSON.stringify(expanded.state) !== json) throw new Error('Complete notebook codec differs');
-const envelope = JSON.stringify(runEnvelope('murmur', { a: '0.9.3', hf: '4.9.0' }, packed));
+const envelope = JSON.stringify(runEnvelope('murmur', { a: '0.10.0', hf: '4.9.0' }, packed));
 const wireBytes = (await gzip(envelope)).size;
 if (!checkRun(envelope) || wireBytes > RUN_LIMITS.compressedBytes)
   throw new Error(`Complete notebook exceeds released upload bounds: ${envelope.length}/${wireBytes}`);

@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { canonicalPersona } from '@adam0white/lab-client';
 import { expect, it } from 'vitest';
-import { cloneState, queueInput, replay, restoreState, runToCard, step } from '../src/sim/game.ts';
-import type { GameState, Input } from '../src/sim/types.ts';
+import { cloneState, queueInput, replay, restoreState, runToCard, step } from '../src/legacy/game.ts';
+import type { GameState, Input } from '../src/legacy/types.ts';
 
 it('retains the complete raw states captured from12914c3 and exact restored continuations', () => {
   const corpus = JSON.parse(

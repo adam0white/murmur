@@ -420,13 +420,13 @@ const monday: Moment[] = [
       {
         id: 'read',
         ink: 'Read it before deciding.',
-        label: 'read the renewal letter',
+        label: 'read the tenancy letter',
         action: 'read-letter',
         duration: 10,
         effort: 0.1,
         advertises: { competence: 0.15, autonomy: 0.1 },
         gives: { competence: 0.1, autonomy: 0.05 },
-        done: 'She read the renewal letter and put it back without signing.',
+        done: 'She read the tenancy letter and left it unsigned by her shoes.',
       },
       signLetter,
       {
@@ -443,6 +443,7 @@ const monday: Moment[] = [
     ],
     after: (s, chosen) => {
       w2(s).letter = chosen;
+      if (chosen === 'read') w2(s).letterRead = true;
     },
   },
   {
@@ -452,7 +453,7 @@ const monday: Moment[] = [
     at: at(7, 25),
     place: 'home',
     when: (c) => c.flags.w2?.letter === 'read',
-    scene: 'Dilan has read the renewal letter. It is still unsigned. The envelope is open by her shoes.',
+    scene: 'Dilan has read the tenancy letter. It is still unsigned. The envelope is open by her shoes.',
     pull: { to: 'bowl', line: 'You can still leave it for later.' },
     options: [signLetter, putLetter],
     after: (s, chosen) => {
@@ -1387,11 +1388,12 @@ export function weekTwoThreads(s: GameState): string[] {
         ? 'Dilan called Mum on some evenings and not others. Mum is keeping a list, kindly.'
         : 'Mum sent a photo of the tomato plant, without a message. It was doing well.',
   );
+  if (f.letterRead) lines.push('She read the tenancy letter.');
   lines.push(
     f.letter === 'sign'
       ? 'The tenancy letter is back in its envelope.'
       : f.letter === 'read'
-        ? 'She read the tenancy letter. It is still unsigned.'
+        ? 'The tenancy letter is still unsigned by her shoes.'
         : f.letter === 'unopened'
           ? 'The tenancy letter is still by the door.'
           : 'A corner of the letter sticks out under the fruit bowl.',

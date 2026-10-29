@@ -1,4 +1,4 @@
-import { isCanonicalEdition, isHf4Edition, sourceRules } from '../sim/edition.ts';
+import { isHf4Edition, sourceRules } from '../sim/edition.ts';
 import { assertNotebookState, compactNotebook } from './notebook.ts';
 import { storeSourceArchive } from './source-archive.ts';
 
@@ -20,7 +20,7 @@ import {
   validatePersona,
 } from '@adam0white/lab-client';
 import { CAST, type CastRole, roleOf } from '../sim/canonical-cast.ts';
-import { type CastReturnArchive, prepareCastChapter, validateCastChapter } from '../sim/cast-chapter.ts';
+import { prepareCastChapter, validateCastChapter } from '../sim/cast-chapter.ts';
 import { createCastHistorySource, createCastSource } from '../sim/cast-source.ts';
 import { cloneState, GAME_VERSION, newGame, queueInput, replay, restoreState, step } from '../sim/game.ts';
 import type { GameState, GameStateSnapshot } from '../sim/types.ts';
@@ -48,33 +48,35 @@ export interface CastSourceRecord {
   clockMs: number;
   explicitFork: boolean;
 }
-export async function freshCanonicalWeek(seed: number, isCurrent: () => boolean): Promise<GameState> {
+export async function freshCanonicalWeek(
+  seed: number,
+  isCurrent: () => boolean,
+  version = GAME_VERSION,
+): Promise<GameState> {
   await shelf.ready;
   if (!isCurrent()) throw Error('The selected chapter changed. Choose again.');
   if (!shelf.enabled) {
-    const s = newGame(seed);
+    const s = newGame(seed, version);
     s.castScope = 'local';
     return s;
   }
-  let preparedInputCount = 0;
+  let candidateIds: string[] = [];
   let prepared: Awaited<ReturnType<typeof prepareCastChapter>> | undefined;
   const journalShelf = {
     request: async <T>(request: PersonaRequest): Promise<T> => {
       if (request.action === 'prepareBatch') {
         const batch = await shelf.request<{
           inputs: { parent: { castId: string } }[];
-          blocked: { reason: string }[];
+          blocked: { castId: string; reason: string }[];
         }>(request);
-        if (batch.blocked.length) throw new Error(batch.blocked.map((p) => p.reason).join(' '));
-        for (const input of batch.inputs) requireSharedWrite(input.parent.castId);
-        preparedInputCount = batch.inputs.length;
+        candidateIds = [...batch.inputs.map((i) => i.parent.castId), ...batch.blocked.map((p) => p.castId)];
         return batch as T;
       }
       if (request.action !== 'putBatch' || !prepared || !request.envelopes?.length)
         return shelf.request<T>(request);
       const chapter = structuredClone(prepared);
       chapter.claims = request.envelopes;
-      const run = newGame(chapter.seed, GAME_VERSION, chapter);
+      const run = newGame(chapter.seed, version, chapter);
       run.castHeads = Object.fromEntries(chapter.claims.map((h) => [h.castId, h]));
       run.castScope = 'shared';
       const key = `murmur-held-cast:${crypto.randomUUID()}`;
@@ -94,25 +96,29 @@ export async function freshCanonicalWeek(seed: number, isCurrent: () => boolean)
     CAST.map((c) => c.castId),
     source,
     async (inputs) => {
-      for (const input of inputs) requireSharedWrite(input.parent.castId);
-      if (inputs.length !== preparedInputCount)
-        throw new Error(
-          'The whole cast cannot arrive together. Continue the source chapters or choose a separate local story.',
-        );
-      prepared = await prepareCastChapter(inputs, seed);
+      prepared = await prepareCastChapter(inputs, seed, {}, version);
+      prepared.blocked = [
+        ...new Set(candidateIds.filter((id) => !inputs.some((i) => i.parent.castId === id))),
+      ];
       return prepared.initial;
     },
-    { isCurrent },
+    {
+      isCurrent,
+      admitPerson: async (input) => {
+        requireSharedWrite(input.parent.castId);
+        await prepareCastChapter([input], seed, {}, version);
+      },
+    },
   );
   if (!isCurrent()) throw Error('The selected chapter changed. Choose again.');
   if (result && prepared) {
     prepared.claims = result.claims;
-    const s = newGame(prepared.seed, GAME_VERSION, prepared);
+    const s = newGame(prepared.seed, version, prepared);
     s.castHeads = Object.fromEntries(result.claims.map((h) => [h.castId, h]));
     s.castScope = 'shared';
     return s;
   }
-  const s = newGame(seed);
+  const s = newGame(seed, version);
   s.castScope = 'shared';
   return s;
 }
@@ -237,6 +243,8 @@ async function saveCastPersonNow(
     throw Error('The loaded run changed before its checkpoint.');
   const selected = canonicalCast(`hf.cast.${role}.murmur`);
   const selectedScope = s.castHeadScopes?.[selected.castId] ?? s.castScope ?? 'local';
+  if (s.castChapter?.blocked?.includes(selected.castId))
+    throw Error('This person could not join this chapter. Continue their saved chapter first.');
   if (options.fork || selectedScope === 'shared') requireSharedWrite(selected.castId);
   if (options.pause) queueInput(s, { kind: 'cast-pause', role });
   const prefix = cloneState(s),
@@ -313,7 +321,7 @@ export function automaticCastCheckpoint(s: GameState | null, save: () => void): 
       const role = roleOf(c.castId),
         head = s.castHeads?.[c.castId];
       const scope = s.castHeadScopes?.[c.castId] ?? s.castScope;
-      if (scope !== 'shared') continue;
+      if (scope !== 'shared' || s.castChapter?.blocked?.includes(c.castId)) continue;
       if (s.phase === 'end') {
         const saved = head && s.castSources?.[head.revision];
         if (saved?.inputCount === s.inputs.length && saved.minute === s.minute) continue;
@@ -336,7 +344,7 @@ export function automaticCastCheckpoint(s: GameState | null, save: () => void): 
 export function canonicalPersonControls(s: GameState, save: () => void): HTMLElement {
   const el = document.createElement('section');
   el.innerHTML =
-    '<h3>People in this chapter</h3><p>The whole cast arrives together. A checkpoint observes an eligible completed Saturday; it does not clear work or promises.</p><label>Person <select id="cast-person">' +
+    '<h3>People in this chapter</h3><p>Available people arrive together. A checkpoint observes an eligible completed Saturday; it does not clear work or promises.</p><label>Person <select id="cast-person">' +
     CAST.map((c) => `<option value="${roleOf(c.castId)}">${c.name}</option>`).join('') +
     '</select></label><button id="cast-save">Save this person’s finished chapter</button><button id="cast-alternate">Save an explicit alternate branch for this person</button><button id="cast-download">Download this person’s accepted passport</button><button id="cast-history-download">Download Aylin’s complete source archive</button><p id="cast-status" role="status"></p>';
   const role = () => (el.querySelector('select') as HTMLSelectElement).value as CastRole;

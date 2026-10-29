@@ -8,7 +8,7 @@ import { isOutcomesEdition } from './edition.ts';
 import { playEncounter } from './hf4-encounter.ts';
 import type { GameState, Moment, Opt } from './types.ts';
 
-export const OUTCOMES_VERSION = '0.9.2';
+export const OUTCOMES_VERSION = '0.10.2';
 const flags = (s: GameState) => (s.flags.outcomes ??= {});
 
 import { OUTCOME_MOMENTS } from './outcome-moments.ts';
