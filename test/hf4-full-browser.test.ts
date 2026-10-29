@@ -1,5 +1,6 @@
 /** Opt-in actual full-run artifact proof. Local source custody is tested with an explicitly rejected transport. */
 import { appendFileSync, readFileSync } from 'node:fs';
+import { portableWriteBlockers } from '@adam0white/lab-client';
 import { createServer } from 'vite';
 import { expect, it } from 'vitest';
 import { launchBrowser } from './browser.ts';
@@ -15,7 +16,7 @@ for (const viewport of [
   { width: 1280, height: 800 },
 ])
   it.skipIf(!artifact)(
-    `cold resumes the full artifact and retains source custody at ${viewport.width}×${viewport.height}`,
+    `cold resumes the full artifact and preserves custody or certified read-only refusal at ${viewport.width}×${viewport.height}`,
     async () => {
       const state = JSON.parse(readFileSync(artifact!, 'utf8'));
       expect(state.phase).toBe('end');
@@ -94,108 +95,144 @@ for (const viewport of [
           { timeout: 600000 },
         );
         progress({ stage: 'browser-source-custody', clock: new Date().toISOString(), viewport });
-        const custody = await page.evaluate(async (testAbort) => {
-          // The fixture remains a file. No head is owned or accepted by this check.
-          const dynamicImport = new Function('path', 'return import(path)') as (path: string) => Promise<any>;
-          const { cloneState, fingerprint } = await dynamicImport('/src/sim/game.ts');
-          const { readSourceArchive } = await dynamicImport('/src/ui/source-archive.ts');
-          const { castDigest } = await dynamicImport('/src/sim/cast-source.ts');
-          const { saveCastPerson } = await dynamicImport('/src/ui/cast-chapter.ts');
-          const { shelf } = await dynamicImport('/src/ui/continuity.ts');
-          const emit = (stage: string) =>
-            (
-              window as unknown as { __fullProofProgress: (stage: string) => Promise<void> }
-            ).__fullProofProgress(stage);
-          const s = window.__murmur.state!;
-          const prior = fingerprint(s);
-          const saveBefore = localStorage.getItem('murmur-save-v1');
-          let quotaProbe = 'accepted';
-          try {
-            localStorage.setItem('murmur-quota-probe', saveBefore!);
-          } catch (e) {
-            quotaProbe = e instanceof DOMException ? e.name : String(e);
-          } finally {
-            localStorage.removeItem('murmur-quota-probe');
-          }
-          await emit(`browser-quota-probe:${quotaProbe}`);
-          const original = shelf.request;
-          let requests = 0,
-            message = '';
-          shelf.request = async () => {
-            requests++;
-            throw new Error('controlled publication rejection');
-          };
-          try {
-            await emit('browser-source-request');
-            await saveCastPerson(s, 'aylin', () => {}, { fork: true });
-          } catch (e) {
-            message = String(e);
-          } finally {
-            shelf.request = original;
-          }
-          const keys = Object.keys(localStorage).filter((k) => k.startsWith('murmur-cast-source:'));
-          if (keys.length !== 1)
-            throw new Error(
-              `Source save failed before custody: ${message}. Expected one complete source archive, got${keys.length}`,
-            );
-          const key = keys[0]!;
-          const raw = localStorage.getItem(key)!;
-          await emit('browser-source-committed');
-          const archive = await readSourceArchive(JSON.parse(raw));
-          const source = archive.state;
-          const actual = cloneState(s);
-          let abortResult = null;
-          if (testAbort) {
-            await emit('browser-forced-abort-start');
-            const proto = IDBDatabase.prototype as any;
-            const transaction = proto.transaction;
-            let abortRequests = 0,
-              abortMessage = '';
-            proto.transaction = function (this: IDBDatabase, ...args: any[]) {
-              const tx = Reflect.apply(transaction, this, args) as IDBTransaction;
-              if (this.name === 'murmur-source-archives' && args[1] === 'readwrite')
-                queueMicrotask(() => tx.abort());
-              return tx;
-            };
+        const custody = await page.evaluate(
+          async ({ testAbort, blockers }) => {
+            // The fixture remains a file. No head is owned or accepted by this check.
+            const dynamicImport = new Function('path', 'return import(path)') as (
+              path: string,
+            ) => Promise<any>;
+            const { cloneState, fingerprint } = await dynamicImport('/src/sim/game.ts');
+            const { readSourceArchive } = await dynamicImport('/src/ui/source-archive.ts');
+            const { castDigest } = await dynamicImport('/src/sim/cast-source.ts');
+            const { saveCastPerson } = await dynamicImport('/src/ui/cast-chapter.ts');
+            const { shelf } = await dynamicImport('/src/ui/continuity.ts');
+            const emit = (stage: string) =>
+              (
+                window as unknown as { __fullProofProgress: (stage: string) => Promise<void> }
+              ).__fullProofProgress(stage);
+            const s = window.__murmur.state!;
+            const prior = fingerprint(s);
+            const saveBefore = localStorage.getItem('murmur-save-v1');
+            const storageBefore = JSON.stringify(Object.entries(localStorage).sort());
+            let quotaProbe = 'accepted';
+            try {
+              localStorage.setItem('murmur-quota-probe', saveBefore!);
+            } catch (e) {
+              quotaProbe = e instanceof DOMException ? e.name : String(e);
+            } finally {
+              localStorage.removeItem('murmur-quota-probe');
+            }
+            await emit(`browser-quota-probe:${quotaProbe}`);
+            const original = shelf.request;
+            let requests = 0,
+              message = '';
             shelf.request = async () => {
-              abortRequests++;
-              throw new Error('Publication must not run after storage abort');
+              requests++;
+              throw new Error('controlled publication rejection');
             };
             try {
+              await emit('browser-source-request');
               await saveCastPerson(s, 'aylin', () => {}, { fork: true });
             } catch (e) {
-              abortMessage = String(e);
+              message = String(e);
             } finally {
-              proto.transaction = transaction;
               shelf.request = original;
             }
-            await emit('browser-forced-abort-complete');
-            const retained = await readSourceArchive(JSON.parse(raw));
-            abortResult = {
-              requests: abortRequests,
-              message: abortMessage,
-              receiptCount: Object.keys(localStorage).filter((k) => k.startsWith('murmur-cast-source:'))
-                .length,
-              sourcePreserved: (await castDigest(retained.state)) === (await castDigest(source)),
-              savePreserved: localStorage.getItem('murmur-save-v1') === saveBefore,
+            const keys = Object.keys(localStorage).filter((k) => k.startsWith('murmur-cast-source:'));
+            if (blockers.length)
+              return {
+                readOnly: true as const,
+                message,
+                requests,
+                expectedMessage: `Error: This person is read-only until ${blockers.join(', ')} supports safe shared history. The saved history has not been replaced.`,
+                receiptCount: keys.length,
+                storageUnchanged: JSON.stringify(Object.entries(localStorage).sort()) === storageBefore,
+                stateUnchanged: fingerprint(s) === prior,
+                scope: s.castScope,
+                file: s.fileHistory,
+                headCount: Object.keys(s.castHeads ?? {}).length,
+              };
+            if (keys.length !== 1)
+              throw new Error(
+                `Source save failed before custody: ${message}. Expected one complete source archive, got${keys.length}`,
+              );
+            const key = keys[0]!;
+            const raw = localStorage.getItem(key)!;
+            await emit('browser-source-committed');
+            const archive = await readSourceArchive(JSON.parse(raw));
+            const source = archive.state;
+            const actual = cloneState(s);
+            let abortResult = null;
+            if (testAbort) {
+              await emit('browser-forced-abort-start');
+              const proto = IDBDatabase.prototype as any;
+              const transaction = proto.transaction;
+              let abortRequests = 0,
+                abortMessage = '';
+              proto.transaction = function (this: IDBDatabase, ...args: any[]) {
+                const tx = Reflect.apply(transaction, this, args) as IDBTransaction;
+                if (this.name === 'murmur-source-archives' && args[1] === 'readwrite')
+                  queueMicrotask(() => tx.abort());
+                return tx;
+              };
+              shelf.request = async () => {
+                abortRequests++;
+                throw new Error('Publication must not run after storage abort');
+              };
+              try {
+                await saveCastPerson(s, 'aylin', () => {}, { fork: true });
+              } catch (e) {
+                abortMessage = String(e);
+              } finally {
+                proto.transaction = transaction;
+                shelf.request = original;
+              }
+              await emit('browser-forced-abort-complete');
+              const retained = await readSourceArchive(JSON.parse(raw));
+              abortResult = {
+                requests: abortRequests,
+                message: abortMessage,
+                receiptCount: Object.keys(localStorage).filter((k) => k.startsWith('murmur-cast-source:'))
+                  .length,
+                sourcePreserved: (await castDigest(retained.state)) === (await castDigest(source)),
+                savePreserved: localStorage.getItem('murmur-save-v1') === saveBefore,
+              };
+            }
+            return {
+              readOnly: false as const,
+              quotaProbe,
+              abortResult,
+              requests,
+              message,
+              archiveKey: key,
+              archiveBytes: raw.length,
+              archiveHash: source.hf.run.hashes.full,
+              currentHash: actual.hf.run.hashes.full,
+              fullSourceMatches: (await castDigest(source)) === (await castDigest(actual)),
+              stateUnchanged: fingerprint(s) === prior,
+              scope: s.castScope,
+              file: s.fileHistory,
+              headCount: Object.keys(s.castHeads ?? {}).length,
             };
-          }
-          return {
-            quotaProbe,
-            abortResult,
-            requests,
-            message,
-            archiveKey: key,
-            archiveBytes: raw.length,
-            archiveHash: source.hf.run.hashes.full,
-            currentHash: actual.hf.run.hashes.full,
-            fullSourceMatches: (await castDigest(source)) === (await castDigest(actual)),
-            stateUnchanged: fingerprint(s) === prior,
-            scope: s.castScope,
-            file: s.fileHistory,
-            headCount: Object.keys(s.castHeads ?? {}).length,
-          };
-        }, viewport.width === 360);
+          },
+          {
+            testAbort: viewport.width === 360,
+            blockers: portableWriteBlockers('hf.cast.aylin.murmur', 'murmur'),
+          },
+        );
+        if (custody.readOnly) {
+          expect(custody.message).toBe(custody.expectedMessage);
+          expect(custody.requests).toBe(0);
+          expect(custody.receiptCount).toBe(0);
+          expect(custody.storageUnchanged).toBe(true);
+          expect(custody.stateUnchanged).toBe(true);
+          expect(custody.scope).toBe('file');
+          expect(custody.file).toBe(true);
+          expect(custody.headCount).toBe(0);
+          expect(errors).toEqual([]);
+          progress({ viewport, day: before.day, phase: before.phase, inputs: before.inputs, ...custody });
+          return;
+        }
         expect(custody.message).toContain('controlled publication rejection');
         expect(custody.requests).toBe(1);
         if (viewport.width === 360) {
