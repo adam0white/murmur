@@ -12,17 +12,23 @@ const fake = vi.hoisted(() => ({
   request: vi.fn(),
   setEnabled: vi.fn(),
 }));
+const policy = vi.hoisted(() => ({ allow: false }));
 const recording = vi.hoisted(() => ({
   setPersonaRecording: vi.fn(),
   allowPersonaRecording: vi.fn(),
   personaRecordingAllowed: false,
   telemetryOn: true,
 }));
-vi.mock('@adam0white/lab-client', async (original) => ({
-  ...(await original<object>()),
-  personaChannel: () => fake,
-  watchPersonaCheckpoint: () => () => {},
-}));
+vi.mock('@adam0white/lab-client', async (original) => {
+  const actual = await original<typeof import('@adam0white/lab-client')>();
+  return {
+    ...actual,
+    portableWriteBlockers: (id: string, game: string) =>
+      policy.allow ? [] : actual.portableWriteBlockers(id, game),
+    personaChannel: () => fake,
+    watchPersonaCheckpoint: () => () => {},
+  };
+});
 vi.mock('../src/ui/lab', () => ({ lab: recording }));
 
 import {
@@ -58,6 +64,7 @@ const reply = (req: { envelope?: PersonaEnvelope }, sameEpoch: boolean) => ({
 });
 beforeEach(() => {
   invalidateContinuity();
+  policy.allow = false;
   state = undefined;
   installContinuity(
     () => state,
@@ -73,6 +80,7 @@ beforeEach(() => {
   recording.allowPersonaRecording.mockClear();
 });
 it('captures authored ownership before source work and refuses publication after a generation change', async () => {
+  policy.allow = true; // Isolate ownership behavior; the published policy is tested separately.
   state = { owner: {}, heads: [] };
   await gateContinuity(state);
   recording.personaRecordingAllowed = true;
@@ -89,6 +97,7 @@ it('captures authored ownership before source work and refuses publication after
   await expect(publishPersona(envelope, { guard })).rejects.toThrow(/changed/);
 });
 it('creates different admission attempts and preserves the actual selected source parent', async () => {
+  policy.allow = true; // Isolate claim identity from the current peer deployment policy.
   const envelope = await source();
   const host = { ...envelope.source, game: 'hearsay' };
   const one = await claimPersona(envelope, host, { mapping: 'murmur-hearsay/1' });
@@ -119,5 +128,11 @@ it('history binding and checkpoint capture require no recording RPC even with re
   await chooseContinuityRecording(true);
   const guard = await recordingEpochGuard();
   expect(guard.authored).toBe(true);
+  expect(fake.request).not.toHaveBeenCalled();
+});
+
+it('refuses a blocked shared publication before the shelf write', async () => {
+  const envelope = await source();
+  await expect(publishPersona(envelope)).rejects.toThrow(/read-only/i);
   expect(fake.request).not.toHaveBeenCalled();
 });
