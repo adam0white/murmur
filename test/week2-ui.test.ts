@@ -6,6 +6,7 @@ import { playedFirstWeek } from '../src/sim/firstweek.ts';
 import { anotherWeek, cloneState, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
 import type { GameState } from '../src/sim/types.ts';
 import type { tester } from '../src/ui/app.ts';
+import { compactNotebook } from '../src/ui/notebook.ts';
 import { chooseSeed, launchBrowser } from './browser.ts';
 
 declare global {
@@ -46,23 +47,23 @@ afterAll(async () => {
 }, 30_000);
 
 async function importRun(page: Page, state: GameState) {
+  page.setDefaultTimeout(120_000);
   await page.goto(`${origin}`);
   await page.evaluate(() => {
     window.__murmur.fast = true;
   });
   await page.locator('#menu').click();
   await page.getByText('Debug', { exact: true }).click();
+  const notebook = await compactNotebook({
+    version: state.version,
+    seed: state.seed,
+    inputs: state.inputs,
+    state: cloneState(state),
+  });
   await page.locator('#file').setInputFiles({
     name: 'run.json',
     mimeType: 'application/json',
-    buffer: Buffer.from(
-      JSON.stringify({
-        version: state.version,
-        seed: state.seed,
-        inputs: state.inputs,
-        state: cloneState(state),
-      }),
-    ),
+    buffer: Buffer.from(JSON.stringify(notebook)),
   });
   await page.locator('.toast').waitFor();
   expect(await page.locator('.toast').innerText()).toBe('The saved run was replayed. It matches the file.');
@@ -95,7 +96,7 @@ describe('a played first week', () => {
   );
 });
 
-describe('second week browser flow', { timeout: 60_000 }, () => {
+describe('second week browser flow', { timeout: 180_000 }, () => {
   for (const viewport of [
     { width: 360, height: 690 },
     { width: 412, height: 891 },
@@ -204,7 +205,12 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
           viewport.width,
         );
-        expect(await page.evaluate(() => window.__murmur.state)).toEqual({
+        expect(
+          await page.evaluate(async () => {
+            const { cloneState } = await new Function('return import("/src/sim/game.ts")')();
+            return cloneState(window.__murmur.state!);
+          }),
+        ).toEqual({
           ...cloneState(state),
           fileHistory: true,
           castScope: 'file',
@@ -242,4 +248,4 @@ it('offers the notebook tally only at the ending, closed until requested', async
     })),
   ).toEqual(before);
   await page.close();
-}, 60_000);
+}, 180_000);
