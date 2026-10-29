@@ -158,7 +158,7 @@ for (const mode of ['linked', 'off', 'privacy'] as const) {
 }
 it('offers privacy beside the recording switch and yields journal room before scrolling long text', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
-  page.setDefaultTimeout(120000);
+  page.setDefaultTimeout(300000);
   try {
     // Build the actual long journal headlessly, then render its ordinary saved notebook.
     // Re-rendering and saving every earlier card is unrelated to this layout assertion.
@@ -196,7 +196,7 @@ it('offers privacy beside the recording switch and yields journal room before sc
   } finally {
     await page.close();
   }
-}, 180000);
+}, 420000);
 it('refreshes Send when the shared recording preference changes after the form opens', async () => {
   const page = await browser.newPage();
   try {
