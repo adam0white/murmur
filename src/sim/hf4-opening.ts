@@ -10,6 +10,7 @@ import {
 } from '@adam0white/human-framework';
 import { castForGame } from '@adam0white/lab-client';
 import { MURMUR_PLACES } from './hf4-history.ts';
+import { murmurLexicon } from './hf4-narration.ts';
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -88,7 +89,7 @@ export function createMurmurOpening(
         { type: 'voice', id: 'pull' },
         ...[...cast.map((c) => role(c.castId)), 'mum'].map((id) => ({ type: 'person' as const, id })),
       ],
-      lexicon: { names: {}, roles: {}, prefer: 'name', actions: {} },
+      lexicon: murmurLexicon(Object.fromEntries(cast.map((entry) => [role(entry.castId), entry.name]))),
       calendar: {
         id: 'murmur-calendar',
         epoch: { id: 'epoch', simulationAt: 0, dayIndex: 0, msOfDay: 0 },
