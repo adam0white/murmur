@@ -104,9 +104,10 @@ for (const compression of ['gzip', 'checkpoint'])
       await page.clock.runFor(14000);
       await page.locator('#menu').click();
       const remaining = await page.locator('#timer').getAttribute('stroke-dasharray');
-      const before = await page.evaluate(() => {
+      const before = await page.evaluate(async () => {
         window.dispatchEvent(new PageTransitionEvent('pagehide'));
-        return JSON.parse(JSON.stringify(window.__murmur.state));
+        const { cloneState } = await new Function('return import("/src/sim/game.ts")')();
+        return cloneState(window.__murmur.state!);
       });
       await page.reload();
       await page.locator('#cont').waitFor();
@@ -115,7 +116,10 @@ for (const compression of ['gzip', 'checkpoint'])
       expect(await page.locator('.title').innerText()).toContain('with her choice still waiting');
       await page.locator('#cont').click();
       await page.locator('#hush').waitFor();
-      const after = await page.evaluate(() => JSON.parse(JSON.stringify(window.__murmur.state)));
+      const after = await page.evaluate(async () => {
+        const { cloneState } = await new Function('return import("/src/sim/game.ts")')();
+        return cloneState(window.__murmur.state!);
+      });
       expect(after).toEqual(before);
       expect(after.card.closesAt).toBe(before.card.closesAt);
       expect(await page.locator('#timer').getAttribute('stroke-dasharray')).toBe(remaining);
