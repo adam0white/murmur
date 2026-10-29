@@ -1,10 +1,9 @@
 /** Four maintained people. Private clues require a completed chosen encounter, never a passport. */
 import { castForGame } from '@adam0white/lab-client';
-import { isRemainderEdition } from './edition.ts';
 import { playEncounter } from './hf4-encounter.ts';
 import { readDilan } from './hf4-read.ts';
 import type { GameState, Moment, Opt } from './types.ts';
-export const CAST_VERSION = '0.9.0';
+export const CAST_VERSION = '0.10.0';
 export const CAST = castForGame('murmur');
 export type CastRole = 'dilan' | 'aylin' | 'ece' | 'murat';
 export const roleOf = (castId: string): CastRole => {
@@ -79,7 +78,7 @@ export function castOptions(s: GameState, m: Moment, base: Opt[]): Opt[] {
       ink: c.ink,
       label: c.label ?? c.ink,
       action: c.action,
-      ...(role === 'aylin' && isRemainderEdition(s.version) ? { keeps: ['mum'] } : {}),
+      ...(role === 'aylin' ? { keeps: ['mum'] } : {}),
       duration: c.duration,
       advertises: { belonging: 0.25, meaning: 0.2 },
       gives: { belonging: 0.25, meaning: 0.2 },
@@ -92,10 +91,10 @@ export function castOptions(s: GameState, m: Moment, base: Opt[]): Opt[] {
 export function finishCastEncounter(s: GameState, m: Moment, chosen: Opt): string | undefined {
   if (!s.cast) return;
   // Authored Friday work: only a second completed HF act establishes joint checking.
-  if (isRemainderEdition(s.version) && m.id === 'handover-5' && chosen.id === 'handover') {
+  if (m.id === 'handover-5' && chosen.id === 'handover') {
     if (playEncounter(s, 'ece', 'handover-ece', chosen.duration, m.place))
-      return 'They checked the handover sheet together. Dilan still had her own late deliveries to route.';
-    return 'Dilan checked the handover sheet. Ece did not join her; no joint check was completed. Dilan’s own late deliveries still needed routing.';
+      return 'Together they found a parcel on the wrong sheet. Dilan still had her own late deliveries to route.';
+    return 'Ece stayed at the loading bay. Dilan found the wrong-sheet parcel alone. Her own late deliveries still needed routing.';
   }
   if (m.id === 'shelf-visit-6' && chosen.id === 'repair-with-aylin') {
     if (!playEncounter(s, 'aylin', 'shelf', chosen.duration, m.place))

@@ -1,5 +1,5 @@
 import { canonicalPersona } from '@adam0white/lab-client';
-import { isHf4Edition } from '../sim/edition.ts';
+import { isHf4Edition, requireCurrentEdition, START_FRESH } from '../sim/edition.ts';
 /**
  * The Two Voices UI: plain DOM over the pure sim. The UI reads state and queues inputs; it never changes the sim
  * directly. Real time drives sim minutes, continuously: fast between cards (dead time skipped quickly), strongly
@@ -145,10 +145,14 @@ installContinuity(
 
 // ---------- save ----------
 
+let olderNotebook: string | null = null;
 async function readSave(): Promise<Save | null> {
+  olderNotebook = null;
   try {
     const raw = localStorage.getItem(SAVE);
     const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed?.host?.version) requireCurrentEdition(parsed.host.version);
+    if (parsed?.version) requireCurrentEdition(parsed.version);
     let sv: Save | null = parsed;
     if (parsed?.format === 'murmur-notebook/1') sv = (await expandNotebook(parsed)) as unknown as Save;
     if (parsed?.format === 'murmur-replay-save/1') {
@@ -197,8 +201,12 @@ async function readSave(): Promise<Save | null> {
     if (!Number.isSafeInteger(sv.seed) || !Array.isArray(sv.inputs) || (sv.version && !isEdition(sv.version)))
       throw Error('Unknown or malformed saved edition.');
     return sv;
-  } catch {
-    toast = 'This saved notebook could not be read. It remains in this browser.';
+  } catch (error) {
+    if (error instanceof Error && error.message === START_FRESH) olderNotebook = localStorage.getItem(SAVE);
+    toast =
+      error instanceof Error && error.message === START_FRESH
+        ? START_FRESH
+        : 'This saved notebook could not be read. It remains in this browser.';
     return null;
   }
 }
@@ -493,7 +501,8 @@ async function title() {
     <div class="title-spacer" id="title-spacer"></div>
     <div class="page-actions actions">
       ${saved ? `<p class="soft small">${esc(save?.state ? savedLocation(saved) : 'This older save keeps your answers, but not the exact saved minute. Resume opens its next choice.')}</p><button class="primary" id="cont">Resume · ${esc(DAY_NAMES[saved.day]?.slice(0, 3) ?? '')} ${clock(saved.minute)}</button>` : ''}
-      <label class="soft small"><input type="checkbox" id="remainder-edition" /> Try the new handover, letter-reading and learned-morning rules (0.10). Existing notebooks keep their recorded rules.</label><label class="soft small"><input type="checkbox" id="next-edition" /> Try the three-week edition with fresh local people.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Try the separate outcomes week with fresh local people (replaces week three).</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
+      ${olderNotebook ? '<button id="download-old">Download old notebook</button>' : ''}
+      <label class="soft small"><input type="checkbox" id="next-edition" /> Play a third week.</label><label class="soft small"><input type="checkbox" id="outcomes-edition" /> Play the outcomes week instead of the third week.</label><button class="${save ? '' : 'primary'}" id="new">${save ? 'New game' : 'Start'}</button>
       <div id="new-confirm" hidden><p>Start a new game? This replaces your saved week.</p><div class="confirm-actions"><button id="confirm-new">Start new game</button><button id="cancel-new">Cancel</button></div></div>
       ${credit()}
     </div></div>`;
@@ -501,6 +510,9 @@ async function title() {
   const retry = failureRetry;
   failureRetry = null;
   bindHeader();
+  document.getElementById('download-old')?.addEventListener('click', () => {
+    if (olderNotebook) downloadJSON(JSON.parse(olderNotebook), 'two-voices-old-notebook.json');
+  });
   document.getElementById('start-retry')?.addEventListener('click', (event) => {
     (event.currentTarget as HTMLButtonElement).disabled = true;
     retry?.();
@@ -572,11 +584,7 @@ async function title() {
 }
 
 function selectedEdition() {
-  const remainder = document.querySelector<HTMLInputElement>('#remainder-edition')?.checked;
-  if (document.querySelector<HTMLInputElement>('#outcomes-edition')?.checked)
-    return remainder ? '0.10.2' : '0.9.2';
-  if (remainder)
-    return document.querySelector<HTMLInputElement>('#next-edition')?.checked ? '0.10.1' : '0.10.0';
+  if (document.querySelector<HTMLInputElement>('#outcomes-edition')?.checked) return '0.10.2';
   return document.querySelector<HTMLInputElement>('#next-edition')?.checked ? NEXT_VERSION : GAME_VERSION;
 }
 async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
@@ -587,8 +595,8 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   const localDevelopment = ['localhost', '127.0.0.1'].includes(location.hostname);
   try {
     next =
-      useShelf && !localDevelopment && version === GAME_VERSION
-        ? await freshCanonicalWeek(seed, () => attempt === loadGeneration)
+      useShelf && !localDevelopment
+        ? await freshCanonicalWeek(seed, () => attempt === loadGeneration, version)
         : newGame(seed, version);
   } catch (error) {
     if (attempt === loadGeneration) {
@@ -609,8 +617,7 @@ async function newWeek(seed: number, version = GAME_VERSION, useShelf = true) {
   clearSave();
   s = next;
   carry = 0;
-  if (!useShelf || localDevelopment || version === '0.9.2' || version.startsWith('0.10.'))
-    s.castScope = 'local';
+  if (!useShelf || localDevelopment) s.castScope = 'local';
   await gateContinuity(recordingState(s));
   writeSave();
   enter();
@@ -635,6 +642,7 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       };
       if (typeof ex.seed !== 'number' || !Array.isArray(ex.inputs)) throw new Error('not a run');
       const version = ex.version ?? ex.state?.version ?? LEGACY_VERSION;
+      requireCurrentEdition(version);
       if (!isEdition(version) || (ex.version && ex.state?.version && ex.version !== ex.state.version))
         throw new Error('unknown or conflicting edition');
       if (
@@ -671,9 +679,11 @@ function bindImport(btn: HTMLElement | null, input: HTMLElement | null) {
       writeSave();
       toast = note;
       enter();
-    } catch {
+    } catch (error) {
       toast =
-        'This file could not be loaded. It may come from an older version of The Two Voices. Start a new game instead.';
+        error instanceof Error && error.message === START_FRESH
+          ? START_FRESH
+          : 'This file could not be loaded. It may come from an older version of The Two Voices. Start a new game instead.';
       if (s) enter();
       else title();
     }

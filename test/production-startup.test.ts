@@ -46,7 +46,7 @@ for (const engine of [chromium, webkit])
         await page.locator('#bp-close').click();
         await page.getByRole('button', { name: 'Start', exact: true }).click();
         await page.locator('#hush').waitFor({ timeout: 30_000 });
-        expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.9.0');
+        expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.10.0');
         expect(await overflow()).toBe(false);
         for (const selector of ['#menu', '#hush']) {
           const box = await page.locator(selector).boundingBox();
@@ -206,11 +206,8 @@ it('starts each current optional route through its public title checkbox', async
   const browser = await chromium.launch();
   try {
     for (const [selector, edition] of [
-      ['#next-edition', '0.9.1'],
-      ['#outcomes-edition', '0.9.2'],
-      ['#remainder-edition', '0.10.0'],
-      ['#remainder-edition,#next-edition', '0.10.1'],
-      ['#remainder-edition,#outcomes-edition', '0.10.2'],
+      ['#next-edition', '0.10.1'],
+      ['#outcomes-edition', '0.10.2'],
     ]) {
       const context = await browser.newContext({
         viewport: { width: 360, height: 690 },
@@ -233,69 +230,29 @@ it('starts each current optional route through its public title checkbox', async
   }
 }, 60_000);
 
-/** One actual397 book, synthetic local transport only. No owner/profile or shared claim. */
-it('resumes and imports an immutable397 notebook in the production reader', async () => {
-  const { readFileSync } = await import('node:fs');
-  const { gunzipSync } = await import('node:zlib');
-  const raw = JSON.parse(
-    gunzipSync(readFileSync(new URL('./fixtures/hf49-397-day1.json.gz', import.meta.url))).toString(),
-  );
+/** Refusal happens before replay, preserves the source, and also covers file import. */
+it('refuses an older saved notebook and file with a start-fresh message', async () => {
+  const raw = { version: '0.9.0', seed: 17, inputs: [], state: { version: '0.9.0' } };
   const browser = await chromium.launch();
   try {
-    const context = await browser.newContext({
-      viewport: { width: 360, height: 690 },
-      extraHTTPHeaders: { DNT: '1' },
-    });
+    const context = await browser.newContext({ extraHTTPHeaders: { DNT: '1' } });
     await context.route('https://human.adamwhite.work/**', (route) => route.abort());
-    await context.addInitScript(
-      (state) =>
-        localStorage.setItem(
-          'murmur-save-v1',
-          JSON.stringify({
-            format: 'murmur-save/2',
-            version: state.version,
-            seed: state.seed,
-            inputs: state.inputs,
-            state,
-          }),
-        ),
-      raw,
-    );
+    await context.addInitScript((raw) => localStorage.setItem('murmur-save-v1', JSON.stringify(raw)), raw);
     const page = await context.newPage();
-    await page.clock.install();
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(origin);
-    await page.locator('#cont').click();
-    await page.locator('#hush').waitFor();
-    expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.9.0');
+    await page.locator('.title').waitFor();
+    expect(await page.locator('#cont').count()).toBe(0);
+    expect(await page.locator('.title').textContent()).toContain('then start a new week');
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('murmur-save-v1')!))).toEqual(raw);
     await page.locator('#menu').click();
-    const pending = page.waitForEvent('download');
-    await page.locator('#bp-export').click();
-    const download = await pending;
-    const stream = await download.createReadStream();
-    const chunks: Buffer[] = [];
-    if (!stream) throw Error('Missing notebook download');
-    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-    expect(JSON.parse(Buffer.concat(chunks).toString()).state).toEqual(raw);
-    await download.delete();
     await page.getByText('Debug', { exact: true }).click();
     await page.locator('#file').setInputFiles({
-      name: '397-book.json',
+      name: 'old-book.json',
       mimeType: 'application/json',
-      buffer: Buffer.from(
-        JSON.stringify({
-          game: 'murmur',
-          version: raw.version,
-          seed: raw.seed,
-          inputs: raw.inputs,
-          state: raw,
-        }),
-      ),
+      buffer: Buffer.from(JSON.stringify(raw)),
     });
-    await expect.poll(() => page.evaluate(() => window.__murmur.state?.fileHistory)).toBe(true);
-    expect(await page.evaluate(() => window.__murmur.state?.castScope)).toBe('file');
-    expect(errors).toEqual([]);
+    await expect.poll(() => page.locator('.title').textContent()).toContain('then start a new week');
+    expect(await page.evaluate(() => window.__murmur.state)).toBeNull();
     await context.close();
   } finally {
     await browser.close();

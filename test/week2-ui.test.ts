@@ -2,9 +2,9 @@ import { mkdir } from 'node:fs/promises';
 import type { Browser, Page } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { playedFirstWeek } from '../src/legacy/firstweek.ts';
-import { anotherWeek, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/legacy/game.ts';
-import type { GameState } from '../src/legacy/types.ts';
+import { playedFirstWeek } from '../src/sim/firstweek.ts';
+import { anotherWeek, cloneState, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
+import type { GameState } from '../src/sim/types.ts';
 import type { tester } from '../src/ui/app.ts';
 import { chooseSeed, launchBrowser } from './browser.ts';
 
@@ -78,7 +78,7 @@ describe('a played first week', () => {
     'plays and replays seed %i through the normal inputs',
     (seed) => {
       const s = playedFirstWeek(seed);
-      expect(s.version).toBe('0.6.1');
+      expect(s.version).toBe('0.10.0');
       expect(s.phase).toBe('end');
       expect(s.day).toBe(6);
       expect(s.inputs.some((i) => i.kind === 'say' && i.insist)).toBe(false);
@@ -167,7 +167,7 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
         );
         // Straight to Monday of the second week: no recap page of answers the player never gave.
         await page.locator('#hush').waitFor();
-        expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.9.0');
+        expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.10.0');
         expect(await page.evaluate(() => window.__murmur.state?.seed)).toBe(1003);
         expect(await page.evaluate(() => window.__murmur.state?.past?.length)).toBe(1);
         expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(8);
@@ -216,30 +216,6 @@ describe('second week browser flow', { timeout: 60_000 }, () => {
       }
     });
   }
-
-  it.each(['0.2.1', '0.3.0'])('keeps the %s ending and its allowed actions', async (version) => {
-    const page = await browser.newPage();
-    try {
-      await importRun(page, finish(newGame(42, version)));
-      expect(await page.getByRole('button', { name: 'Another week', exact: true }).count()).toBe(
-        version === '0.3.0' ? 1 : 0,
-      );
-      expect(await page.locator('.voicenote').count()).toBe(1);
-      if (version === '0.3.0') {
-        await page.getByRole('button', { name: 'Another week', exact: true }).click();
-        expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.4.1');
-        expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(8);
-      }
-      await page.getByRole('button', { name: 'Game menu', exact: true }).click();
-      await page.locator('#bp-title').click();
-      await page.locator('#new').click();
-      await page.locator('#confirm-new').click();
-      expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.9.0');
-      expect(await page.evaluate(() => window.__murmur.state?.day)).toBe(1);
-    } finally {
-      await page.close();
-    }
-  });
 });
 
 it('offers the notebook tally only at the ending, closed until requested', async () => {

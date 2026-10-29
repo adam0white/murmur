@@ -1,22 +1,19 @@
+import { createHash } from 'node:crypto';
+import { canonicalPersona } from '@adam0white/lab-client';
 import { expect, it } from 'vitest';
-import * as old from '../src/legacy/game.ts';
 import * as game from '../src/sim/game.ts';
 
-it('dispatches historical starts and complete snapshots to the pinned legacy engine', () => {
-  const a = game.newGame(17, '0.6.1');
-  const b = old.newGame(17, '0.6.1');
-  expect(game.cloneState(a)).toEqual(old.cloneState(b));
-  game.runToCard(a);
-  old.runToCard(b);
-  expect(game.cloneState(a)).toEqual(old.cloneState(b));
-  expect(game.cloneState(game.restoreState(JSON.parse(JSON.stringify(game.cloneState(a)))))).toEqual(
-    old.cloneState(b),
-  );
+it('refuses older saves and starts with a plain start-fresh message', () => {
+  for (const version of ['0.9.0', '0.9.1', '0.9.2', '0.6.1']) {
+    expect(() => game.newGame(17, version)).toThrow(/older rules.*[Ss]tart a new week/);
+    expect(() => game.restoreState({ version } as never)).toThrow(/older rules.*[Ss]tart a new week/);
+    expect(() => game.replay(17, [], undefined, version)).toThrow(/older rules.*[Ss]tart a new week/);
+  }
 });
 
 it('starts the new HF4 edition', () => {
   const state = game.newGame(17);
-  expect(state.version).toBe('0.9.0');
+  expect(state.version).toBe('0.10.0');
   expect(state.hf.run).toBeDefined();
 });
 
@@ -80,3 +77,22 @@ it('previews low-trust insistence with the same suggestion that holding submits'
   }
   expect(game.fingerprint(state)).toBe(before);
 }, 60_000);
+
+it('pins the current complete replay hash and cold continuation', () => {
+  const state = game.newGame(17);
+  game.runToCard(state);
+  game.queueInput(state, { kind: 'say', option: 'up' });
+  game.runToCard(state);
+  const raw = game.cloneState(state);
+  expect(createHash('sha256').update(canonicalPersona(raw)).digest('hex')).toBe(
+    'efb8ac0bfe116b22c1d7a803f271ce43402a0e392cdd9c06477f9de47fea009d',
+  );
+  const cold = game.restoreState(raw);
+  const rebuilt = game.replay(state.seed, state.inputs, state.minute, state.version);
+  expect(game.cloneState(rebuilt)).toEqual(raw);
+  game.step(state);
+  game.step(cold);
+  game.step(rebuilt);
+  expect(game.cloneState(cold)).toEqual(game.cloneState(state));
+  expect(game.cloneState(rebuilt)).toEqual(game.cloneState(state));
+});

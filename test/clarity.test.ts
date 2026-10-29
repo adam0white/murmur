@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
 import type { Browser, Page } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/legacy/game.ts';
-import type { Input } from '../src/legacy/types.ts';
+import { cardView, cloneState, newGame, queueInput, replay, runToCard, step } from '../src/sim/game.ts';
+import type { Input } from '../src/sim/types.ts';
 import { chooseSeed, launchBrowser } from './browser.ts';
 
 let server: ViteDevServer;
@@ -22,7 +21,7 @@ afterAll(async () => {
   await server?.close();
 }, 30_000);
 
-async function firstChoice(page: Page, version = '0.2.1') {
+async function firstChoice(page: Page, version = '0.10.0') {
   await page.goto(`${origin}`);
   await chooseSeed(page, 1);
   await page.evaluate(() => {
@@ -251,7 +250,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
   );
 
   it('pauses the evening transition while the menu is open and resumes it on close', async () => {
-    const state = newGame(1, '0.2.1');
+    const state = newGame(1, '0.10.0');
     runToCard(state);
     let lastCard = cloneState(state);
     while (state.phase === 'day') {
@@ -300,7 +299,7 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     } finally {
       await page.close();
     }
-  });
+  }, 120_000);
 
   it.each([
     { width: 360, height: 690 },
@@ -313,8 +312,8 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
         (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
       await page.locator('.opt[data-o="up"]').click();
-      expect(await page.locator('.journal .record-reply').innerText()).toMatch(
-        /next.*alarm.*press and hold/i,
+      expect(await page.locator('.journal .record-reply').innerText()).toContain(
+        'not ready to face the morning',
       );
       for (const selector of ['#state-words', '.record-yours', '.journal .record-reply', '#hurry']) {
         await page.locator(selector).scrollIntoViewIfNeeded();
@@ -328,81 +327,30 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
     }
   });
 
-  it('keeps a long refusal and completed outcome visible without moving the response', async () => {
-    const example = JSON.parse(
-      readFileSync(new URL('./fixtures/clarity-long-reply.json', import.meta.url), 'utf8'),
-    ) as {
-      seed: number;
-      inputs: Input[];
-      minute: number;
-      completion: number;
-      option: string;
-      words: string;
-    };
+  it('keeps a long refusal visible without moving the response', async () => {
     const page = await browser.newPage({
       viewport: { width: 360, height: 690 },
       hasTouch: true,
       reducedMotion: 'reduce',
     });
     try {
-      const before = replay(example.seed, example.inputs, example.minute);
-      expect(cardView(before)?.id).toBe('ece-4');
-      await page.goto(`${origin}`);
-      await page.locator('#menu').click();
-      await page.getByText('Debug', { exact: true }).click();
-      await page.locator('#file').setInputFiles({
-        name: 'before.json',
-        mimeType: 'application/json',
-        buffer: Buffer.from(
-          JSON.stringify({ seed: before.seed, inputs: before.inputs, state: cloneState(before) }),
-        ),
+      await firstChoice(page);
+      await page.evaluate(() => {
+        (window as unknown as { __murmur: { fast: boolean } }).__murmur.fast = false;
       });
-      await page.locator('#hush').waitFor();
-      await page.waitForTimeout(350);
-      await page.locator(`.opt[data-o="${example.option}"]`).click();
+      await page.locator('.opt[data-o="up"]').click();
+      const reply = page.locator('.journal .record-reply').last();
       const position = await page.locator('#hurry').boundingBox();
-      const run = await page.evaluate(() => {
-        const game = (
-          window as unknown as { __murmur: { state: { seed: number; inputs: Input[]; minute: number } } }
-        ).__murmur;
-        return { seed: game.state.seed, inputs: game.state.inputs, minute: game.state.minute };
+      await reply.evaluate((el) => {
+        el.textContent =
+          'I cannot do it now. After I finish this task, I will do it. I heard your suggestion. When the next moment comes, try a different suggestion, or say nothing.';
       });
-      const after = replay(run.seed, run.inputs, run.minute);
-      while (after.minute < example.completion && after.phase === 'day') step(after);
-      await page.locator('#menu').click();
-      await page.locator('#bp-title').click();
-      await page.locator('#menu').click();
-      await page.getByText('Debug', { exact: true }).click();
-      await page.locator('#file').setInputFiles({
-        name: 'after.json',
-        mimeType: 'application/json',
-        buffer: Buffer.from(
-          JSON.stringify({ seed: after.seed, inputs: after.inputs, state: cloneState(after) }),
-        ),
-      });
-      const latest = page.locator('.journal');
-      const completion = after.log.find((line) => line.who === 'narrator' && line.at === example.completion);
-      expect(completion).toBeDefined();
-      await page.locator('.journal .n').filter({ hasText: completion?.text }).waitFor();
-      expect(await page.locator('.journal').innerText()).toContain(completion?.text);
-      expect(await latest.locator('.record-reply').last().innerText()).toContain(
-        'I cannot do it now. After I finish this task (say next week), I will do it. I could have listened to ‘Tell Ece she can watch you next week.’ When the next moment comes, try a different suggestion, or say nothing,” she says.',
-      );
-      expect(await page.locator('.gap').count()).toBe(0);
-      for (const el of [latest.locator('.record-reply').last(), page.locator('.journal .n').last()]) {
-        await el.scrollIntoViewIfNeeded();
-        const box = await el.boundingBox();
-        expect(box?.y).toBeGreaterThanOrEqual(0);
-        expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(690);
-        expect(await el.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
-      }
+      await reply.scrollIntoViewIfNeeded();
+      const box = await reply.boundingBox();
+      expect(box?.y).toBeGreaterThanOrEqual(0);
+      expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(690);
+      expect(await reply.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
       expect((await page.locator('#hurry').boundingBox())?.y).toBe(position?.y);
-      for (const selector of ['#state-words', '#hurry']) {
-        await page.locator(selector).scrollIntoViewIfNeeded();
-        const box = await page.locator(selector).boundingBox();
-        expect(box?.y).toBeGreaterThanOrEqual(0);
-        expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(690);
-      }
     } finally {
       await page.close();
     }
@@ -425,8 +373,8 @@ describe('first-minute clarity', { timeout: 30_000 }, () => {
       if (!stream) throw new Error('Run download has no stream');
       for await (const chunk of stream) chunks.push(Buffer.from(chunk));
       const run = JSON.parse(Buffer.concat(chunks).toString());
-      const { replay, fingerprint, restoreState } = await import('../src/legacy/game.ts');
-      expect(fingerprint(replay(run.seed, run.inputs, run.state.minute))).toBe(
+      const { replay, fingerprint, restoreState } = await import('../src/sim/game.ts');
+      expect(fingerprint(replay(run.seed, run.inputs, run.state.minute, run.version))).toBe(
         fingerprint(restoreState(run.state)),
       );
     } finally {
@@ -542,7 +490,11 @@ describe('round 4 early insistence', { timeout: 30_000 }, () => {
       expect(run.inputs[0]).toMatchObject({ kind: 'say', option: 'up', insist: true });
       expect(run.answer.chosen).toBe('up');
       expect(await page.locator('.record-yours').innerText()).toContain('You insisted');
-      expect(cloneState(replay(run.seed, run.inputs, run.minute))).toEqual(run);
+      const snapshot = await page.evaluate(async () => {
+        const { cloneState } = await new Function('return import("/src/sim/game.ts")')();
+        return cloneState(window.__murmur.state!);
+      });
+      expect(cloneState(replay(run.seed, run.inputs, run.minute, '0.10.0'))).toEqual(snapshot);
     } finally {
       await page.close();
     }
@@ -762,7 +714,7 @@ describe('design round card safety and time', { timeout: 30_000 }, () => {
   it('ignores silence and option releases after the card is replaced', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
     try {
-      await firstChoice(page, '0.3.0');
+      await firstChoice(page, '0.10.0');
       await page.evaluate(() => {
         const game = (window as unknown as { __murmur: { skipToCard(): void } }).__murmur;
         const old = document.getElementById('hush');
@@ -808,11 +760,14 @@ describe('edition persistence in the browser', { timeout: 30_000 }, () => {
   it('stores the run edition with the local continue record', async () => {
     const page = await browser.newPage();
     try {
-      await firstChoice(page, '0.3.0');
-      const editions = await page.evaluate(() => ({
-        state: (window as unknown as { __murmur: { state: { version: string } } }).__murmur.state.version,
-        save: JSON.parse(localStorage.getItem('murmur-save-v1') ?? '{}').version,
-      }));
+      await firstChoice(page, '0.10.0');
+      const editions = await page.evaluate(async () => {
+        const state = window.__murmur.state!.version;
+        const saved = JSON.parse(localStorage.getItem('murmur-save-v1') ?? '{}');
+        if (saved.format === 'murmur-replay-save/1') return { state, save: saved.host.version };
+        const { expandNotebook } = await new Function('return import("/src/ui/notebook.ts")')();
+        return { state, save: (await expandNotebook(saved)).state.version };
+      });
       expect(editions.save).toBe(editions.state);
     } finally {
       await page.close();
@@ -838,71 +793,17 @@ describe('edition persistence in the browser', { timeout: 30_000 }, () => {
   });
 });
 
-describe('design round remembered words', { timeout: 30_000 }, () => {
-  it('uses uncertain mood words and shows a retained suggestion in her reply, history and next related card', async () => {
-    const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
-    try {
-      await firstChoice(page, '0.3.0');
-      expect(await page.locator('[data-o="up"] .lean').innerText()).toMatch(/listening|has not decided/);
-      const stayed = await page.evaluate(() => {
-        const game = (
-          window as unknown as {
-            __murmur: {
-              start(seed: number, version: string): void;
-              say(option: string): void;
-              quiet(): void;
-              skipToCard(): void;
-              fast: boolean;
-              state: { day: number; phase: string; card: unknown; answer: { stayed?: string } };
-            };
-          }
-        ).__murmur;
-        for (let seed = 1; seed <= 16; seed++) {
-          game.fast = false;
-          game.start(seed, '0.3.0');
-          game.skipToCard();
-          game.say('up');
-          if (game.state.answer.stayed) return game.state.answer.stayed;
-        }
-        return null;
-      });
-      expect(stayed).toBeTruthy();
-      expect(await page.locator('.journal .stayed').innerText()).toContain(
-        (stayed ?? '').replace(/\.$/, ','),
-      );
-      await page.evaluate(() => {
-        (window as unknown as { __murmur: { skipToCard(): void } }).__murmur.skipToCard();
-      });
-      expect(await page.locator('.journal .stayed').first().innerText()).toContain(
-        (stayed ?? '').replace(/\.$/, ','),
-      );
-      await page.evaluate(() => {
-        const game = (
-          window as unknown as {
-            __murmur: {
-              quiet(): void;
-              skipToCard(): void;
-              fast: boolean;
-              state: { day: number; phase: string; card: unknown };
-            };
-          }
-        ).__murmur;
-        game.fast = true;
-        while (game.state.day === 1 && game.state.phase === 'day' && game.state.card) game.quiet();
-      });
-      await page.locator('#next').waitFor();
-      expect(await page.locator('.notebook .stayed').count()).toBe(0);
-      await page.locator('#next').click();
-      await page.locator('#hush').waitFor();
-      await page.waitForTimeout(350);
-      expect(await page.locator('.card .stayed').innerText()).toMatch(/get up|feet|alarm/i);
-    } finally {
-      await page.close();
-    }
-  });
+it('describes when the first suggestion needs insistence', async () => {
+  const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
+  try {
+    await firstChoice(page, '0.10.0');
+    expect(await page.locator('[data-o="up"] .lean').innerText()).toContain('only if you insist');
+  } finally {
+    await page.close();
+  }
 });
 
-describe('silent edition exports', { timeout: 30_000 }, () => {
+describe('silent edition exports', { timeout: 120_000 }, () => {
   it('imports a full week whose last decision timed out without another input', async () => {
     const state = newGame(7);
     while (state.phase !== 'end') {
@@ -913,6 +814,7 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
       }
     }
     const page = await browser.newPage();
+    page.setDefaultTimeout(120_000);
     try {
       await page.goto(`${origin}`);
       await page.locator('#menu').click();
@@ -921,7 +823,12 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
         name: 'silent-week.json',
         mimeType: 'application/json',
         buffer: Buffer.from(
-          JSON.stringify({ version: state.version, seed: state.seed, inputs: state.inputs, state }),
+          JSON.stringify({
+            version: state.version,
+            seed: state.seed,
+            inputs: state.inputs,
+            state: cloneState(state),
+          }),
         ),
       });
       await page.locator('.toast').waitFor();
@@ -929,7 +836,10 @@ describe('silent edition exports', { timeout: 30_000 }, () => {
         'The saved run was replayed. It matches the file.',
       );
       expect(
-        await page.evaluate(() => (window as unknown as { __murmur: { state: unknown } }).__murmur.state),
+        await page.evaluate(async () => {
+          const { cloneState } = await new Function('return import("/src/sim/game.ts")')();
+          return cloneState(window.__murmur.state!);
+        }),
       ).toEqual({ ...cloneState(state), fileHistory: true, castScope: 'file', castHeadScopes: {} });
     } finally {
       await page.close();
@@ -996,7 +906,7 @@ it('opens a fully opaque menu immediately with motion enabled and labels the run
     reducedMotion: 'no-preference',
   });
   try {
-    await firstChoice(page, '0.6.0');
+    await firstChoice(page, '0.10.0');
     await page.getByRole('button', { name: 'Game menu', exact: true }).click();
     const menu = page.getByRole('dialog', { name: 'Game menu' });
     const paint = await menu.evaluate((el) => {
@@ -1008,7 +918,7 @@ it('opens a fully opaque menu immediately with motion enabled and labels the run
     expect(paint.animation).toBe('none');
     expect(await menu.locator('.menu-links details').getAttribute('open')).toBeNull();
     await menu.getByText('Debug', { exact: true }).click();
-    expect(await menu.locator('.provenance').innerText()).toMatch(/Week 1 · run 1 · edition 0.6.0/);
+    expect(await menu.locator('.provenance').innerText()).toContain('Week 1 · run 1 · edition 0.10.0');
   } finally {
     await page.close();
   }

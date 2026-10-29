@@ -33,7 +33,7 @@ it('renders quiet choices without sending; ordinary Submit keeps recording-off p
     await chooseSeed(page, 17);
     await page.locator('#next-edition').check();
     await page.locator('#new').click();
-    expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.9.1');
+    expect(await page.evaluate(() => window.__murmur.state?.version)).toBe('0.10.1');
     await page.locator('#hush').waitFor();
     const raw = await page.evaluate(async () => {
       const { cloneState } = await new Function('return import("/src/sim/game.ts")')();

@@ -42,8 +42,7 @@ export const FRIDAY_HANDOVER: Moment = {
   day: 5,
   at: at(15, 20),
   place: 'depot',
-  scene:
-    'The loading-floor handover sheet has not been checked. It is Ece’s next job. Dilan could check it and ask Ece to compare it with her. Her own delivery board is still red.',
+  scene: 'Ece has the handover sheet for the loading floor. Dilan’s delivery board is still red.',
   pull: { to: 'board', line: 'Have a coffee. Do your own board first.' },
   options: [
     opt(
@@ -51,7 +50,7 @@ export const FRIDAY_HANDOVER: Moment = {
       'Check the handover with Ece.',
       'handover-ece',
       20,
-      'Dilan checked the handover sheet. Her own late deliveries still needed routing.',
+      'Together they found a parcel on the wrong sheet. Dilan’s late deliveries still needed routing.',
       {
         effort: 0.28,
         gives: { competence: 0.2, belonging: 0.15 },
@@ -63,7 +62,7 @@ export const FRIDAY_HANDOVER: Moment = {
       'Finish your own board with a coffee.',
       'coffee',
       15,
-      'Dilan worked on her own board with a coffee. She left the handover sheet unchecked.',
+      'Dilan worked on her own board with a coffee. Ece took the unchecked sheet to the floor.',
       { advertises: { rest: 0.3, competence: 0.2 }, gives: { rest: 0.3, competence: 0.2 } },
     ),
   ],
@@ -191,7 +190,7 @@ const central: Moment[] = [
     at: at(14),
     place: 'depot',
     scene: (c) =>
-      `${practiced(c) ? 'Ece has practised the delivery board.' : 'Ece has not completed the board practice.'} ${c.flags.w3?.handover === 'handover' ? (c.handoverTogether ? 'They checked a handover together in the first week.' : 'Dilan checked a handover alone in the first week.') : 'Dilan did not check the first week’s handover sheet.'} ${c.flags.w2?.adviceId ? 'Ece remembers borrowing Dilan’s advice for a customer last week.' : 'They have not settled on a phrase to use here.'} An instruction that fits the board sends a van to the wrong loading bay.`,
+      `${practiced(c) ? 'Ece points to the route she practised last week.' : 'Ece stops at a route she has not practised.'} ${c.flags.w3?.handover === 'handover' ? (c.handoverTogether ? 'Ece taps the sheet they fixed together last Friday.' : 'Dilan remembers the parcel she found on the wrong sheet last Friday.') : 'Ece still has last Friday’s unchecked sheet in her pocket.'} Read off the board alone, the instruction would send a van to the wrong bay.`,
     pull: { to: 'repeat', line: 'The instruction worked last week. Say it again.' },
     options: [
       opt(

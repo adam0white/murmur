@@ -1,5 +1,5 @@
 /** Atomic retained-cast admission. Full passports and captured life clocks are replay inputs. */
-import { DEFAULT_NORMS, type PortableAdmission, validatePortablePerson } from '@adam0white/human-framework';
+import { type PortableAdmission, validatePortablePerson } from '@adam0white/human-framework';
 import {
   canonicalPersona,
   type LifePreparation,
@@ -11,7 +11,7 @@ import {
 } from '@adam0white/lab-client';
 import { CAST, type CastState, freshCast, roleOf } from './canonical-cast.ts';
 import { sourceRules } from './edition.ts';
-import { actionsForEdition } from './hf4-actions.ts';
+import { MURMUR_ACTIONS } from './hf4-actions.ts';
 import { retainedReferences } from './hf4-history.ts';
 import { createMurmurOpening } from './hf4-opening.ts';
 import type { GameStateSnapshot } from './types.ts';
@@ -21,7 +21,8 @@ export interface CastReturnArchive {
   lineage?: PersonaEnvelope[];
 }
 export interface CastChapter {
-  edition: '0.9.0' | '0.10.0';
+  edition: '0.10.0';
+  blocked?: string[];
   seed: number;
   inputs: LifePreparation[];
   claims: PersonaEnvelope[];
@@ -35,15 +36,23 @@ export async function prepareCastChapter(
   inputs: LifePreparation[],
   seed: number,
   _archives: Record<string, unknown> = {},
-  version = '0.9.0',
+  version = '0.10.0',
 ): Promise<CastChapter> {
+  if (version.startsWith('0.9.'))
+    throw new Error(
+      'This notebook was written under older rules. Download it if you want to keep it, then start a new week.',
+    );
   if (inputs.length > 4 || new Set(inputs.map((i) => i.parent.castId)).size !== inputs.length)
     throw new Error('Invalid or duplicate cast batch.');
   const initial = freshCast(seed),
     portable: Record<string, PortableAdmission> = {};
   for (const input of inputs) {
-    const parent = await validatePersona(input.parent),
-      cast = CAST.find((c) => c.castId === parent.castId),
+    const parent = await validatePersona(input.parent);
+    if (parent.source.game === 'murmur' && parent.source.rules.startsWith('0.9.'))
+      throw new Error(
+        'This notebook was written under older rules. Download it if you want to keep it, then start a new week.',
+      );
+    const cast = CAST.find((c) => c.castId === parent.castId),
       role = roleOf(parent.castId);
     if (
       !cast ||
@@ -81,9 +90,9 @@ export async function prepareCastChapter(
     initial.extraWork[role] = life.availableForExtraWork;
   }
   // HF validates every retained history/reference and responsibility before any central write.
-  createMurmurOpening(seed, actionsForEdition(version), portable);
+  createMurmurOpening(seed, MURMUR_ACTIONS, portable);
   return {
-    edition: sourceRules(version),
+    edition: sourceRules(version) as '0.10.0',
     seed,
     inputs: structuredClone(inputs),
     claims: [],
@@ -93,16 +102,26 @@ export async function prepareCastChapter(
   };
 }
 export async function validateCastChapter(chapter: CastChapter, seed: number): Promise<void> {
+  if (chapter && chapter.edition !== '0.10.0')
+    throw new Error(
+      'This notebook was written under older rules. Download it if you want to keep it, then start a new week.',
+    );
   if (
     !chapter ||
     chapter.seed !== seed ||
-    !['0.9.0', '0.10.0'].includes(chapter.edition) ||
+    !Array.isArray(chapter.inputs) ||
+    (chapter.blocked !== undefined && !Array.isArray(chapter.blocked)) ||
+    new Set(chapter.blocked ?? []).size !== (chapter.blocked?.length ?? 0) ||
+    chapter.blocked?.some(
+      (id) => !CAST.some((c) => c.castId === id) || chapter.inputs.some((i) => i.parent.castId === id),
+    ) ||
     chapter.mapping !== 'murmur-portable/2' ||
     !Array.isArray(chapter.claims) ||
     chapter.claims.length !== chapter.inputs.length
   )
     throw new Error('Invalid pinned retained cast chapter.');
   const prepared = await prepareCastChapter(chapter.inputs, seed, {}, chapter.edition);
+  if (chapter.blocked) prepared.blocked = chapter.blocked;
   if (!same({ ...prepared, claims: chapter.claims }, chapter))
     throw new Error('Pinned cast admission differs from its complete sources.');
   const seen = new Set<string>();

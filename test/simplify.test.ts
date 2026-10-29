@@ -1,7 +1,7 @@
 import type { Browser } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
-import { newGame } from '../src/legacy/game.ts';
+import { newGame } from '../src/sim/game.ts';
 import { launchBrowser } from './browser.ts';
 
 let browser: Browser;
@@ -108,7 +108,7 @@ it('starts local development play without making a shared admission', async () =
 
 it('preserves the saved week and explains a failed production admission', async () => {
   const page = await browser.newPage({ serviceWorkers: 'block', viewport: { width: 360, height: 690 } });
-  const state = newGame(19, '0.2.1');
+  const state = newGame(19, '0.10.0');
   const saved = JSON.stringify({ version: state.version, seed: state.seed, inputs: state.inputs, state });
   try {
     await page.addInitScript((saved) => localStorage.setItem('murmur-save-v1', saved), saved);

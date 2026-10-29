@@ -6,12 +6,11 @@ import { canonicalPersona } from '@adam0white/lab-client';
  * Covers: two authored weeks, the offstage weekend between them, edition-preserving replay, and one HF decision
  * per moment with two voices (`you` and `pull`, each with its own trust), her answer in HF's words, prompts and turning away (HF promptings), the evening review (HF
  * review: `ruminating` by default, `accounting` on nights she writes the day down), the hours between moments lived
- * through HF (commute, work, meals, sleep). Served0.9.x keeps397 learned-morning behavior;0.10.x uses ordinary HF morning choices.
- * Optional0.9.1/0.10.1 add a third week;0.9.2/0.10.2 supply separate outcomes. HF3 replay uses src/legacy. Does not cover money or spatial movement.
+ * through HF (commute, work, meals, sleep). Learned mornings use ordinary HF choices.
+ * The authored third-week and outcomes catalogs use the same current rules. Does not cover money or spatial movement.
  */
 import {
   advanceCast,
-  CAST_VERSION,
   castMoment,
   castOptions,
   castScene,
@@ -22,14 +21,13 @@ import type { CastChapter } from './cast-chapter.ts';
 import { releaseCastSource } from './cast-source.ts';
 import { DAY0, dayStart, LABEL, PULL, promiseReview, REVIEW_AT, WAKE, YOU } from './dilan-content.ts';
 import {
-  isCanonicalEdition,
+  isHf4Edition,
   isOutcomesEdition,
-  isRemainderEdition,
   isThreeWeekEdition,
-  PROMISE_EDITION,
-  sourceRules,
+  REMAINDER_EDITION,
+  requireCurrentEdition,
 } from './edition.ts';
-import { actionsForEdition } from './hf4-actions.ts';
+import { MURMUR_ACTIONS } from './hf4-actions.ts';
 import { changeReviewStyle, learnResponse, requestPromise, requestReview } from './hf4-agenda.ts';
 import { saturdayRoutineEndsAt } from './hf4-companions.ts';
 import { freshMurmurHf4, type MurmurHf4, playHf4Moment, playHf4Routine } from './hf4-game.ts';
@@ -41,8 +39,7 @@ import { settleMurmur } from './hf4-world.ts';
 import { listens } from './listening-editions.ts';
 import { LAST_DAY, momentById, momentsOf, WEEK_TWO_LAST_DAY } from './moments.ts';
 import { releaseOneCastDeparture } from './one-cast.ts';
-import { finishOutcome, OUTCOMES_VERSION, outcomeThreads } from './outcomes.ts';
-import * as servedWeekTwo from './rules-397/week2.ts';
+import { finishOutcome, outcomeThreads } from './outcomes.ts';
 import * as weekTwo from './week2.ts';
 import { thirdWeekHerLine, thirdWeekNote, thirdWeekThreads } from './week3.ts';
 
@@ -63,12 +60,12 @@ import type {
   Verdict,
 } from './types.ts';
 
-export const GAME_VERSION = PROMISE_EDITION;
-export const NEXT_VERSION = '0.9.1';
+export const GAME_VERSION = REMAINDER_EDITION;
+export const NEXT_VERSION = '0.10.1';
 /** Public current HF tuning: one day of disuse retains0.8, without host practice mutation. */
 export const PRACTICE_HALF_LIFE_DAYS = 3.1062837195053903;
 export const LEGACY_VERSION = '0.2.1';
-export const isEdition = (version: string) => listens({ version }) || version === LEGACY_VERSION;
+export const isEdition = isHf4Edition;
 export const DAY_NAMES = [
   '',
   'Monday',
@@ -94,16 +91,7 @@ export const DAY_NAMES = [
 ];
 /** Edition 0.4.0 adds a second week after Saturday's last page. */
 export const WEEK_TWO_EDITION = '0.4.0';
-const hasWeekTwo = (s: GameState) =>
-  s.version === '0.4.2' ||
-  s.version === '0.5.0' ||
-  isRemainderEdition(s.version) ||
-  s.version === CAST_VERSION ||
-  s.version === WEEK_TWO_EDITION ||
-  s.version === '0.4.1' ||
-  s.version === GAME_VERSION ||
-  isThreeWeekEdition(s.version) ||
-  isOutcomesEdition(s.version);
+const hasWeekTwo = (_s: GameState) => true;
 export const weekOf = (day: number) => Math.floor((day - 1) / 7) + 1;
 export const weekdayOf = (day: number) => ((day - 1) % 7) + 1;
 const WINDOW = 5;
@@ -116,7 +104,6 @@ const TIRED_PULL = 0.2;
 const WEEK_TWO_PULL = 0.1;
 /** The pull borrows your ink only once she trusts you this much. */
 const BORROW_FROM = 0.55;
-const { FEET_ALONE_FROM, upAloneLine } = servedWeekTwo;
 const PSYCH = ['safety', 'belonging', 'esteem', 'autonomy', 'competence', 'leisure', 'meaning'];
 
 const minuteOfDay = (m: number) => (((m - DAY0) % 1440) + 1440) % 1440;
@@ -153,15 +140,11 @@ export function newGame(
   chapter?: CastChapter,
   plainEnglish = true,
 ): GameState {
-  if (!isEdition(version)) throw new Error(`Unknown Murmur edition: ${version}`);
-  if (
-    chapter &&
-    (chapter.seed !== seed ||
-      chapter.mapping !== 'murmur-portable/2' ||
-      chapter.edition !== sourceRules(version))
-  )
+  requireCurrentEdition(version);
+  if (chapter) requireCurrentEdition(chapter.edition);
+  if (chapter && (chapter.seed !== seed || chapter.mapping !== 'murmur-portable/2'))
     throw new Error('Invalid pinned cast chapter.');
-  const hf = freshMurmurHf4(seed, actionsForEdition(version), chapter?.portable);
+  const hf = freshMurmurHf4(seed, MURMUR_ACTIONS, chapter?.portable);
   const s: GameState = {
     hf,
     cast: chapter ? structuredClone(chapter.initial) : freshCast(seed),
@@ -463,14 +446,6 @@ export function step(s: GameState): void {
     while (s.queue.length > 0) {
       const m = castMoment(s, momentById(s.queue[0] as string, s.version));
       if (m.when && !m.when(ctxOf(s))) {
-        if (getsUpAlone(s, m)) {
-          const at = dayStart(s.day) + (typeof m.at === 'function' ? m.at(ctxOf(s)) : m.at);
-          if (s.minute < at) {
-            s.minute += 1;
-            return;
-          }
-          getUpAlone(s, m);
-        }
         s.queue.shift();
         continue;
       }
@@ -520,50 +495,6 @@ function open(s: GameState, m: Moment) {
         t.surfacedAt = s.minute;
     }
   }
-}
-
-/** Old editions force a learned morning. New promises still go through an HF decision. */
-function getsUpAlone(s: GameState, m: Moment): boolean {
-  return (
-    !isRemainderEdition(s.version) &&
-    weekOf(s.day) === 2 &&
-    s.version !== PROMISE_EDITION &&
-    m.id.startsWith('alarm-') &&
-    (ctxOf(s).phrases.find((ph) => ph.id === 'feet')?.practice ?? 0) >= FEET_ALONE_FROM
-  );
-}
-
-function getUpAlone(s: GameState, m: Moment) {
-  liveUntil(s, s.minute);
-  const up = optionsOf(s, m).find((o) => o.action === 'get-up');
-  if (!up) throw new Error(`Alarm ${m.id} has no get-up action.`);
-  const due = readDilan(s.hf.run)
-    .agenda.commitments.filter((item) => item.status === 'pending' && item.actions.includes(up.action))
-    .map((item) => item.id);
-  hostAct(
-    s,
-    {
-      id: up.id,
-      action: up.action,
-      label: up.label,
-      duration: up.duration,
-      effort: up.effort ?? 0,
-      advertises: up.advertises ?? {},
-      placeId: up.placeId,
-    },
-    hfMinute(s),
-    { competence: 0.15, autonomy: 0.1 },
-    undefined,
-    due,
-  );
-  s.flags.late = false;
-  s.chosen[m.id] = up.id;
-  s.stats.gotUpAlone = true;
-  s.stats.turnedAlone.push(s.phrases.find((ph) => ph.id === 'feet')?.text ?? 'Put your feet on the floor');
-  say(s, 'narrator', upAloneLine);
-  m.after?.(s, up.id);
-  // Do not mark the phrase reinforced: no player said it again today.
-  // The ordinary HF action above keeps her alarm promise and practises the get-up habit.
 }
 
 /** Her reason when she turns your word down and HF gave her no words: tiredness, the easier way, or plain no. */
@@ -1060,11 +991,7 @@ function aboutYou(s: GameState): string {
 function herLine(s: GameState): string {
   if (isOutcomesEdition(s.version) && weekOf(s.day) === 3) return outcomeThreads(s).join(' ');
   if (isThreeWeekEdition(s.version) && weekOf(s.day) === 3) return thirdWeekHerLine(s);
-  if (weekOf(s.day) === 2)
-    return (
-      (isRemainderEdition(s.version) ? weekTwo : servedWeekTwo).weekTwoHerLine(s) ||
-      `${DAY_NAMES[s.day]} is over.`
-    );
+  if (weekOf(s.day) === 2) return weekTwo.weekTwoHerLine(s) || `${DAY_NAMES[s.day]} is over.`;
   const f = s.flags;
   const ch = s.chosen;
   switch (s.day) {
@@ -1174,7 +1101,7 @@ function finalPage(s: GameState): Final {
           ? outcomeThreads(s)
           : thirdWeekThreads(s)
         : weekOf(s.day) === 2
-          ? (isRemainderEdition(s.version) ? weekTwo : servedWeekTwo).weekTwoThreads(s)
+          ? weekTwo.weekTwoThreads(s)
           : threadsOf(s),
     sent,
     phrases: phrasesOf(s),
@@ -1185,7 +1112,7 @@ function finalPage(s: GameState): Final {
       weekOf(s.day) === 3
         ? 'Three weeks. Some advice I kept. Some I changed.'
         : weekOf(s.day) === 2
-          ? (isRemainderEdition(s.version) ? weekTwo : servedWeekTwo).weekTwoLine(s)
+          ? weekTwo.weekTwoLine(s)
           : line,
   };
 }
@@ -1247,14 +1174,14 @@ function startWeekTwo(s: GameState) {
     kind: 'promise',
     toId: 'mum',
     label: LABEL.mum,
-    actions: [s.version === PROMISE_EDITION || s.version === '0.10.0' ? 'listen-to-mum' : 'call-mum'],
+    actions: [s.version === REMAINDER_EDITION ? 'listen-to-mum' : 'call-mum'],
     from: dayStart(firstDay) + 17 * 60 + 30,
     until: dayStart(firstDay) + 21 * 60 + 30,
     importance: 0.55,
     recurEvery: 1440,
     recurUntil,
   });
-  if (s.version === PROMISE_EDITION || s.version === '0.10.0')
+  if (s.version === REMAINDER_EDITION)
     requestPromise(s.hf, {
       kind: 'promise',
       toId: 'self',
@@ -1276,7 +1203,7 @@ export function cloneState(s: GameState): GameStateSnapshot {
 }
 
 export function restoreState(json: GameStateSnapshot): GameState {
-  if (!isEdition(json.version)) throw new Error(`Unknown Murmur edition: ${json.version}`);
+  requireCurrentEdition(json.version);
   const { hf, ...host } = json;
   return { ...structuredClone(host), hf: restoreMurmur(hf) };
 }
@@ -1286,7 +1213,7 @@ export function replay(
   seed: number,
   inputs: readonly Input[],
   until?: number,
-  version = LEGACY_VERSION,
+  version = GAME_VERSION,
   chapter?: CastChapter,
   plainEnglish = true,
 ): GameState {

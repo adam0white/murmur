@@ -1,4 +1,3 @@
-import { isRemainderEdition } from './edition.ts';
 /** The current authored card and routine action identities, registered before the run starts. */
 export const MURMUR_ACTIONS = [
   'accept-help',
@@ -74,6 +73,7 @@ export const MURMUR_ACTIONS = [
   'promise-ece',
   'put-letter',
   'quiet',
+  'read-letter',
   'redo-returns',
   'repair-sheet',
   'repeat-board',
@@ -104,9 +104,3 @@ export const MURMUR_ACTIONS = [
   'work',
   'write',
 ] as const;
-
-/** Catalog order is part of the native opening. Old editions keep397 bytes. */
-export const REMAINDER_ACTIONS = MURMUR_ACTIONS.flatMap((a) =>
-  a === 'redo-returns' ? ['read-letter', a] : [a],
-);
-export const actionsForEdition = (v: string) => (isRemainderEdition(v) ? REMAINDER_ACTIONS : MURMUR_ACTIONS);

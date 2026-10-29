@@ -1,8 +1,8 @@
 import type { Browser } from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
-import { playedFirstWeek } from '../src/legacy/firstweek.ts';
-import { anotherWeek, cloneState, queueInput, runToCard } from '../src/legacy/game.ts';
+import { playedFirstWeek } from '../src/sim/firstweek.ts';
+import { anotherWeek, cloneState, queueInput, runToCard } from '../src/sim/game.ts';
 import { expandNotebook } from '../src/ui/notebook.ts';
 import { chooseSeed, launchBrowser } from './browser.ts';
 
@@ -169,18 +169,17 @@ it('offers privacy beside the recording switch and yields journal room before sc
         if (state.card && state.card.moment !== 'bus-10') queueInput(state, { kind: 'quiet' });
       }
     }
-    await page.addInitScript((saved) => {
-      localStorage.setItem(
-        'murmur-save-v1',
-        JSON.stringify({
-          format: 'murmur-save/2',
-          version: saved.version,
-          seed: saved.seed,
-          inputs: saved.inputs,
-          state: saved,
-        }),
-      );
-    }, cloneState(state));
+    const saved = cloneState(state);
+    await page.addInitScript(
+      (json) => localStorage.setItem('murmur-save-v1', json),
+      JSON.stringify({
+        format: 'murmur-save/2',
+        version: saved.version,
+        seed: saved.seed,
+        inputs: saved.inputs,
+        state: saved,
+      }),
+    );
     await page.goto(`${url}`);
     await chooseSeed(page, 1);
     await page.locator('#menu').click();
@@ -212,13 +211,13 @@ it('refreshes Send when the shared recording preference changes after the form o
     await page.close();
   }
 }, 30000);
-it('records a refusal once in plain words, including on a legacy run', async () => {
+it('records a refusal once in plain words, in a current run', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
     await page.goto(`${url}`);
     await page.evaluate(() => {
       window.__murmur.fast = true;
-      window.__murmur.start(9, '0.2.1');
+      window.__murmur.start(9);
     });
     await page.locator('#hush').waitFor();
     await page.evaluate(() => window.__murmur.say('up'));

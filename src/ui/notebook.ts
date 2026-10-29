@@ -2,6 +2,7 @@
  * source notebooks; it does not prune or derive semantic data. The declared decode bound is64MiB.
  * Semantic replay/admission stays with validateRun; this codec grants no branch ownership.
  */
+import { requireCurrentEdition } from '../sim/edition.ts';
 import { clock, DAY_NAMES, isEdition } from '../sim/game.ts';
 import type { GameState, GameStateSnapshot } from '../sim/types.ts';
 export interface Notebook {
@@ -21,6 +22,7 @@ const digest = async (bytes: Uint8Array<ArrayBuffer>) =>
     b.toString(16).padStart(2, '0'),
   ).join('');
 export function assertNotebookState(s: GameStateSnapshot): void {
+  if (s) requireCurrentEdition(s.version);
   if (
     !s ||
     !isEdition(s.version) ||
