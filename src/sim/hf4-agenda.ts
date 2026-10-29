@@ -1,5 +1,5 @@
 /** Agenda changes are timestamped HF inputs, with a persisted ingress sequence. */
-import { exportRun, type Input, inspect } from '@adam0white/human-framework';
+import { exportRun, type Input, inspect, readRunHistory } from '@adam0white/human-framework';
 import type { MurmurHf4 } from './hf4-game.ts';
 import { advanceHost } from './hf4-host.ts';
 import { type MurmurWorld, settleMurmur } from './hf4-world.ts';
@@ -19,7 +19,7 @@ function submit(game: MurmurHf4, make: (at: number, id: string) => Input): strin
     advanceHost(game, at, [input], (host: MurmurWorld, request) => settleMurmur(host, request, []));
   } catch (error) {
     // A reached world boundary can fail after HF has already accepted this command.
-    const accepted = exportRun(game.run).history.some((transaction) =>
+    const accepted = readRunHistory(exportRun(game.run)).some((transaction) =>
       transaction.inputs.some((entry) => entry.id === id),
     );
     if (accepted) game.nextCommand++;

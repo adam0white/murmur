@@ -1,3 +1,9 @@
+# HF 4.9 narration adoption — 2026-10-29
+
+Application0.9.3 pins published HF4.9.0/client0.5.8/kit0.5.25. Simulation editions0.9.0/0.9.1/0.9.2 and the HF3 legacy alias remain unchanged. Murmur supplies action forms and Dilan templates through the opening lexicon; HF owns seeded selection and the two-choice repeat window. Complete history reads use the public decoder.
+
+HF archive format7 is a deliberate documented format bump for retained history and narration RNG. HF4.8 notebooks fail closed through the existing restore error; start a fresh current notebook. Historical HF3 replay remains separate. Canonical replay-hash tests are retained. Technical proof and remaining delivery are recorded in the NARRATION report at ~/code/.lab-scratch/codex/narration.md. The dated receipts below describe earlier source. Cross-origin custody and Adam fiction acceptance are separate.
+
 # HF 4 release 0.9.0 —2026-10-28
 
 Current source uses official HF 4.8.0, client 0.5.4 and kit 0.5.22. Default simulation/application release is 0.9.0; optional 0.9.1 and 0.9.2 remain separate. Historical raw replay uses the exact HF 3 alias. Current retained-v2 admission, full notebook save/replay and atomic complete-source custody are implemented. The prior current-pin/port-blocker notes below are historical.

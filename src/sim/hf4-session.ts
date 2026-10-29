@@ -4,6 +4,7 @@ import {
   exportRun,
   type Run,
   type RunArchive,
+  readRunHistory,
   replay,
   restoreRun,
 } from '@adam0white/human-framework';
@@ -85,14 +86,15 @@ export function restoreMurmur(input: unknown): import('./hf4-game.ts').MurmurHf4
       throw new Error('Companion revision differs from run');
   const currentRevision = archive.current.offers.dilan?.revision ?? 0;
   if (currentRevision !== x.offerRevision) throw new Error('Murmur offer revision disagrees with its run');
-  const commands = archive.history
+  const history = readRunHistory(archive);
+  const commands = history
     .flatMap((transaction) => transaction.inputs)
     .map((entry) => /^murmur:agenda:(\d+)$/.exec(entry.id))
     .filter((match): match is RegExpExecArray => match !== null)
     .map((match) => Number(match[1]));
   if (commands.length !== x.nextCommand || commands.some((n, index) => n !== index))
     throw new Error('Murmur command sequence disagrees with its run');
-  const snapshots = archive.history
+  const snapshots = history
     .flatMap((transaction) => transaction.inputs)
     .filter((entry) => /^companion:(aylin|ece|murat):snapshot:\d+$/.test(entry.id));
   if (snapshots.length !== (x.nextCompanionEvent as number) * 3)

@@ -1,3 +1,4 @@
+import { readRunHistory } from '@adam0white/human-framework';
 import { expect, it } from 'vitest';
 import { saturdayRoutineEndsAt } from '../src/sim/hf4-companions.ts';
 import { freshMurmurHf4 } from '../src/sim/hf4-game.ts';
@@ -12,7 +13,7 @@ it('bounds recent host diagnostics while retaining every accepted completion and
     settleMurmur(host, request, []),
   );
   const saved = checkpointMurmur(game);
-  const completions = saved.run.history
+  const completions = readRunHistory(saved.run)
     .flatMap((t) => t.inputs)
     .filter((i) => i.kind === 'action.resolved' && i.payload.disposition === 'completed');
   expect(completions.length).toBeGreaterThan(RECENT_COMPLETIONS);
