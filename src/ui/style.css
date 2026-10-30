@@ -1134,6 +1134,17 @@ summary {
   max-height: none;
   padding: 0 8px calc(8px + var(--safe-b));
 }
+@media (max-width: 699px) {
+  .day:not(.has-card) .sheet:has(.cast-skip-notice) {
+    flex: 0 1 auto;
+    height: auto;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  .day:not(.has-card) .sheet:has(.cast-skip-notice) > * {
+    flex-shrink: 0;
+  }
+}
 .card {
   flex: 1 1 0;
   min-height: 0;
