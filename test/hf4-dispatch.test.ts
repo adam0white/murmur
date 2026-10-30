@@ -84,8 +84,14 @@ it('pins the current complete replay hash and cold continuation', () => {
   game.queueInput(state, { kind: 'say', option: 'up' });
   game.runToCard(state);
   const raw = game.cloneState(state);
-  expect(createHash('sha256').update(canonicalPersona(raw)).digest('hex')).toBe(
+  // Admission permission is new envelope metadata; every prior host/HF value stays pinned.
+  const { castAdmission, ...priorRepresentation } = raw;
+  expect(castAdmission).toEqual({ kind: 'local' });
+  expect(createHash('sha256').update(canonicalPersona(priorRepresentation)).digest('hex')).toBe(
     'efb8ac0bfe116b22c1d7a803f271ce43402a0e392cdd9c06477f9de47fea009d',
+  );
+  expect(createHash('sha256').update(canonicalPersona(raw)).digest('hex')).toBe(
+    '9875f0d6a76d880982dc09df6545b2620bf20ea114f13af32782c513ce3be85b',
   );
   const cold = game.restoreState(raw);
   const rebuilt = game.replay(state.seed, state.inputs, state.minute, state.version);
