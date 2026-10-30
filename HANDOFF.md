@@ -1,3 +1,7 @@
+# Attribution correction — 2026-10-30
+
+Merge `3db188f3dd153e666976fbdbec0d4f5ae81555aa` contains the co-author text, but Git does not parse it as a trailer because a reviewed-source line follows it. Reviewed source `9e95d778d3e26faf1e313ce622da3157699f6cca` has a valid parsed co-author trailer. The correction is a new signed follow-up with the co-author trailer last; it leaves the old merge and app code unchanged. Exact follow-up CI, deployment and fresh bounded live proof remain pending.
+
 # Reader authority and notices — 2026-10-30
 
 Shared openings preserve every requested head and individual refusal. The public notice names people whose histories could not continue. Native and file replay retain explicit authority; missing older authority permits local reading but grants no publication or fork rights. Malformed metadata refuses before recording, save or activation. HF4.9/client0.5.8/kit0.5.25 and gameplay stay unchanged. Exact source/main CI, normal deployment and a matching clean live release establish technical delivery; receipts are in `~/code/.lab-scratch/games-deferred/resume-murmur-reader-delivery-report.md`. Genuine custody, source retirement and Adam's November 3 acceptance remain separate.
