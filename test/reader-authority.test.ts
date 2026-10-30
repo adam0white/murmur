@@ -88,3 +88,36 @@ it('denies every skipped checkpoint path before activation, recording or source 
   expect(() => recordingState(s)).toThrow(/skipped person/);
   expect(() => assertNotebookState(cloneState(s))).toThrow(/skipped person/);
 });
+
+it('describes skipped people and sharing limits without changing authority', async () => {
+  const { castNotices } = await import('../src/ui/cast-notices.ts');
+  const current = newGame(17);
+  current.castScope = 'shared';
+  current.castChapter = await prepareCastChapter([], 17);
+  current.castAdmission = {
+    kind: 'shared',
+    expectedHeads: Object.fromEntries(
+      ['dilan', 'aylin', 'ece', 'murat'].map((role) => [`hf.cast.${role}.murmur`, null]),
+    ),
+  };
+  const before = cloneState(current);
+  expect(castNotices(current)).toEqual([]);
+  expect(cloneState(current)).toStrictEqual(before);
+
+  const skipped = cloneState(current);
+  skipped.castChapter!.blocked = ['hf.cast.aylin.murmur'];
+  expect(castNotices(skipped)).toEqual([
+    'Aylin could not join this week. They start fresh here. Their saved history in other games has not changed.',
+  ]);
+  const old = cloneState(current);
+  delete old.castAdmission;
+  expect(castNotices(old)).toEqual([
+    'This saved week began before an update. You can finish it here, but its people will not carry over to other games. Start a new game to carry people over.',
+  ]);
+  for (const admission of [undefined, current.castAdmission]) {
+    const file = { ...structuredClone(old), castScope: 'file' as const, castAdmission: admission };
+    expect(castNotices(file)).toEqual([
+      'This file can be played here. Its people will not carry over to other games. Start a new game to carry people over.',
+    ]);
+  }
+});
