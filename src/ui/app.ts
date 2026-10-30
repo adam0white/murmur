@@ -8,7 +8,7 @@ import { isHf4Edition, requireCurrentEdition, START_FRESH } from '../sim/edition
  */
 
 import { PEOPLE_ACROSS_GAMES, telemetryNotice, telemetryToggle } from '@adam0white/lab-kit';
-import { CAST, castIntroduction } from '../sim/canonical-cast.ts';
+import { castIntroduction } from '../sim/canonical-cast.ts';
 import { PULL, YOU } from '../sim/dilan-content.ts';
 import { playedFirstWeek } from '../sim/firstweek.ts';
 import {
@@ -40,6 +40,7 @@ import { departureReleaseDescription } from '../sim/one-cast.ts';
 import { weekStanding } from '../sim/standing.ts';
 import type { Answer, Final, GameState, GameStateSnapshot, Input, LogLine, Page } from '../sim/types.ts';
 import { freshCanonicalWeek } from './cast-chapter.ts';
+import { castNotices } from './cast-notices.ts';
 import { gateContinuity, installContinuity, invalidateContinuity } from './continuity.ts';
 import { required } from './dom.ts';
 import { showFeedback } from './feedback.ts';
@@ -718,10 +719,9 @@ function enter() {
 // ---------- the day ----------
 
 function skippedPeopleNotice() {
-  const names = CAST.filter((c) => s?.castChapter?.blocked?.includes(c.castId)).map((c) => c.name);
-  return names.length
-    ? `<p class="soft small cast-skip-notice" role="status">${esc(names.join(', '))} could not continue from their saved chapters. Their saved chapters have not changed. Other people can continue here.</p>`
-    : '';
+  return castNotices(s)
+    .map((text) => `<p class="soft small cast-skip-notice" role="status">${esc(text)}</p>`)
+    .join('');
 }
 
 function day() {
@@ -981,7 +981,7 @@ function drawSheet() {
   if (v && s.card) {
     el.className = 'sheet open';
     cardVisibleAt = performance.now();
-    el.innerHTML = cardHtml(v);
+    el.innerHTML = skippedPeopleNotice() + cardHtml(v);
     for (const b of el.querySelectorAll<HTMLButtonElement>('button.opt')) bindHold(b);
     const silence = document.getElementById('hush');
     if (silence) bindSilence(silence);
