@@ -1,3 +1,4 @@
+import { assertCastMetadata, requireCastPerson, requireCastPublication } from '../sim/cast-authority.ts';
 import { isHf4Edition, sourceRules } from '../sim/edition.ts';
 import { assertNotebookState, compactNotebook } from './notebook.ts';
 import { storeSourceArchive } from './source-archive.ts';
@@ -61,14 +62,17 @@ export async function freshCanonicalWeek(
     return s;
   }
   let candidateIds: string[] = [];
+  let expectedHeads: Record<string, string | null> = {};
   let prepared: Awaited<ReturnType<typeof prepareCastChapter>> | undefined;
   const journalShelf = {
     request: async <T>(request: PersonaRequest): Promise<T> => {
       if (request.action === 'prepareBatch') {
         const batch = await shelf.request<{
+          expectedHeads: Record<string, string | null>;
           inputs: { parent: { castId: string } }[];
           blocked: { castId: string; reason: string }[];
         }>(request);
+        expectedHeads = structuredClone(batch.expectedHeads);
         candidateIds = [...batch.inputs.map((i) => i.parent.castId), ...batch.blocked.map((p) => p.castId)];
         return batch as T;
       }
@@ -79,6 +83,8 @@ export async function freshCanonicalWeek(
       const run = newGame(chapter.seed, version, chapter);
       run.castHeads = Object.fromEntries(chapter.claims.map((h) => [h.castId, h]));
       run.castScope = 'shared';
+      run.castAdmission = { kind: 'shared', expectedHeads };
+      assertCastMetadata(run);
       const key = `murmur-held-cast:${crypto.randomUUID()}`;
       const entry = { accepted: false, state: cloneState(run) };
       localStorage.setItem(key, JSON.stringify(entry));
@@ -116,14 +122,20 @@ export async function freshCanonicalWeek(
     const s = newGame(prepared.seed, version, prepared);
     s.castHeads = Object.fromEntries(result.claims.map((h) => [h.castId, h]));
     s.castScope = 'shared';
+    s.castAdmission = { kind: 'shared', expectedHeads };
+    assertCastMetadata(s);
     return s;
   }
-  const s = newGame(seed, version);
+  const empty = await prepareCastChapter([], seed, {}, version);
+  const s = newGame(seed, version, empty);
+  s.castAdmission = { kind: 'shared', expectedHeads };
+  assertCastMetadata(s);
   s.castScope = 'shared';
   return s;
 }
 function simulationOnly(s: GameState | GameStateSnapshot) {
   const copy = 'host' in s.hf ? cloneState(s as GameState) : structuredClone(s);
+  delete copy.castAdmission;
   delete copy.fileHistory;
   delete copy.castHeads;
   delete copy.castScope;
@@ -209,8 +221,17 @@ export async function validateCanonicalRun(json: GameStateSnapshot): Promise<Gam
           throw Error('Native checkpoint differs from its actual played prefix.');
     }
   }
+  // Preserve absence too: replay cannot create authority for a historical notebook.
+  delete rebuilt.castAdmission;
   // Preserve the exact captured ownership metadata, including absence and explicit false.
-  for (const key of ['castHeads', 'castScope', 'castHeadScopes', 'castSources', 'fileHistory'] as const) {
+  for (const key of [
+    'castAdmission',
+    'castHeads',
+    'castScope',
+    'castHeadScopes',
+    'castSources',
+    'fileHistory',
+  ] as const) {
     if (Object.hasOwn(json, key)) Object.assign(rebuilt, { [key]: structuredClone(json[key]) });
   }
   return rebuilt;
@@ -238,13 +259,14 @@ async function saveCastPersonNow(
   options: { pause?: boolean; fork?: boolean },
   fixedGuard?: DepartureGuard,
 ): Promise<PersonaEnvelope> {
+  requireCastPerson(s, `hf.cast.${role}.murmur`);
+  if (options.fork || (s.castHeadScopes?.[`hf.cast.${role}.murmur`] ?? s.castScope) === 'shared')
+    requireCastPublication(s);
   const guard = fixedGuard ?? (await recordingEpochGuard());
   if (fixedGuard && (guard.owner !== s || !departureGuardCurrent(guard)))
     throw Error('The loaded run changed before its checkpoint.');
   const selected = canonicalCast(`hf.cast.${role}.murmur`);
   const selectedScope = s.castHeadScopes?.[selected.castId] ?? s.castScope ?? 'local';
-  if (s.castChapter?.blocked?.includes(selected.castId))
-    throw Error('This person could not join this chapter. Continue their saved chapter first.');
   if (options.fork || selectedScope === 'shared') requireSharedWrite(selected.castId);
   if (options.pause) queueInput(s, { kind: 'cast-pause', role });
   const prefix = cloneState(s),
@@ -312,6 +334,7 @@ async function saveCastPersonNow(
 }
 /** Observe eligible shared chapters automatically. Never pause purposes, fork conflicts, or publish imported files. */
 export function automaticCastCheckpoint(s: GameState | null, save: () => void): Promise<void> {
+  if (s) assertCastMetadata(s);
   if (!s?.cast || !shelf.enabled || pending || saving) return pending ?? Promise.resolve();
   pending = (async () => {
     const guard = await recordingEpochGuard();
@@ -326,6 +349,7 @@ export function automaticCastCheckpoint(s: GameState | null, save: () => void): 
         const saved = head && s.castSources?.[head.revision];
         if (saved?.inputCount === s.inputs.length && saved.minute === s.minute) continue;
         // Check the shared-write policy before creating a portable projection.
+        requireCastPublication(s);
         requireSharedWrite(c.castId);
         try {
           await createCastSource(s, role);

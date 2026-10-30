@@ -8,6 +8,7 @@ import {
   preparePersonaLife,
 } from '@adam0white/lab-client';
 import { expect, it, vi } from 'vitest';
+import { prepareCastChapter } from '../src/sim/cast-chapter.ts';
 import { MURMUR_ACTIONS } from '../src/sim/hf4-actions.ts';
 import { createMurmurOpening } from '../src/sim/hf4-opening.ts';
 import { readPerson } from '../src/sim/hf4-read.ts';
@@ -41,7 +42,10 @@ vi.mock('../src/ui/continuity.ts', () => ({
             inputs: [],
             blocked: [{ castId: 'hf.cast.aylin.murmur', reason: 'A source duty is still open.' }],
             expectedHeads: Object.fromEntries(
-              ['dilan', 'aylin', 'ece', 'murat'].map((id) => [`hf.cast.${id}.murmur`, null]),
+              ['dilan', 'aylin', 'ece', 'murat'].map((id) => [
+                `hf.cast.${id}.murmur`,
+                id === 'aylin' ? 'a'.repeat(64) : null,
+              ]),
             ),
           }
         );
@@ -87,6 +91,13 @@ it('validates a complete current notebook without adding or dropping ownership m
 it('blocks explicit and automatic shared checkpoints before projection or mutation', async () => {
   const state = newGame(17);
   state.castScope = 'shared';
+  state.castChapter = await prepareCastChapter([], 17);
+  state.castAdmission = {
+    kind: 'shared',
+    expectedHeads: Object.fromEntries(
+      ['dilan', 'aylin', 'ece', 'murat'].map((role) => [`hf.cast.${role}.murmur`, null]),
+    ),
+  };
   state.phase = 'end';
   const before = cloneState(state);
   calls.owner = state;

@@ -1,4 +1,5 @@
 import type { PersonaEnvelope } from '@adam0white/lab-client';
+import { assertCastMetadata } from '../sim/cast-authority.ts';
 import type { GameState, GameStateSnapshot } from '../sim/types.ts';
 import {
   automaticCastCheckpoint,
@@ -13,6 +14,7 @@ export async function initOneCast() {
   await shelf.ready;
 }
 export function recordingState(s: GameState | null) {
+  if (s) assertCastMetadata(s);
   if (s?.cast)
     return {
       owner: s,

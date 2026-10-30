@@ -1,3 +1,4 @@
+import { assertCastMetadata } from '../sim/cast-authority.ts';
 /** Lossless notebook transport. Gzip carries the entire JSON including Person/RNG, histories and pinned
  * source notebooks; it does not prune or derive semantic data. The declared decode bound is64MiB.
  * Semantic replay/admission stays with validateRun; this codec grants no branch ownership.
@@ -22,7 +23,10 @@ const digest = async (bytes: Uint8Array<ArrayBuffer>) =>
     b.toString(16).padStart(2, '0'),
   ).join('');
 export function assertNotebookState(s: GameStateSnapshot): void {
-  if (s) requireCurrentEdition(s.version);
+  if (s) {
+    requireCurrentEdition(s.version);
+    assertCastMetadata(s);
+  }
   if (
     !s ||
     !isEdition(s.version) ||

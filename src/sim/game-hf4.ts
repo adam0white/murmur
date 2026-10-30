@@ -17,6 +17,7 @@ import {
   finishCastEncounter,
   freshCast,
 } from './canonical-cast.ts';
+import { assertCastMetadata } from './cast-authority.ts';
 import type { CastChapter } from './cast-chapter.ts';
 import { releaseCastSource } from './cast-source.ts';
 import { DAY0, dayStart, LABEL, PULL, promiseReview, REVIEW_AT, WAKE, YOU } from './dilan-content.ts';
@@ -144,9 +145,11 @@ export function newGame(
   if (chapter) requireCurrentEdition(chapter.edition);
   if (chapter && (chapter.seed !== seed || chapter.mapping !== 'murmur-portable/2'))
     throw new Error('Invalid pinned cast chapter.');
+  assertCastMetadata({ castChapter: chapter });
   const hf = freshMurmurHf4(seed, MURMUR_ACTIONS, chapter?.portable);
   const s: GameState = {
     hf,
+    castAdmission: { kind: 'local' },
     cast: chapter ? structuredClone(chapter.initial) : freshCast(seed),
     ...(chapter ? { castChapter: structuredClone(chapter) } : {}),
     plainEnglish,
@@ -1204,6 +1207,7 @@ export function cloneState(s: GameState): GameStateSnapshot {
 
 export function restoreState(json: GameStateSnapshot): GameState {
   requireCurrentEdition(json.version);
+  assertCastMetadata(json);
   const { hf, ...host } = json;
   return { ...structuredClone(host), hf: restoreMurmur(hf) };
 }
