@@ -720,7 +720,7 @@ function enter() {
 
 function skippedPeopleNotice() {
   return castNotices(s)
-    .map((text) => `<p class="soft small cast-skip-notice" role="status">${esc(text)}</p>`)
+    .map((text) => `<p class="soft small cast-skip-notice">${esc(text)}</p>`)
     .join('');
 }
 
@@ -981,7 +981,7 @@ function drawSheet() {
   if (v && s.card) {
     el.className = 'sheet open';
     cardVisibleAt = performance.now();
-    el.innerHTML = skippedPeopleNotice() + cardHtml(v);
+    el.innerHTML = cardHtml(v);
     for (const b of el.querySelectorAll<HTMLButtonElement>('button.opt')) bindHold(b);
     const silence = document.getElementById('hush');
     if (silence) bindSilence(silence);
