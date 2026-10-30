@@ -241,6 +241,7 @@ export interface GameState {
   plainEnglish: boolean;
   castHeadScopes?: Record<string, 'shared' | 'local' | 'file'>;
   castSources?: Record<string, CastSourceRecord>;
+  castAdmission?: import('./cast-authority.ts').CastAdmission;
   castChapter?: import('./cast-chapter.ts').CastChapter;
   castHeads?: Record<string, PersonaEnvelope>;
   castScope?: 'shared' | 'local' | 'file';

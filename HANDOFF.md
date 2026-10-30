@@ -1,3 +1,7 @@
+# Reader authority and notices — 2026-10-30
+
+Shared openings preserve every requested head and individual refusal. The public notice names people whose histories could not continue. Native and file replay retain explicit authority; missing older authority permits local reading but grants no publication or fork rights. Malformed metadata refuses before recording, save or activation. HF4.9/client0.5.8/kit0.5.25 and gameplay stay unchanged. Exact source/main CI, normal deployment and a matching clean live release establish technical delivery; receipts are in `~/code/.lab-scratch/games-deferred/resume-murmur-reader-delivery-report.md`. Genuine custody, source retirement and Adam's November 3 acceptance remain separate.
+
 # Remainder source batch —2026-10-29
 
 Remaining: final qualified signed source/draftPR packet and root-owned review, exact CI, integration/deployment/live verification. Adam/player acceptanceNov3 and genuine SDK/peer custody remain open. No new hosted request, merge or deploy is authorized for this worker. See docs/remainder-2026-10-29.md and ~/code/.lab-scratch/games-deferred/recovery-murmur-remainder-report.md.

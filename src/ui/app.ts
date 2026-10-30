@@ -1,4 +1,5 @@
 import { canonicalPersona } from '@adam0white/lab-client';
+import { assertCastMetadata } from '../sim/cast-authority.ts';
 import { isHf4Edition, requireCurrentEdition, START_FRESH } from '../sim/edition.ts';
 /**
  * The Two Voices UI: plain DOM over the pure sim. The UI reads state and queues inputs; it never changes the sim
@@ -7,7 +8,7 @@ import { isHf4Edition, requireCurrentEdition, START_FRESH } from '../sim/edition
  */
 
 import { PEOPLE_ACROSS_GAMES, telemetryNotice, telemetryToggle } from '@adam0white/lab-kit';
-import { castIntroduction } from '../sim/canonical-cast.ts';
+import { CAST, castIntroduction } from '../sim/canonical-cast.ts';
 import { PULL, YOU } from '../sim/dilan-content.ts';
 import { playedFirstWeek } from '../sim/firstweek.ts';
 import {
@@ -157,6 +158,7 @@ async function readSave(): Promise<Save | null> {
     if (parsed?.format === 'murmur-notebook/1') sv = (await expandNotebook(parsed)) as unknown as Save;
     if (parsed?.format === 'murmur-replay-save/1') {
       const host = parsed.host as Omit<GameStateSnapshot, 'hf'>;
+      assertCastMetadata(host);
       const rebuilt = replay(
         host.seed,
         host.inputs,
@@ -166,7 +168,15 @@ async function readSave(): Promise<Save | null> {
         host.plainEnglish,
       );
       if (host.phase !== 'day' && rebuilt.phase === 'day') step(rebuilt);
-      for (const key of ['castHeads', 'castScope', 'castHeadScopes', 'castSources', 'fileHistory'] as const) {
+      delete rebuilt.castAdmission;
+      for (const key of [
+        'castAdmission',
+        'castHeads',
+        'castScope',
+        'castHeadScopes',
+        'castSources',
+        'fileHistory',
+      ] as const) {
         if (host[key] !== undefined) Object.assign(rebuilt, { [key]: structuredClone(host[key]) });
       }
       const state = cloneState(rebuilt),
@@ -216,6 +226,7 @@ function writeSave() {
   if (!s) return;
   const generation = ++saveGeneration;
   try {
+    assertCastMetadata(s);
     const state = cloneState(s);
     const clockFraction = s.phase === 'day' ? carry % 1 : 0;
     const payload = {
@@ -706,6 +717,13 @@ function enter() {
 
 // ---------- the day ----------
 
+function skippedPeopleNotice() {
+  const names = CAST.filter((c) => s?.castChapter?.blocked?.includes(c.castId)).map((c) => c.name);
+  return names.length
+    ? `<p class="soft small cast-skip-notice" role="status">${esc(names.join(', '))} could not continue from their saved chapters. Their saved chapters have not changed. Other people can continue here.</p>`
+    : '';
+}
+
 function day() {
   if (!s) return;
   screen = 'day';
@@ -970,7 +988,7 @@ function drawSheet() {
     return;
   }
   el.className = 'sheet';
-  el.innerHTML = gapHtml(s.answer);
+  el.innerHTML = skippedPeopleNotice() + gapHtml(s.answer);
   document.getElementById('hurry')?.addEventListener('click', () => {
     if (s?.card || s?.phase !== 'day') return;
     hurry = true;
@@ -1350,6 +1368,7 @@ function backPage() {
   lab.screen('back page');
   const { el, close } = overlay(
     `<section class="backpage" role="dialog" aria-modal="true" aria-label="Game menu">
+    ${skippedPeopleNotice()}
     <div class="menu-heading"><h2>Game menu${s && screen !== 'title' ? ` · ${esc(DAY_NAMES[s.day]?.slice(0, 3) ?? '')} ${clock(s.minute)}` : ''}</h2><button data-close aria-label="Close game menu">×</button></div>
     ${screen === 'day' ? '<p class="soft small">Time is paused while this menu is open.</p>' : ''}
     ${`<fieldset class="menu-speed"><legend>Pace between moments</legend><p class="caption">Every choice allows 64 seconds. Slow changes only the time between choices.</p>${(['automatic', 'slow', 'steady', 'fast'] as const).map((value) => `<button class="chip" data-speed="${value}" aria-pressed="${pacing === value}">${value.charAt(0).toUpperCase() + value.slice(1)}</button>`).join('')}</fieldset>`}
