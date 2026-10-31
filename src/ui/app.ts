@@ -21,6 +21,7 @@ import {
   DAY_NAMES,
   fingerprint,
   GAME_VERSION,
+  insistCarries,
   isEdition,
   LEGACY_VERSION,
   type Lean,
@@ -416,7 +417,22 @@ function infoPage() {
     screen === 'title'
       ? '<h2>Dilan</h2><p>Dilan is thirty-three. She delivers parcels from a courier depot in Istanbul.</p><p>There are two voices in her head. One is yours. <span class="notebook-text other-voice pencil-inline">The other got there first.</span></p>'
       : screen === 'day'
-        ? '<h2>The two voices</h2><p>Tap a choice to suggest it. Press and hold a choice to insist. Insisting works only while she trusts you, and it costs trust.</p><p>Choose “Say nothing” to let her decide without your advice. The pencil handwriting shows the other voice.</p><p>The words below each choice show how she feels about it.</p><p>Your handwriting gets darker as she trusts you more. The pencil handwriting gets larger as she trusts the other voice more.</p><p>You have 64 seconds to read and answer each choice. Time passes faster between choices.</p><p class="desktop-only">Press Shift+Enter to insist on the selected choice.</p>'
+        ? [
+            '<h2>The two voices</h2>',
+            '<p>Tap a choice to suggest it. Press and hold a choice to insist. Insisting can cost her trust, and she can still say no. If she trusts you too little, a hold counts only as a weak suggestion.</p>',
+            '<p>Choose “Say nothing” to let her decide without your advice. The pencil handwriting shows the other voice.</p>',
+            '<p>The words below each choice show how she feels about it.</p>',
+            '<p>“She is willing.” A tap should be enough.</p>',
+            '<p>“She would agree only if you insist.” A tap will not move her. A hold may: she may simply agree, or give in and say she did not like being pushed. She may still say no.</p>',
+            '<p>“She wants to do it later.” She would put it off. A hold will not change that now.</p>',
+            '<p>“She is against it.” A hold will not change that either. Insisting never overrides a firm no.</p>',
+            '<p>Trust is how much she believes you. The game shows no number. Your handwriting gets darker as she trusts you more. The pencil handwriting gets larger as she trusts the other voice more.</p>',
+            '<p>Insisting does not always cost trust, and it is not a promise she will agree. When she is already tired of being pushed, it can cost trust. A note above the choices says when holding works worse than tapping.</p>',
+            '<p>You have 64 seconds to read and answer each choice. If they pass, she chooses for herself, and the day records that time ran out.</p>',
+            '<p>Time passes faster between choices. Skip ahead moves the clock to her next choice, or to the end of the day if none is left. It never skips a choice.</p>',
+            '<p>Pace in the Game menu changes only the time between choices, not the 64 seconds. The clock stops while that menu is open.</p>',
+            '<p class="desktop-only">Press Shift+Enter to insist on the selected choice.</p>',
+          ].join('')
         : screen === 'evening'
           ? '<h2>Her page</h2><p>A tick marks something she followed through on today. A crossed-out line marks something she missed.</p><p>Tally marks show things she intends to follow through on.</p><p>“Words she is starting to use” lists phrases she is learning. Larger handwriting means a phrase has become more familiar to her.</p>'
           : '<h2>Saturday</h2><p>These lines compare how much she trusted each voice at the start and end of the week.</p><p>The tally counts your suggestions, times you insisted, and times you chose to say nothing.</p><p>Another week continues with the same Dilan.</p>';
@@ -452,7 +468,7 @@ function cue(lean: Lean, pushed: Lean): string {
   if (lean === 'yes') return 'She is willing.';
   if (lean === 'if pushed') return 'She might agree, but she would not like it.';
   if (pushed === 'yes' || pushed === 'if pushed') return 'She would agree only if you insist.';
-  if (lean === 'later') return 'She wants to do it later.';
+  if (lean === 'later') return 'She wants to do it later. A hold will not change that now.';
   return 'She is against it.';
 }
 
@@ -878,9 +894,19 @@ function records(): MomentRecord[] {
   return history.records;
 }
 
+/** What her recorded answer says about a hold she did not follow. Tap records add nothing. */
+function heldResultWords(record: MomentRecord): string {
+  if (!record.insisted) return '';
+  const verdict = record.answer.verdict;
+  if (verdict === 'refused') return '. She turned that down.';
+  if (verdict === 'deferred') return '. She put it off.';
+  if (verdict === 'modified') return '. She chose something close instead.';
+  return '';
+}
+
 function recordHtml(record: MomentRecord): string {
   const yours = record.said
-    ? `You ${record.insisted ? 'insisted on' : 'suggested'} ${esc(quotedWords(record.said.ink))}${record.said.ink === record.chosen.ink ? ' ✓' : ` She chose ${esc(quotedWords(record.chosen.ink))}`}`
+    ? `You ${record.insisted ? 'insisted on' : 'suggested'} ${esc(quotedWords(record.said.ink))}${record.said.id === record.chosen.id ? ' ✓' : `${heldResultWords(record)} She chose ${esc(quotedWords(record.chosen.ink))}`}`
     : `You said nothing${record.quiet === 'timeout' ? ' because time ran out' : ''}. She chose ${esc(quotedWords(record.chosen.ink))}`;
   const a = record.answer;
   const reply = s ? replyWords(s, a) : undefined;
@@ -1003,10 +1029,14 @@ function cardHtml(v: CardView): string {
   const tPull = trustOf(s, PULL);
   const first = s.day === 1 && v.id === 'alarm-1';
   // Holding helps only while she trusts you enough; when a hold would land worse than a tap, say so in words.
-  const pushSore = v.options.some((o) => RANK[o.pushed] < RANK[o.lean]);
+  // A hold below her trust line counts as a weaker suggestion than a tap, even when the words match.
+  const pushSore = !insistCarries(s) || v.options.some((o) => RANK[o.pushed] < RANK[o.lean]);
   const hint = pushSore
     ? 'She resists pressure now. Holding a choice works worse than tapping it.'
-    : (v.hint ?? (first ? 'Tap a choice to suggest it.' : undefined));
+    : (v.hint ??
+      (first
+        ? 'Tap a choice to suggest it. Hold to insist; this can cost her trust, and she can still say no. If time runs out, she chooses for herself.'
+        : undefined));
   const pull = `<p class="pull notebook-text other-voice${v.borrowed ? ' borrowed' : ''}" style="${pencilStyle(tPull, 6)}">${esc(v.pullLine)}</p>`;
   const resolve = v.resolve
     ? `<p class="resolve">${tally(v.resolve.marks, v.id.length)}<span class="notebook-text">${esc(v.resolve.line)}</span></p>`
@@ -1015,7 +1045,7 @@ function cardHtml(v: CardView): string {
   const opts = v.options
     .map(
       (o) =>
-        `<button class="opt" data-o="${esc(o.id)}" aria-keyshortcuts="Shift+Enter" title="Tap to suggest; hold or Shift+Enter to insist."><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean notebook-text">${esc(o.mood ?? cue(o.lean, o.pushed))}</span>${first && RANK[o.pushed] > RANK[o.lean] ? '<span class="gesture">Hold to insist. This costs trust.</span>' : ''}</button>`,
+        `<button class="opt" data-o="${esc(o.id)}" aria-keyshortcuts="Shift+Enter" title="Tap to suggest; hold or Shift+Enter to insist."><span class="fill"></span><span class="ink" style="${inkStyle(tYou)}">${esc(o.ink)}</span><span class="lean notebook-text">${esc(o.mood ?? cue(o.lean, o.pushed))}</span>${first && RANK[o.pushed] > RANK[o.lean] ? '<span class="gesture">Hold to insist. This can cost trust.</span>' : ''}</button>`,
     )
     .join('');
   return `<div class="card ink-in">
@@ -1117,7 +1147,7 @@ function bindHold(b: HTMLButtonElement) {
     down = true;
     fired = false;
     b.classList.add('holding');
-    if (gesture) gesture.textContent = 'insisting… · costs trust';
+    if (gesture) gesture.textContent = 'insisting… · can cost trust';
     timer = window.setTimeout(() => {
       if (!down || !current()) return;
       fired = true;

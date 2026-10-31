@@ -1,6 +1,7 @@
 import { tick } from '@adam0white/human-framework-legacy';
 import { replyWords as historicalReplyWords } from '../legacy/ui/reply.ts';
-import { cardView, ctxOf, insistCarries, listens, optionsOf, replay } from '../sim/game.ts';
+import { DAY0 } from '../sim/dilan.ts';
+import { cardView, ctxOf, HOLD_NOT_CARRIED, insistCarries, listens, optionsOf, replay } from '../sim/game.ts';
 import { momentById } from '../sim/moments.ts';
 import type { Answer, GameState } from '../sim/types.ts';
 import { quotedWords, spokenAction } from './presentation.ts';
@@ -106,6 +107,47 @@ function assentWords(s: GameState, a: Answer): string | undefined {
   return a.says;
 }
 
+const TIMES = ['no times', 'once', 'twice', 'three times', 'four times', 'five times', 'six times'];
+const dayOfMinute = (at: number) => Math.floor((at - DAY0) / 1440) + 1;
+
+/** How often the player held to insist before this answer, counted from the recorded inputs. */
+function holdsBefore(s: GameState, a: Answer, index: number) {
+  const day = dayOfMinute(a.at);
+  let today = 0;
+  let earlier = 0;
+  for (const input of s.inputs.slice(0, index)) {
+    if (input.kind !== 'say' || input.insist !== true) continue;
+    if (dayOfMinute(input.at) === day) today++;
+    else earlier++;
+  }
+  return { today, earlier };
+}
+
+/**
+ * A hold that did not carry keeps its stored refusal, but the words say how often she has been pushed.
+ * The counts come from the recorded inputs; nothing is added to her story.
+ */
+function pushedWords(s: GameState, a: Answer, index: number, doing: string): string {
+  if (a.says !== HOLD_NOT_CARRIED) return a.says ?? '';
+  const { today, earlier } = holdsBefore(s, a, index);
+  const lead =
+    today > 0
+      ? `You have pushed me ${TIMES[today] ?? `${today} times`} today. I’m not listening to that.`
+      : earlier > 0
+        ? 'You pushed me before today. I’m not listening to that now.'
+        : HOLD_NOT_CARRIED;
+  return doing ? `${lead} I’m going to ${doing}.` : lead;
+}
+
+/** She did what a hold asked. Say what the hold did, so the player can read its cost. */
+function heldAssentWords(s: GameState, a: Answer): string | undefined {
+  if (!listens(s)) return a.says;
+  if (a.says === HOLD_NOT_CARRIED) return 'You keep pushing me. I’m doing this one.';
+  if (!a.says && a.verdict === 'complied')
+    return 'Fine. I’m doing it because you pushed me. I don’t like it.';
+  return a.says;
+}
+
 /** Only used when the exact decision forecast says a hold could have carried. */
 function mightHear(before: GameState, a: Answer): string {
   const c = ctxOf(before);
@@ -137,7 +179,7 @@ function mightHear(before: GameState, a: Answer): string {
 export function replyWords(s: GameState, a: Answer): string | undefined {
   if (!('hf' in s)) return historicalReplyWords(s as unknown as import('../legacy/types.ts').GameState, a);
   if (!a.said) return a.says;
-  if (a.said === a.chosen) return assentWords(s, a);
+  if (a.said === a.chosen) return a.insisted ? heldAssentWords(s, a) : assentWords(s, a);
 
   // HF's deferred wording can promise rejected advice after an action that closes its window.
   // Describe these recorded choices without adding a future commitment.
@@ -170,7 +212,7 @@ export function replyWords(s: GameState, a: Answer): string | undefined {
     if (listens(s)) {
       const chosen = optionsOf(before, momentById(a.moment, before.version)).find((o) => o.id === a.chosen);
       if (!chosen) return a.says;
-      if (a.insisted) return a.says;
+      if (a.insisted) return pushedWords(s, a, index, spokenAction(chosen.label));
       const c = ctxOf(before);
       const reason = a.moment.startsWith('alarm-')
         ? chosen.action === 'get-up'

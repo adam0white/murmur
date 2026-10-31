@@ -1,3 +1,11 @@
+# LIGHT correction 1 — 2026-10-31
+
+Independent review R1–R5 corrected: Info no longer promises protest for every hold; trust cost is conditional; failed-hold line follows verdict and option id; 21 distinct dispositions in docs/design.md; pkill correction in restart-murmur-light-correction1.md. Still open: UI check at both sizes, reviews at an exact SHA, CI, deploy, live proof, Adam's play.
+
+# LIGHT display words — 2026-10-31 (uncommitted source, not delivered)
+
+Display-only changes for the LIGHT asks F2316–F2338: Information page labels, trust, timer and Skip words; first-card hint; “later” label; pressure note also when a hold is below her trust line; “It did not work.” after a failed hold; varied refusal words counted from recorded holds; a reply when a hold made her comply. `answer.says` and all simulation output are unchanged (same full-state hash as 6a5ce8f for the same inputs). Remaining: root UI check at 360×690 and 1280×800 (no browser was run), exact signed source, CI, deploy, live proof and Adam's play. The per-ask owner/date plan is the last section of docs/design.md.
+
 # Attribution correction — 2026-10-30
 
 Merge `3db188f3dd153e666976fbdbec0d4f5ae81555aa` contains the co-author text, but Git does not parse it as a trailer because a reviewed-source line follows it. Reviewed source `9e95d778d3e26faf1e313ce622da3157699f6cca` has a valid parsed co-author trailer. The correction is a new signed follow-up with the co-author trailer last; it leaves the old merge and app code unchanged. Exact follow-up CI, deployment and fresh bounded live proof remain pending.
