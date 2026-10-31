@@ -7,7 +7,7 @@ Application 0.10.0 uses HF 4.9.0, client 0.5.8 and kit 0.5.25. Fresh runs use th
 ## How to play
 
 1. Choose **Start**, or **Resume** to open the week saved in this browser. Starting a new game asks before replacing a saved week.
-2. Read the scene and the other voice’s pencil handwriting. Tap a choice to suggest it. Press and hold to insist; this costs trust and works only while she trusts you. Keyboard players can use Shift+Enter to insist on the selected choice.
+2. Read the scene and the other voice’s pencil handwriting. Tap a choice to suggest it. Press and hold to insist; this can cost trust and counts for less when she trusts you too little. Keyboard players can use Shift+Enter to insist on the selected choice.
 3. Choose **Say nothing** to let her decide without your advice. The words below each choice describe her feelings, not numerical odds. Each choice allows 64 real seconds. Time passes faster between choices.
 4. Read her response and journal. Each evening shows what she kept, missed and intends to do. Saturday closes the week. **Another week**, when available, continues with the same Dilan into the second authored week.
 

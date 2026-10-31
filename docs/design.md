@@ -369,3 +369,32 @@ All forty paired first-week complete-state hashes matched. Careless second-week 
 The first-week full-state hashes are compared across editions after normalizing only the edition field. The two focused tests pin first-week equality, the second-week rules and complete replay, plus one careful headless control. Existing legacy exports and a new-edition native source return remain covered. No test matrix is added. These driver results establish rule separation, not human acceptance.
 
 Tradeoff: five extra promises change the denominator, and a connected call adds one decision. Keeping a bedtime is not a score for Dilan's worth. Older notebooks retain their old difficulty. Revert fresh starts by restoring GAME_VERSION and package version to 0.6.0; retain the 0.6.1 branch for existing notebooks.
+
+## LIGHT 2026-10-31 source plan (display words only; no rules, edition, HF or log change)
+
+Source: the seven LIGHT reports (five people; Aisha and Mei each returned once with a separate diagnostic). Only Monday and Tuesday were visited. Several ordinary taps stalled about 31.5 s in the test driver while the game clock ran, so Tuesday refusals, missed choices and pace are qualified, not proof. A held choice is the real game input; the originals that could only tap are untested for holds. A refusal stays a refusal, and nothing here changes difficulty, trust or the 64-second window.
+
+Built (display words only; corrected 2026-10-31 after independent review): the Information page explains the four feeling labels. “She would agree only if you insist” says a hold may be plain agreement or giving in with a protest, and she may still say no. Insisting is described as conditional: it can cost trust, it is not a promise, and a hold counts only as a weak suggestion when she trusts you too little. The first card says the same briefly and that time running out lets her choose. “She wants to do it later.” adds that a hold will not change that now. After a hold she did not follow, the journal says by the recorded result: refused “She turned that down.”, deferred “She put it off.”, modified “She chose something close instead.”, compared by option id, never by display ink. Refusal words count recorded prior holds. Protest wording appears only for an actual complied result. Stored refusal text, simulation and serialization are unchanged.
+
+Per-ask disposition (owner · date · reason). “Words” means buildable plain cues from existing public eligibility; a literal meter, new scenes and difficulty are owner choices.
+- F2316 · OPEN: canonical promotion of the later private native-hold returns · lab/director · 2026-11-03 · the private driver ability question is answered; the original reports stay un-held.
+- F2317 · owner/player scene preference · Adam · 2026-11-10 · only Tuesday’s alarm was seen; new-device Mondays repeat by method; any new scene is Adam’s call.
+- F2318 · partial · Murmur writer + lead designer · 2026-11-03 · first-card and Info cost/eligibility words built; per-choice reasons through existing cues stay active.
+- F2319 · partial · Murmur writer · 2026-11-03 · hold meaning and conditional cost built; never a guaranteed assent or fixed deduction.
+- F2320 · owner/player preference · Adam · 2026-11-10 · a kind first option may not mean universal willingness; refusal and tradeoffs stay.
+- F2321 · partial · Murmur writer + root UI owner · 2026-11-03 · expiry and pace scope stated; discoverability and fit at 360×690 and 1280×800 unmeasured.
+- F2322 · owner/player scene preference · Adam · 2026-11-10 · Tuesday alarm only; no whole-week repetition established.
+- F2323 · instrument-qualified, open · lab/director · 2026-11-03 · taps stalled about 31.5 s; the source formula is not a human-speed measurement; no speed change.
+- F2324 · open diagnosis · root UI owner + Murmur writer · 2026-11-03 · long journal and repeated refusal differ; no faded/plain duplicate reproduced.
+- F2325 · partial · Murmur writer · 2026-11-03 · handwriting and weak-hold explanation built; zero/budget/reset guesses not adopted.
+- F2326 · partial · Murmur writer + root UI owner · 2026-11-03 · label meanings corrected; “later” means no uptake now, not a future promise; layout unverified.
+- F2327 · built, verification open · root UI owner · 2026-11-03 · Skip runs to the next choice or day end; fit unmeasured.
+- F2328 · literal number/bar is an owner decision · Adam + lead designer · 2026-11-03 · qualitative cues (handwriting, labels, weak-hold note) stay active for the writer.
+- F2329 · partial · Murmur writer · 2026-11-03 · deferral kept distinct from refusal; Tuesday observations are stall-qualified.
+- F2330 · open diagnosis · root UI owner + Murmur writer · 2026-11-03 · only the stored refusal repeat reproduced and was varied; no DOM duplicate shown.
+- F2333 · partial · Murmur writer + lead designer · 2026-11-03 · below-line note built; qualitative readiness cues from public eligibility remain; no recovery promise.
+- F2334 · built, feel open · Murmur writer + Adam · 2026-11-03 · refusal wording counts recorded holds and the chosen action; no new acts.
+- F2335 · owner/player scene preference · Adam · 2026-11-10 · second device required a NEW Monday; the coffee memory was noticed.
+- F2336 · partial · Murmur writer + lead designer · 2026-11-03 · two paths do not prove a budget; current eligibility cue buildable.
+- F2337 · partial, NOT fully fixed · Murmur writer + root UI owner · 2026-11-03 · first-card and Info cost words built; fit of the longer card is unverified.
+- F2338 · built, UI verification open · Murmur writer + root UI owner · 2026-11-03 · the result line follows the recorded verdict and option id.

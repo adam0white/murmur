@@ -220,6 +220,8 @@ export function optionsOf(s: GameState, m: Moment): Opt[] {
 }
 
 const INSIST_FROM = 0.45;
+/** Stored when a hold does not carry. Display code recognises it; it must not change, because exports hold it. */
+export const HOLD_NOT_CARRIED = 'You keep pushing me. I’m not listening to that today.';
 export const insistCarries = (s: GameState) => trustOf(s, YOU) >= INSIST_FROM;
 
 /** Preview and submission use the same trust-dependent advice strength. */
@@ -584,7 +586,7 @@ function resolve(s: GameState, said: { option: string; insist: boolean } | null)
     if (said.insist) s.stats.insisted++;
     if (resolution) {
       answer.verdict = resolution.verdict;
-      if (!carried) answer.says = 'You keep pushing me. I’m not listening to that today.';
+      if (!carried) answer.says = HOLD_NOT_CARRIED;
       else if (resolution.verdict === 'refused')
         answer.says = reasonOf(c, resolution.verdict, selected?.id === m.pull.to);
       if (resolution.verdict === 'assented' || resolution.verdict === 'complied') s.stats.heard++;
