@@ -69,6 +69,8 @@ describe('held choices on one fixed Monday', () => {
   });
 
   // The raw minute-only replay cannot reach the zero-minute evening phase, so this uses the canonical validator.
+  // Explicit 30 s for this case only (default 5 s): it restores and validates the full HF archive, replays the whole host,
+  // then runs a real next input and native replay. Same scope as the full-notebook control in cast-ui.test.ts. Not a speed fix.
   it('keeps an evening notebook exact through the real validator and the real next alarm input', async () => {
     expect(s.phase).toBe('evening');
     const exported = JSON.parse(
@@ -99,7 +101,7 @@ describe('held choices on one fixed Monday', () => {
     expect(fingerprint(rebuilt)).toBe(fingerprint(s));
     const native = nativeReplay(cloneState(rebuilt).hf.run);
     expect(native.ok && native.value.verified).toBe(true);
-  });
+  }, 30_000);
 
   it('words a failed hold by the recorded verdict, never by ink', () => {
     const verdicts = new Set(
